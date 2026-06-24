@@ -16,6 +16,10 @@ struct Sidebar: View {
 
   var body: some View {
     List(selection: $selection) {
+      Section {
+        row(.search)
+      }
+
       Section("Library".localized) {
         row(.new)
         ForEach(SidebarItem.libraryCategories, id: \.self) { type in

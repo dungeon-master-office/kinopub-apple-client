@@ -42,6 +42,13 @@ final class VideoContentServiceImpl: VideoContentService {
     return response
   }
 
+  func fetchGenres() async throws -> [MediaGenre] {
+    let request = GenresRequest()
+    let response = try await apiClient.performRequest(with: request,
+                                                      decodingType: ArrayData<MediaGenre>.self)
+    return response.items
+  }
+
   func fetchDetails(for id: String) async throws -> SingleItemData<MediaItem> {
     let request = ItemDetailsRequest(id: id)
     let response = try await apiClient.performRequest(with: request,

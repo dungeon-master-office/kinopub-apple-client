@@ -9,6 +9,7 @@ import Foundation
 import KinoPubBackend
 
 enum NavigationTabs {
+  case search
   case main
   case bookmarks
   case watching
@@ -20,6 +21,7 @@ enum NavigationTabs {
 /// Sidebar destinations for the iPad / macOS two-column layout.
 /// The `library` group mirrors the kino.pub website categories, the rest live in the "Other" group.
 enum SidebarItem: Hashable, Identifiable {
+  case search
   case new
   case category(MediaType)
   case watching
@@ -30,6 +32,7 @@ enum SidebarItem: Hashable, Identifiable {
 
   var id: String {
     switch self {
+    case .search: return "search"
     case .new: return "new"
     case .category(let type): return "category-\(type.rawValue)"
     case .watching: return "watching"
@@ -47,6 +50,7 @@ enum SidebarItem: Hashable, Identifiable {
 
   var title: String {
     switch self {
+    case .search: return "Search"
     case .new: return "New"
     case .category(let type): return type.title
     case .watching: return "Watching"
@@ -59,6 +63,7 @@ enum SidebarItem: Hashable, Identifiable {
 
   var systemImage: String {
     switch self {
+    case .search: return "magnifyingglass"
     case .new: return "sparkles"
     case .category(let type): return type.systemImage
     case .watching: return "play.tv"

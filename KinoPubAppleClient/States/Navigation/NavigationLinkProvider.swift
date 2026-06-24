@@ -16,6 +16,28 @@ protocol NavigationLinkProvider {
   func season(for season: Season) -> any Hashable
 }
 
+struct SearchRoutesLinkProvider: NavigationLinkProvider {
+  func link(for item: MediaItem) -> any Hashable {
+    SearchRoutes.details(item)
+  }
+
+  func player(for item: any PlayableItem) -> any Hashable {
+    SearchRoutes.player(item)
+  }
+
+  func trailerPlayer(for item: any PlayableItem) -> any Hashable {
+    SearchRoutes.trailerPlayer(item)
+  }
+
+  func seasons(for seasons: [Season]) -> any Hashable {
+    SearchRoutes.seasons(seasons)
+  }
+
+  func season(for season: Season) -> any Hashable {
+    SearchRoutes.season(season)
+  }
+}
+
 struct MainRoutesLinkProvider: NavigationLinkProvider {
   func link(for item: MediaItem) -> any Hashable {
     MainRoutes.details(item)

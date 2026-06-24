@@ -19,6 +19,8 @@ struct SidebarNavigationDetail: View {
 
   var body: some View {
     switch selection ?? .new {
+    case .search:
+      search
     case .new:
       mainCatalog(contentType: .movie, shortcut: .fresh)
         .id("library-new")
@@ -36,6 +38,12 @@ struct SidebarNavigationDetail: View {
     case .profile:
       profile
     }
+  }
+
+  var search: some View {
+    SearchView(model: SearchModel(itemsService: appContext.contentService,
+                                  authState: authState,
+                                  errorHandler: errorHandler))
   }
 
   func mainCatalog(contentType: MediaType, shortcut: MediaShortcut) -> some View {

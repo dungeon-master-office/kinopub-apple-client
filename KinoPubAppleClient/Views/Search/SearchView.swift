@@ -1,0 +1,202 @@
+//
+//  SearchView.swift
+//  KinoPubAppleClient
+//
+//  Created by Kirill Kunst on 24.06.2026.
+//
+
+import SwiftUI
+import KinoPubUI
+import KinoPubBackend
+
+struct SearchView: View {
+  @EnvironmentObject var navigationState: NavigationState
+  @EnvironmentObject var authState: AuthState
+  @EnvironmentObject var errorHandler: ErrorHandler
+  @Environment(\.appContext) var appContext
+  @StateObject private var model: SearchModel
+
+  private let browseColumns = [GridItem(.adaptive(minimum: 220), spacing: 16)]
+  private let resultsColumns = [GridItem(.adaptive(minimum: 130), spacing: 16)]
+
+  init(model: @autoclosure @escaping () -> SearchModel) {
+    _model = StateObject(wrappedValue: model())
+  }
+
+  var body: some View {
+    NavigationStack(path: $navigationState.searchRoutes) {
+      ScrollView {
+        if model.query.trimmingCharacters(in: .whitespaces).isEmpty {
+          discoveryContent
+        } else {
+          resultsContent
+        }
+      }
+      .searchable(text: $model.query, placement: .automatic, prompt: "Shows & Movies")
+      .navigationTitle("Search")
+      .background(Color.KinoPub.background)
+      .task {
+        await model.loadGenres()
+      }
+      .navigationDestination(for: SearchRoutes.self) { route in
+        switch route {
+        case .details(let item):
+          MediaItemView(model: MediaItemModel(mediaItemId: item.id,
+                                              itemsService: appContext.contentService,
+                                              downloadManager: appContext.downloadManager,
+                                              linkProvider: SearchRoutesLinkProvider(),
+                                              errorHandler: errorHandler))
+        case .player(let item):
+          PlayerView(manager: PlayerManager(playItem: item,
+                                            watchMode: .media,
+                                            downloadedFilesDatabase: appContext.downloadedFilesDatabase,
+                                            actionsService: appContext.actionsService))
+        case .trailerPlayer(let item):
+          PlayerView(manager: PlayerManager(playItem: item,
+                                            watchMode: .trailer,
+                                            downloadedFilesDatabase: appContext.downloadedFilesDatabase,
+                                            actionsService: appContext.actionsService))
+        case .seasons(let seasons):
+          SeasonsView(model: SeasonsModel(seasons: seasons, linkProvider: SearchRoutesLinkProvider()))
+        case .season(let season):
+          SeasonView(model: SeasonModel(season: season, linkProvider: SearchRoutesLinkProvider()))
+        case .genre(let id, let title):
+          genreResults(id: id, title: title)
+        }
+      }
+      .handleError(state: $errorHandler.state)
+    }
+  }
+
+  // MARK: - Discovery (empty query)
+
+  var discoveryContent: some View {
+    VStack(alignment: .leading, spacing: 24) {
+      if !model.recentSearches.isEmpty {
+        recentSection
+      }
+      browseSection
+    }
+    .padding(16)
+  }
+
+  var recentSection: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack {
+        Text("Recent")
+          .font(Font.KinoPub.subheader)
+          .foregroundStyle(Color.KinoPub.text)
+        Spacer()
+        Button("Clear") {
+          model.clearRecents()
+        }
+        .foregroundStyle(Color.KinoPub.accent)
+      }
+
+      ForEach(model.recentSearches, id: \.self) { search in
+        Button {
+          model.query = search
+        } label: {
+          HStack(spacing: 12) {
+            Image(systemName: "clock.arrow.circlepath")
+              .foregroundStyle(Color.KinoPub.subtitle)
+            Text(search)
+              .foregroundStyle(Color.KinoPub.text)
+            Spacer()
+          }
+          .padding(.vertical, 6)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+      }
+    }
+  }
+
+  var browseSection: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Text("Browse")
+        .font(Font.KinoPub.subheader)
+        .foregroundStyle(Color.KinoPub.text)
+
+      LazyVGrid(columns: browseColumns, spacing: 16) {
+        if model.genres.isEmpty {
+          ForEach(MediaType.allCases) { type in
+            NavigationLink(value: SearchRoutes.genre(0, type.title)) {
+              BrowseCategoryCard(title: type.title)
+            }
+#if os(macOS)
+            .buttonStyle(.plain)
+#endif
+          }
+        } else {
+          ForEach(model.genres, id: \.id) { genre in
+            NavigationLink(value: SearchRoutes.genre(Int(genre.id) ?? 0, genre.title)) {
+              BrowseCategoryCard(title: genre.title)
+            }
+#if os(macOS)
+            .buttonStyle(.plain)
+#endif
+          }
+        }
+      }
+    }
+  }
+
+  // MARK: - Results (non-empty query)
+
+  var resultsContent: some View {
+    LazyVGrid(columns: resultsColumns, spacing: 16) {
+      ForEach(model.results, id: \.id) { item in
+        if item.skeleton ?? false {
+          PosterCard(imageURL: nil)
+        } else {
+          NavigationLink(value: SearchRoutes.details(item)) {
+            PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
+          }
+#if os(macOS)
+          .buttonStyle(.plain)
+#endif
+        }
+      }
+    }
+    .padding(16)
+  }
+
+  // MARK: - Genre results destination
+
+  func genreResults(id: Int, title: String) -> some View {
+    ScrollView {
+      LazyVGrid(columns: resultsColumns, spacing: 16) {
+        ForEach(model.genreResults, id: \.id) { item in
+          if item.skeleton ?? false {
+            PosterCard(imageURL: nil)
+          } else {
+            NavigationLink(value: SearchRoutes.details(item)) {
+              PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
+            }
+#if os(macOS)
+            .buttonStyle(.plain)
+#endif
+          }
+        }
+      }
+      .padding(16)
+    }
+    .background(Color.KinoPub.background)
+    .navigationTitle(title)
+    .task {
+      await model.loadGenreResults(genreId: id)
+    }
+  }
+}
+
+struct SearchView_Previews: PreviewProvider {
+  @StateObject static var navState = NavigationState()
+
+  static var previews: some View {
+    SearchView(model: SearchModel(itemsService: VideoContentServiceMock(),
+                                  authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock()),
+                                  errorHandler: ErrorHandler()))
+      .environmentObject(navState)
+  }
+}

@@ -8,6 +8,37 @@
 import Foundation
 import KinoPubBackend
 
+enum SearchRoutes: Hashable {
+  case details(MediaItem)
+  case seasons([Season])
+  case season(Season)
+  case player(any PlayableItem)
+  case trailerPlayer(any PlayableItem)
+  case genre(Int, String)
+
+  func hash(into hasher: inout Hasher) {
+    switch self {
+    case .details(let item):
+      hasher.combine(item)
+    case .season(let season):
+      hasher.combine(season)
+    case .seasons(let seasons):
+      hasher.combine(seasons)
+    case .player(let item):
+      hasher.combine(item.id)
+    case .trailerPlayer(let item):
+      hasher.combine(item.id)
+    case .genre(let id, let title):
+      hasher.combine(id)
+      hasher.combine(title)
+    }
+  }
+
+  static func == (lhs: SearchRoutes, rhs: SearchRoutes) -> Bool {
+    rhs.hashValue == lhs.hashValue
+  }
+}
+
 enum MainRoutes: Hashable {
   case details(MediaItem)
   case seasons([Season])

@@ -12,6 +12,7 @@ class NavigationState: ObservableObject {
   @Published var columnVisibility = NavigationSplitViewVisibility.all
   @Published var selectedTab: NavigationTabs = .main
   @Published var sidebarSelection: SidebarItem? = .new
+  @Published var searchRoutes: [SearchRoutes] = []
   @Published var mainRoutes: [MainRoutes] = []
   @Published var bookmarksRoutes: [BookmarksRoutes] = []
   @Published var historyRoutes: [HistoryRoutes] = []
