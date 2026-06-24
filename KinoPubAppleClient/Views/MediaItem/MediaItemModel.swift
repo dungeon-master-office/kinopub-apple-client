@@ -24,6 +24,15 @@ class MediaItemModel: ObservableObject {
   @Published public var mediaItem: MediaItem = MediaItem.mock()
   @Published public var itemLoaded: Bool = false
   @Published public var bookmarkFolders: [Bookmark] = []
+  @Published public var relatedItems: [MediaItem] = []
+
+  /// Actor names parsed from the comma-separated `cast` field (trimmed, non-empty).
+  public var castNames: [String] {
+    mediaItem.cast
+      .split(separator: ",")
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty }
+  }
 
   init(mediaItemId: Int,
        itemsService: VideoContentService,
@@ -46,6 +55,33 @@ class MediaItemModel: ObservableObject {
         let mediaId = mediaItem.id
         mediaItem.seasons = mediaItem.seasons?.map({ $0.mediaId = mediaId; return $0 })
         itemLoaded = true
+        fetchRelated()
+      } catch {
+        errorHandler.setError(error)
+      }
+    }
+  }
+
+  /// Loads items similar to the current one (same primary genre & content type)
+  /// using the catalog filter endpoint. Errors are surfaced but never fatal.
+  func fetchRelated() {
+    Task {
+      do {
+        let contentType = MediaType(rawValue: mediaItem.type) ?? .movie
+        var genres: [Int] = []
+        if let genreId = mediaItem.genres.first?.id {
+          genres.append(genreId)
+        }
+        let filter = MediaItemsFilter(contentType: contentType,
+                                      genres: genres,
+                                      countries: [],
+                                      year: nil,
+                                      sort: nil)
+        let response = try await itemsService.filter(filter: filter, page: nil)
+        relatedItems = response.items
+          .filter { $0.id != mediaItem.id }
+          .prefix(15)
+          .map { $0 }
       } catch {
         errorHandler.setError(error)
       }
