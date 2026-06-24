@@ -119,12 +119,10 @@ struct HomeView: View {
 
   @ViewBuilder
   private func shelfView(_ shelf: HomeModel.Shelf) -> some View {
-    let items = shelf.ranked ? Array(shelf.items.prefix(10)) : shelf.items
     MediaShelf(title: shelf.title) {
-      ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+      ForEach(shelf.items) { item in
         NavigationLink(value: MainRoutes.details(item)) {
           PosterCard(imageURL: item.posters.medium,
-                     rank: shelf.ranked ? (index + 1) : nil,
                      imdbRating: item.imdbRating,
                      kinopoiskRating: item.kinopoiskRating)
         }

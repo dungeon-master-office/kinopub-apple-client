@@ -46,11 +46,11 @@ public struct ContentItemsListView: View {
   }
 
   var cellSize: Double {
-    useReducedThumbnailSize ? 140 : 180
+    useReducedThumbnailSize ? 150 : 172
   }
 
   var gridLayout: [GridItem] {
-    [GridItem(.adaptive(minimum: cellSize), spacing: 25, alignment: .top)]
+    [GridItem(.adaptive(minimum: cellSize), spacing: 16, alignment: .top)]
   }
 
   public init(width: CGFloat,
@@ -67,11 +67,10 @@ public struct ContentItemsListView: View {
 
   public var body: some View {
     ScrollView {
-      LazyVGrid(columns: gridLayout, content: {
+      LazyVGrid(columns: gridLayout, spacing: 24, content: {
         ForEach(items, id: \.id) { item in
           NavigationLink(value: navigationLinkProvider(item)) {
             ContentItemView(mediaItem: item)
-              .padding(.vertical, 20)
               .onAppear {
                 onLoadMoreContent(item)
               }
@@ -81,7 +80,8 @@ public struct ContentItemsListView: View {
           #endif
         }
       })
-      .padding(.horizontal, 16)
+      .padding(.horizontal, 20)
+      .padding(.top, 8)
     }
     .refreshable(action: onRefresh)
   }

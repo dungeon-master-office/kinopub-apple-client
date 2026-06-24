@@ -34,19 +34,22 @@ public struct ContentItemView: View {
   }
 
   var image: some View {
-    AsyncImage(url: URL(string: mediaItem.posters.medium)) { image in
-      image.resizable()
-        .renderingMode(.original)
-        .posterStyle(size: .medium, orientation: .vertical)
-    } placeholder: {
-      Color.KinoPub.skeleton
-        .frame(width: PosterStyle.Size.medium.width,
-               height: PosterStyle.Size.medium.height)
-    }
-    .cornerRadius(8)
-    .skeleton(enabled: mediaItem.skeleton ?? false,
-              size: CGSize(width: PosterStyle.Size.medium.width,
-                           height: PosterStyle.Size.medium.height))
+    // Fill the grid column width with a 2:3 poster so columns stay even (Apple TV style).
+    Color.KinoPub.skeleton
+      .aspectRatio(2.0 / 3.0, contentMode: .fit)
+      .frame(maxWidth: .infinity)
+      .overlay {
+        AsyncImage(url: URL(string: mediaItem.posters.medium)) { image in
+          image
+            .resizable()
+            .renderingMode(.original)
+            .aspectRatio(contentMode: .fill)
+        } placeholder: {
+          Color.KinoPub.skeleton
+        }
+      }
+      .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+      .skeleton(enabled: mediaItem.skeleton ?? false)
   }
   
   var ratingsBlock: some View {
