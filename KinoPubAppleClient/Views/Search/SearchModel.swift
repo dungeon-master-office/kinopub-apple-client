@@ -11,11 +11,19 @@ import OSLog
 import KinoPubLogging
 import Combine
 
+/// A recently opened search result, shown as a card in the "Recent" section.
+struct RecentSearchItem: Codable, Identifiable, Hashable {
+  let id: Int
+  let title: String
+  let subtitle: String
+  let poster: String
+}
+
 @MainActor
 class SearchModel: ObservableObject {
 
-  private static let recentSearchesKey = "recentSearches"
-  private static let recentSearchesLimit = 8
+  private static let recentSearchesKey = "recentSearchItems"
+  private static let recentSearchesLimit = 12
 
   private var authState: AuthState
   private var errorHandler: ErrorHandler
@@ -26,7 +34,7 @@ class SearchModel: ObservableObject {
   @Published public var results: [MediaItem] = []
   @Published public var genres: [MediaGenre] = []
   @Published public var genreResults: [MediaItem] = []
-  @Published public var recentSearches: [String] = []
+  @Published public var recentItems: [RecentSearchItem] = []
   @Published public var searching: Bool = false
   @Published public var browseLoading: Bool = false
 
@@ -34,7 +42,7 @@ class SearchModel: ObservableObject {
     self.contentService = itemsService
     self.authState = authState
     self.errorHandler = errorHandler
-    self.recentSearches = Self.loadRecentSearches()
+    self.recentItems = Self.loadRecentItems()
     subscribe()
   }
 
@@ -64,7 +72,6 @@ class SearchModel: ObservableObject {
     do {
       let data = try await contentService.search(query: trimmed, page: nil)
       results = data.items
-      addRecentSearch(trimmed)
     } catch {
       Logger.app.debug("search error: \(error)")
       results = []
@@ -75,25 +82,40 @@ class SearchModel: ObservableObject {
 
   // MARK: - Recent searches
 
-  func addRecentSearch(_ query: String) {
-    let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { return }
-    var updated = recentSearches.filter { $0.caseInsensitiveCompare(trimmed) != .orderedSame }
-    updated.insert(trimmed, at: 0)
+  /// Records an opened result so it appears in "Recent" (mirrors the Apple TV app, which lists
+  /// recently opened titles with their artwork rather than raw query strings).
+  func recordRecent(_ item: MediaItem) {
+    let subtitle = MediaType(rawValue: item.type)?.title ?? item.type.capitalized
+    let recent = RecentSearchItem(id: item.id,
+                                  title: item.localizedTitle,
+                                  subtitle: subtitle,
+                                  poster: item.posters.medium)
+    var updated = recentItems.filter { $0.id != recent.id }
+    updated.insert(recent, at: 0)
     if updated.count > Self.recentSearchesLimit {
       updated = Array(updated.prefix(Self.recentSearchesLimit))
     }
-    recentSearches = updated
-    UserDefaults.standard.set(updated, forKey: Self.recentSearchesKey)
+    recentItems = updated
+    persistRecents()
   }
 
   func clearRecents() {
-    recentSearches = []
+    recentItems = []
     UserDefaults.standard.removeObject(forKey: Self.recentSearchesKey)
   }
 
-  private static func loadRecentSearches() -> [String] {
-    UserDefaults.standard.stringArray(forKey: recentSearchesKey) ?? []
+  private func persistRecents() {
+    if let data = try? JSONEncoder().encode(recentItems) {
+      UserDefaults.standard.set(data, forKey: Self.recentSearchesKey)
+    }
+  }
+
+  private static func loadRecentItems() -> [RecentSearchItem] {
+    guard let data = UserDefaults.standard.data(forKey: recentSearchesKey),
+          let items = try? JSONDecoder().decode([RecentSearchItem].self, from: data) else {
+      return []
+    }
+    return items
   }
 
   // MARK: - Browse / genres

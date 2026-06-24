@@ -18,6 +18,7 @@ struct MediaItemView: View {
   @StateObject private var itemModel: MediaItemModel
 
   @State private var plotExpanded: Bool = false
+  @State private var selectedSeasonNumber: Int?
 
   // Download flow (mirrors the mechanism previously in MediaItemDescriptionCard).
   @State private var selectedDownloadableItem: DownloadableMediaItem?
@@ -266,23 +267,69 @@ struct MediaItemView: View {
 
   @ViewBuilder
   private var episodesSection: some View {
-    if mediaItem.isSeries, let seasons = mediaItem.seasons {
-      ForEach(seasons) { season in
-        MediaShelf(title: season.fixedTitle, showsChevron: false) {
-          ForEach(season.episodes, id: \.id) { episode in
-            NavigationLink(value: itemModel.linkProvider.player(for: filledEpisode(episode, in: season))) {
-              EpisodeCard(imageURL: episode.thumbnail,
-                          overline: "Episode \(episode.number)",
-                          title: episode.fixedTitle,
-                          footnote: "\(max(episode.duration / 60, 1)) мин",
-                          progress: episodeProgress(episode))
+    if mediaItem.isSeries, let seasons = mediaItem.seasons, !seasons.isEmpty {
+      let season = currentSeason(in: seasons)
+      VStack(alignment: .leading, spacing: 12) {
+        seasonPicker(seasons: seasons, current: season)
+        ScrollView(.horizontal, showsIndicators: false) {
+          HStack(alignment: .top, spacing: 14) {
+            ForEach(season.episodes, id: \.id) { episode in
+              NavigationLink(value: itemModel.linkProvider.player(for: filledEpisode(episode, in: season))) {
+                EpisodeCard(imageURL: episode.thumbnail,
+                            overline: "Episode \(episode.number)",
+                            title: episode.fixedTitle,
+                            footnote: "\(max(episode.duration / 60, 1)) мин",
+                            progress: episodeProgress(episode))
+              }
+              #if os(macOS)
+              .buttonStyle(.plain)
+              #endif
             }
-            #if os(macOS)
-            .buttonStyle(.plain)
-            #endif
           }
+          .padding(.horizontal, 20)
         }
       }
+    }
+  }
+
+  private func currentSeason(in seasons: [Season]) -> Season {
+    if let number = selectedSeasonNumber, let match = seasons.first(where: { $0.number == number }) {
+      return match
+    }
+    return seasons[0]
+  }
+
+  @ViewBuilder
+  private func seasonPicker(seasons: [Season], current: Season) -> some View {
+    if seasons.count > 1 {
+      Menu {
+        ForEach(seasons) { season in
+          Button {
+            selectedSeasonNumber = season.number
+          } label: {
+            if season.number == current.number {
+              Label(season.fixedTitle, systemImage: "checkmark")
+            } else {
+              Text(season.fixedTitle)
+            }
+          }
+        }
+      } label: {
+        HStack(spacing: 6) {
+          Text(current.fixedTitle)
+            .font(.system(size: 22, weight: .bold))
+            .foregroundStyle(Color.KinoPub.text)
+          Image(systemName: "chevron.up.chevron.down")
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(Color.KinoPub.subtitle)
+        }
+      }
+      .padding(.horizontal, 20)
+    } else {
+      Text(current.fixedTitle)
+        .font(.system(size: 22, weight: .bold))
+        .foregroundStyle(Color.KinoPub.text)
+        .padding(.horizontal, 20)
     }
   }
 

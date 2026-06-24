@@ -72,7 +72,7 @@ struct SearchView: View {
 
   var discoveryContent: some View {
     VStack(alignment: .leading, spacing: 24) {
-      if !model.recentSearches.isEmpty {
+      if !model.recentItems.isEmpty {
         recentSection
       }
       browseSection
@@ -93,23 +93,45 @@ struct SearchView: View {
         .foregroundStyle(Color.KinoPub.accent)
       }
 
-      ForEach(model.recentSearches, id: \.self) { search in
-        Button {
-          model.query = search
-        } label: {
-          HStack(spacing: 12) {
-            Image(systemName: "clock.arrow.circlepath")
-              .foregroundStyle(Color.KinoPub.subtitle)
-            Text(search)
-              .foregroundStyle(Color.KinoPub.text)
-            Spacer()
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 12) {
+          ForEach(model.recentItems) { recent in
+            NavigationLink(value: SearchRoutes.details(MediaItem.mock(id: recent.id))) {
+              recentCard(recent)
+            }
+            .buttonStyle(.plain)
           }
-          .padding(.vertical, 6)
-          .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
       }
     }
+  }
+
+  private func recentCard(_ recent: RecentSearchItem) -> some View {
+    HStack(spacing: 12) {
+      AsyncImage(url: URL(string: recent.poster)) { image in
+        image.resizable().aspectRatio(contentMode: .fill)
+      } placeholder: {
+        Color.KinoPub.skeleton
+      }
+      .frame(width: 100, height: 62)
+      .clipped()
+      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text(recent.title)
+          .font(.system(size: 15, weight: .medium))
+          .foregroundStyle(Color.KinoPub.text)
+          .lineLimit(2)
+        Text(recent.subtitle)
+          .font(.system(size: 13))
+          .foregroundStyle(Color.KinoPub.subtitle)
+          .lineLimit(1)
+      }
+      .frame(width: 150, alignment: .leading)
+    }
+    .padding(8)
+    .background(Color.white.opacity(0.06))
+    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
   }
 
   var browseSection: some View {
@@ -156,6 +178,9 @@ struct SearchView: View {
 #if os(macOS)
           .buttonStyle(.plain)
 #endif
+          .simultaneousGesture(TapGesture().onEnded {
+            model.recordRecent(item)
+          })
         }
       }
     }

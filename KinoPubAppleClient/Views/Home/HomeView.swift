@@ -64,34 +64,57 @@ struct HomeView: View {
     }
   }
 
+  private var heroHeight: CGFloat { 460 }
+
   @ViewBuilder
   private var heroSection: some View {
-    if let hero = model.hero {
-      NavigationLink(value: MainRoutes.details(hero)) {
-        HeroBackdrop(imageURL: hero.posters.wide ?? hero.posters.big, height: 460) {
-          VStack(alignment: .leading, spacing: 10) {
-            Text(hero.localizedTitle)
-              .font(.system(size: 34, weight: .bold))
-              .foregroundStyle(.white)
-              .lineLimit(2)
-            Text(hero.genres.compactMap { $0.title }.joined(separator: " · "))
-              .font(.subheadline)
-              .foregroundStyle(.white.opacity(0.85))
-              .lineLimit(1)
-            Label("Details", systemImage: "info.circle")
-              .font(.headline)
-              .foregroundStyle(.white)
-              .padding(.horizontal, 18)
-              .padding(.vertical, 10)
-              .background(Color.white.opacity(0.18))
-              .clipShape(Capsule())
-              .padding(.top, 4)
-          }
-          .frame(maxWidth: .infinity, alignment: .leading)
+    if model.featured.isEmpty {
+      HeroBackdrop(imageURL: nil, height: heroHeight) { EmptyView() }
+    } else {
+#if os(iOS)
+      TabView {
+        ForEach(model.featured) { heroPage($0) }
+      }
+      .tabViewStyle(.page(indexDisplayMode: .always))
+      .frame(height: heroHeight)
+#else
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 16) {
+          ForEach(model.featured) { heroPage($0).frame(width: 820) }
         }
       }
-      .buttonStyle(PlainButtonStyle())
+      .frame(height: heroHeight)
+#endif
     }
+  }
+
+  @ViewBuilder
+  private func heroPage(_ hero: MediaItem) -> some View {
+    NavigationLink(value: MainRoutes.details(hero)) {
+      HeroBackdrop(imageURL: hero.posters.wide ?? hero.posters.big, height: heroHeight) {
+        VStack(alignment: .leading, spacing: 10) {
+          Text(hero.localizedTitle)
+            .font(.system(size: 34, weight: .bold))
+            .foregroundStyle(.white)
+            .lineLimit(2)
+          Text(hero.genres.compactMap { $0.title }.joined(separator: " · "))
+            .font(.subheadline)
+            .foregroundStyle(.white.opacity(0.85))
+            .lineLimit(1)
+          Label("Details", systemImage: "info.circle")
+            .font(.headline)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .background(Color.white.opacity(0.18))
+            .clipShape(Capsule())
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 20)
+      }
+    }
+    .buttonStyle(PlainButtonStyle())
   }
 
   @ViewBuilder

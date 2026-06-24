@@ -27,7 +27,7 @@ class HomeModel: ObservableObject {
   private var bag = Set<AnyCancellable>()
 
   @Published public var shelves: [Shelf] = HomeModel.skeletonShelves()
-  @Published public var hero: MediaItem?
+  @Published public var featured: [MediaItem] = []
 
   init(itemsService: VideoContentService, authState: AuthState, errorHandler: ErrorHandler) {
     self.itemsService = itemsService
@@ -59,7 +59,18 @@ class HomeModel: ObservableObject {
       ]
 
       shelves = loaded
-      hero = loaded.first(where: { !$0.items.isEmpty })?.items.first
+
+      // Build the hero gallery from the lead item of each shelf (deduplicated), so the
+      // top of Home is a swipeable carousel of varied features rather than a single title.
+      var seen = Set<Int>()
+      var featuredItems: [MediaItem] = []
+      for shelf in loaded {
+        if let first = shelf.items.first, !seen.contains(first.id) {
+          seen.insert(first.id)
+          featuredItems.append(first)
+        }
+      }
+      featured = featuredItems
     } catch {
       Logger.app.debug("fetch home error: \(error)")
       errorHandler.setError(error)
