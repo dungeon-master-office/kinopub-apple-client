@@ -199,7 +199,10 @@ struct MediaItemView: View {
   private var heroActions: some View {
     HStack(spacing: 12) {
       playButton
-      watchlistButton
+      // Watchlist ("Буду смотреть") is a serials-only feature on kino.pub; for movies use Bookmarks.
+      if mediaItem.isSeries {
+        watchlistButton
+      }
       watchedButton
       bookmarkMenu
       downloadButton
