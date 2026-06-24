@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  KinoPubButton.swift
 //
 //
 //  Created by Kirill Kunst on 31.07.2023.
@@ -8,27 +8,20 @@
 import Foundation
 import SwiftUI
 
+/// A primary, full-width KinoPub button with a title and a semantic color.
+///
+/// The label layout is provided by ``KinoPubButtonTextStyle`` and the visual
+/// appearance (background, corner radius, pressed/disabled states) by
+/// ``KinoPubButtonStyle`` so styling lives in a single place.
 public struct KinoPubButton: View {
 
-  public enum ButtonColor {
-    case green
-    case gray
-    case red
-    case blue
-
-    internal var color: Color {
-      switch self {
-      case .green:
-        return Color.KinoPub.accent
-      case .red:
-        return Color.KinoPub.accentRed
-      case .gray:
-        return Color.KinoPub.selectionBackground
-      case .blue:
-        return Color.KinoPub.accentBlue
-      }
-    }
-  }
+  /// Backward-compatible alias for the button color palette.
+  ///
+  /// The color type was extracted into the top-level ``KinoPubButtonColor`` so it
+  /// can be reused independently, while existing call sites referring to
+  /// `KinoPubButton.ButtonColor` (and `.green` / `.gray` / `.red` / `.blue`) keep
+  /// compiling unchanged.
+  public typealias ButtonColor = KinoPubButtonColor
 
   public var title: String
   public var color: ButtonColor
@@ -43,12 +36,9 @@ public struct KinoPubButton: View {
   public var body: some View {
     Button(action: action) {
       Text(title)
-        .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity, maxHeight: 40)
-        .font(.system(size: 16, weight: .semibold))
+        .modifier(KinoPubButtonTextStyle())
     }
     .buttonStyle(KinoPubButtonStyle(buttonColor: color))
-
   }
 }
 
