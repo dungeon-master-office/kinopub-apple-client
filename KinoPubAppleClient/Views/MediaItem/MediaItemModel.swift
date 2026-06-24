@@ -15,24 +15,28 @@ import KinoPubKit
 class MediaItemModel: ObservableObject {
 
   private var itemsService: VideoContentService
+  private var actionsService: UserActionsService
   private var downloadManager: DownloadManager<DownloadMeta>
   private var errorHandler: ErrorHandler
   public var linkProvider: NavigationLinkProvider
   public var mediaItemId: Int
-  
+
   @Published public var mediaItem: MediaItem = MediaItem.mock()
   @Published public var itemLoaded: Bool = false
+  @Published public var bookmarkFolders: [Bookmark] = []
 
   init(mediaItemId: Int,
        itemsService: VideoContentService,
        downloadManager: DownloadManager<DownloadMeta>,
        linkProvider: NavigationLinkProvider,
-       errorHandler: ErrorHandler) {
+       errorHandler: ErrorHandler,
+       actionsService: UserActionsService = AppContext.shared.actionsService) {
     self.itemsService = itemsService
     self.mediaItemId = mediaItemId
     self.linkProvider = linkProvider
     self.errorHandler = errorHandler
     self.downloadManager = downloadManager
+    self.actionsService = actionsService
   }
 
   func fetchData() {
@@ -50,6 +54,48 @@ class MediaItemModel: ObservableObject {
   
   func startDownload(item: DownloadableMediaItem, file: FileInfo) {
     _ = downloadManager.startDownload(url: URL(string: file.url.http)!, withMetadata: DownloadMeta.make(from: item))
+  }
+
+  func toggleWatched() {
+    Task {
+      do {
+        try await actionsService.toggleWatching(id: mediaItemId, video: nil, season: nil)
+        fetchData()
+      } catch {
+        errorHandler.setError(error)
+      }
+    }
+  }
+
+  func toggleWatchlist() {
+    Task {
+      do {
+        try await actionsService.toggleWatchlist(id: mediaItemId)
+        fetchData()
+      } catch {
+        errorHandler.setError(error)
+      }
+    }
+  }
+
+  func loadBookmarkFolders() {
+    Task {
+      do {
+        bookmarkFolders = try await actionsService.fetchBookmarks()
+      } catch {
+        errorHandler.setError(error)
+      }
+    }
+  }
+
+  func toggleBookmark(folderId: Int) {
+    Task {
+      do {
+        try await actionsService.toggleBookmark(itemId: mediaItemId, folderId: folderId)
+      } catch {
+        errorHandler.setError(error)
+      }
+    }
   }
 
 }
