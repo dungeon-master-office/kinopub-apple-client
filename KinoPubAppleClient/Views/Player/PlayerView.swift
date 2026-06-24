@@ -8,11 +8,13 @@
 import Foundation
 import SwiftUI
 import AVKit
+#if os(iOS)
+import UIKit
+#endif
 
 struct PlayerView: View {
 
   @StateObject private var playerManager: PlayerManager
-  @State private var hideControls = false
   @Environment(\.dismiss) private var dismiss
   @EnvironmentObject var navigationState: NavigationState
 
@@ -21,83 +23,40 @@ struct PlayerView: View {
   }
 
   var body: some View {
-    GeometryReader { _ in
-      ZStack(alignment: .topLeading) {
-        videoPlayer
-        closeButton
-        if let continueTime = playerManager.continueTime {
-          continueWatching(to: continueTime)
+#if os(iOS)
+    // Fully native AVPlayerViewController (its own controls, Done button, gestures, PiP).
+    NativePlayerView(player: playerManager.player,
+                     resumeTime: playerManager.continueTime,
+                     onResume: { playerManager.seekToContinueWatching() },
+                     onStartOver: { playerManager.cancelContinueWatching() },
+                     onFinished: { dismiss() })
+      .ignoresSafeArea(.all)
+      .navigationBarHidden(true)
+      .toolbar(.hidden, for: .tabBar)
+      .onAppear {
+        UIApplication.shared.isIdleTimerDisabled = true
+        configureAudioSession()
+        AppDelegate.orientationLock = .landscape
+        toggleSidebar()
+        Task { await playerManager.fetchWatchMark() }
+      }
+      .onDisappear {
+        UIApplication.shared.isIdleTimerDisabled = false
+        AppDelegate.orientationLock = .all
+      }
+#elseif os(macOS)
+    VideoPlayer(player: playerManager.player)
+      .ignoresSafeArea(.all)
+      .toolbar(.hidden, for: .windowToolbar)
+      .onAppear {
+        toggleSidebar()
+        playerManager.player.play()
+        Task {
+          await playerManager.fetchWatchMark()
+          playerManager.seekToContinueWatching() // auto-resume
         }
       }
-      .ignoresSafeArea(.all)
-    }
-    .ignoresSafeArea(.all)
-#if os(macOS)
-    .toolbar(.hidden, for: .windowToolbar)
-    .onAppear(perform: {
-      toggleSidebar()
-    })
 #endif
-#if os(iOS)
-    .navigationBarHidden(true)
-    .toolbar(.hidden, for: .tabBar)
-    .onChange(of: playerManager.isPlaying) { isPlaying in
-      hideControls = isPlaying
-    }
-    .onAppear(perform: {
-      UIApplication.shared.isIdleTimerDisabled = true
-      configureAudioSession()
-      UIDevice.current.setValue(UIInterfaceOrientation.landscapeLeft.rawValue, forKey: "orientation")
-      AppDelegate.orientationLock = .landscape
-      toggleSidebar()
-      Task {
-        await playerManager.fetchWatchMark()
-      }
-    })
-    .onDisappear(perform: {
-      UIApplication.shared.isIdleTimerDisabled = false
-      AppDelegate.orientationLock = .all
-      UIDevice.current.setValue(UIDevice.current.orientation.rawValue, forKey: "orientation")
-      UIViewController.attemptRotationToDeviceOrientation()
-    })
-#endif
-  }
-
-  @ViewBuilder
-  var videoPlayer: some View {
-#if os(iOS)
-    // AVPlayerViewController provides the native transport controls, AirPlay and the
-    // Picture-in-Picture button (which SwiftUI's VideoPlayer does not expose).
-    SystemVideoPlayer(player: playerManager.player)
-      .onAppear { playerManager.player.play() }
-#else
-    VideoPlayer(player: playerManager.player)
-      .onAppear { playerManager.player.play() }
-#endif
-  }
-
-  // A native-style circular close control instead of a bare back chevron.
-  var closeButton: some View {
-    HStack(alignment: .top) {
-      Button(action: { dismiss() }, label: {
-        Image(systemName: "xmark")
-          .font(.system(size: 16, weight: .bold))
-          .foregroundStyle(.white)
-          .frame(width: 36, height: 36)
-          .background(.ultraThinMaterial, in: Circle())
-      })
-#if os(macOS)
-      .buttonStyle(PlainButtonStyle())
-#endif
-      .padding(.leading, 20)
-      .padding(.top, 16)
-      .contentShape(Rectangle())
-      .accessibilityLabel("Close")
-      Spacer()
-    }
-    .fixedSize(horizontal: false, vertical: true)
-    .opacity(hideControls ? 0.0 : 1.0)
-    .animation(.easeInOut(duration: 0.2), value: hideControls)
   }
 
 #if os(iOS)
@@ -108,44 +67,114 @@ struct PlayerView: View {
   }
 #endif
 
-  func continueWatching(to continueTime: TimeInterval) -> some View {
-    VStack(alignment: .center) {
-      Spacer()
-      PlayerContinueWatchingView(time: continueTime, onContinueWatching: {
-        playerManager.seekToContinueWatching()
-      }, onCancelContinueWatching: {
-        playerManager.cancelContinueWatching()
-      })
-      .frame(width: 180, height: 50)
-      .padding(.bottom, 50)
-    }
-    .frame(maxWidth: .infinity)
-  }
-
   private func toggleSidebar() {
     navigationState.columnVisibility = .detailOnly
   }
 }
 
 #if os(iOS)
-/// Wraps `AVPlayerViewController` so we get the native playback chrome including
-/// the Picture-in-Picture button.
-private struct SystemVideoPlayer: UIViewControllerRepresentable {
+/// Hosts a natively-presented `AVPlayerViewController` (so we get its built-in Done button,
+/// PiP and gestures with no custom overlay), and a native "Continue Watching" alert.
+private struct NativePlayerView: UIViewControllerRepresentable {
   let player: AVPlayer
+  let resumeTime: TimeInterval?
+  let onResume: () -> Void
+  let onStartOver: () -> Void
+  let onFinished: () -> Void
 
-  func makeUIViewController(context: Context) -> AVPlayerViewController {
-    let controller = AVPlayerViewController()
-    controller.player = player
-    controller.allowsPictureInPicturePlayback = true
-    controller.canStartPictureInPictureAutomaticallyFromInline = true
-    controller.videoGravity = .resizeAspect
-    controller.showsPlaybackControls = true
-    return controller
+  func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+  func makeUIViewController(context: Context) -> PlayerHostController {
+    let host = PlayerHostController()
+    host.onDismissed = { context.coordinator.parent.onFinished() }
+    context.coordinator.host = host
+    return host
   }
 
-  func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
-    if controller.player !== player {
-      controller.player = player
+  func updateUIViewController(_ host: PlayerHostController, context: Context) {
+    context.coordinator.parent = self
+    context.coordinator.presentPlayerIfNeeded()
+    context.coordinator.presentResumeAlertIfNeeded()
+  }
+
+  final class Coordinator: NSObject, AVPlayerViewControllerDelegate {
+    var parent: NativePlayerView
+    weak var host: PlayerHostController?
+    private var playerController: AVPlayerViewController?
+    private var didPresentPlayer = false
+    private var didAskResume = false
+
+    init(_ parent: NativePlayerView) { self.parent = parent }
+
+    func presentPlayerIfNeeded() {
+      guard !didPresentPlayer, let host, host.viewIfLoaded?.window != nil else { return }
+      didPresentPlayer = true
+
+      let controller = AVPlayerViewController()
+      controller.player = parent.player
+      controller.allowsPictureInPicturePlayback = true
+      controller.canStartPictureInPictureAutomaticallyFromInline = true
+      controller.delegate = self
+      controller.modalPresentationStyle = .fullScreen
+      playerController = controller
+      host.trackPresented(controller)
+
+      host.present(controller, animated: true) { [weak self] in
+        self?.parent.player.play()
+        self?.presentResumeAlertIfNeeded()
+      }
+    }
+
+    func presentResumeAlertIfNeeded() {
+      guard !didAskResume,
+            let resume = parent.resumeTime, resume > 0,
+            let controller = playerController,
+            controller.viewIfLoaded?.window != nil,
+            controller.presentedViewController == nil else { return }
+      didAskResume = true
+
+      let alert = UIAlertController(title: "Continue Watching".localized,
+                                    message: Self.timeString(resume),
+                                    preferredStyle: .alert)
+      alert.addAction(UIAlertAction(title: "Resume".localized, style: .default) { [weak self] _ in
+        self?.parent.onResume()
+      })
+      alert.addAction(UIAlertAction(title: "Start from Beginning".localized, style: .default) { [weak self] _ in
+        self?.parent.onStartOver()
+      })
+      controller.present(alert, animated: true)
+    }
+
+    private static func timeString(_ time: TimeInterval) -> String {
+      let formatter = DateComponentsFormatter()
+      formatter.allowedUnits = [.hour, .minute, .second]
+      formatter.unitsStyle = .positional
+      formatter.zeroFormattingBehavior = .pad
+      return formatter.string(from: time) ?? ""
+    }
+  }
+}
+
+/// A clear host controller that presents the player and reports when it is dismissed
+/// (e.g. the native "Done" button) so SwiftUI can pop the route.
+final class PlayerHostController: UIViewController {
+  var onDismissed: (() -> Void)?
+  private var hasPresented = false
+
+  func trackPresented(_ controller: UIViewController) {
+    hasPresented = true
+  }
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    view.backgroundColor = .black
+  }
+
+  override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    // The player modal was presented and is now gone (native Done tapped) -> pop the route.
+    if hasPresented && presentedViewController == nil {
+      onDismissed?()
     }
   }
 }
