@@ -10,6 +10,7 @@ import Foundation
 enum NavigationTabs {
   case main
   case bookmarks
+  case history
   case downloads
   case profile
 }
