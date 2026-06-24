@@ -122,7 +122,7 @@ struct HomeView: View {
 
   @ViewBuilder
   private var continueWatchingShelf: some View {
-    MediaShelf(title: "Continue Watching") {
+    MediaShelf(title: "Continue Watching".localized) {
       ForEach(model.continueWatching) { item in
         NavigationLink(value: MainRoutes.details(item)) {
           ContinueWatchingCard(imageURL: item.posters.wide ?? item.posters.big,

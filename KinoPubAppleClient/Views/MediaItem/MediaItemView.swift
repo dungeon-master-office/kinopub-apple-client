@@ -221,7 +221,7 @@ struct MediaItemView: View {
 
   @ViewBuilder
   private var playButton: some View {
-    let title = mediaItem.isSeries ? "Watch" : "Play"
+    let title = (mediaItem.isSeries ? "Watch" : "Play").localized
     if mediaItem.isSeries, let firstEpisode = firstPlayableEpisode {
       NavigationLink(value: itemModel.linkProvider.player(for: firstEpisode)) {
         playLabel(title)
@@ -304,7 +304,7 @@ struct MediaItemView: View {
               ForEach(season.episodes, id: \.id) { episode in
                 NavigationLink(value: itemModel.linkProvider.player(for: filledEpisode(episode, in: season))) {
                   EpisodeCard(imageURL: episode.thumbnail,
-                              overline: "Episode \(episode.number)",
+                              overline: "\("Episode".localized) \(episode.number)",
                               title: episode.fixedTitle,
                               footnote: "\(max(episode.duration / 60, 1)) мин",
                               progress: episodeProgress(episode))
@@ -415,7 +415,7 @@ struct MediaItemView: View {
   @ViewBuilder
   private var trailersSection: some View {
     if mediaItem.trailer?.url != nil {
-      MediaShelf(title: "Trailers", showsChevron: false) {
+      MediaShelf(title: "Trailers".localized, showsChevron: false) {
         NavigationLink(value: itemModel.linkProvider.trailerPlayer(for: mediaItem)) {
           EpisodeCard(imageURL: mediaItem.posters.big, title: "Trailer")
         }
@@ -431,7 +431,7 @@ struct MediaItemView: View {
   @ViewBuilder
   private var relatedSection: some View {
     if !itemModel.relatedItems.isEmpty {
-      MediaShelf(title: "Related", showsChevron: false) {
+      MediaShelf(title: "Related".localized, showsChevron: false) {
         ForEach(itemModel.relatedItems) { item in
           NavigationLink(value: itemModel.linkProvider.link(for: item)) {
             PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
@@ -454,12 +454,12 @@ struct MediaItemView: View {
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .filter { !$0.isEmpty }
     if !actors.isEmpty || !directors.isEmpty {
-      MediaShelf(title: "Cast & Crew", showsChevron: false) {
+      MediaShelf(title: "Cast & Crew".localized, showsChevron: false) {
         ForEach(directors, id: \.self) { name in
-          CastAvatarView(name: name, role: "Director")
+          CastAvatarView(name: name, role: "Director".localized)
         }
         ForEach(actors, id: \.self) { name in
-          CastAvatarView(name: name, role: "Actor")
+          CastAvatarView(name: name, role: "Actor".localized)
         }
       }
     }
@@ -532,15 +532,15 @@ private struct MediaItemInfoSection: View {
 
   private var information: some View {
     VStack(alignment: .leading, spacing: 12) {
-      sectionTitle("Information")
+      sectionTitle("Information".localized)
 
       if mediaItem.year > 0 {
-        infoRow(label: "Premiere", value: "\(mediaItem.year)")
+        infoRow(label: "Premiere".localized, value: "\(mediaItem.year)")
       }
 
       let countries = mediaItem.countries.map { $0.title }.joined(separator: ", ")
       if !countries.isEmpty {
-        infoRow(label: "Country", value: countries)
+        infoRow(label: "Country".localized, value: countries)
       }
 
       if !mediaItem.director.isEmpty {
@@ -568,7 +568,7 @@ private struct MediaItemInfoSection: View {
     let voice = mediaItem.voice?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     if !voice.isEmpty {
       VStack(alignment: .leading, spacing: 12) {
-        sectionTitle("Languages")
+        sectionTitle("Languages".localized)
         infoRow(label: "Audio", value: voice)
       }
     }

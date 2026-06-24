@@ -64,7 +64,7 @@ struct WatchingView: View {
     Picker("", selection: Binding(get: { model.filter },
                                   set: { model.select(filter: $0) })) {
       ForEach(WatchingFilter.allCases) { filter in
-        Text(filter.title).tag(filter)
+        Text(filter.title.localized).tag(filter)
       }
     }
     .pickerStyle(.segmented)
