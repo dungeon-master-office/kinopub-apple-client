@@ -155,6 +155,8 @@ struct FilteredCatalogView: View {
   @StateObject private var catalog: MediaCatalog
   private let title: String
   private let linkProvider: NavigationLinkProvider
+  @State private var showShortCutPicker: Bool = false
+  @State private var showFilterPicker: Bool = false
 
   init(catalog: @autoclosure @escaping () -> MediaCatalog,
        title: String,
@@ -164,6 +166,16 @@ struct FilteredCatalogView: View {
     self.linkProvider = linkProvider
   }
 
+  private var toolbarItemPlacement: ToolbarItemPlacement {
+#if os(iOS)
+    .topBarTrailing
+#elseif os(macOS)
+    .navigation
+#endif
+  }
+
+  // Lands on the actual section catalog (e.g. Serials) pre-filtered, with the section's own
+  // sort/filter/search chrome — a deep link into the section, not a one-off page.
   var body: some View {
     GeometryReader { geometryProxy in
       ContentItemsListView(width: geometryProxy.size.width, items: $catalog.items, onLoadMoreContent: { item in
@@ -174,8 +186,31 @@ struct FilteredCatalogView: View {
         linkProvider.link(for: item)
       })
     }
+    .searchable(text: $catalog.query, placement: .automatic)
     .background(Color.KinoPub.background)
-    .navigationTitle(title)
+    .navigationTitle(catalog.title.localized)
+    .toolbar {
+      ToolbarItem(placement: toolbarItemPlacement) {
+        Button { showShortCutPicker = true } label: {
+          Image(systemName: "arrow.up.arrow.down")
+        }
+      }
+      ToolbarItem(placement: toolbarItemPlacement) {
+        Button { showFilterPicker = true } label: {
+          Image(systemName: "line.3.horizontal.decrease.circle")
+        }
+      }
+    }
+    .sheet(isPresented: $showShortCutPicker) {
+      ShortcutSelectionView(shortcut: $catalog.shortcut, mediaType: $catalog.contentType)
+    }
+    .sheet(isPresented: $showFilterPicker) {
+      FilterView(model: FilterModel(), onApply: { filter in
+        catalog.apply(filter: filter)
+      }, onClear: {
+        catalog.clearFilter()
+      })
+    }
     .task {
       await catalog.fetchItems()
     }
