@@ -205,6 +205,13 @@ struct SearchView: View {
             .simultaneousGesture(TapGesture().onEnded {
               model.recordRecent(item)
             })
+            .onAppear {
+              // Paginate against the full result set; the type pills only filter
+              // client-side, so trigger load-more when the last loaded item shows.
+              if item.id == model.results.last?.id {
+                model.loadMoreContent(after: item)
+              }
+            }
           }
         }
       }

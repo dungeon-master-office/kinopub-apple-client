@@ -13,21 +13,10 @@ import KinoPubUI
 struct ShortcutSelectionView: View {
   @Environment(\.dismiss) private var dismiss
   @Binding var shortcut: MediaShortcut
-  @Binding var mediaType: MediaType
 
   var body: some View {
     NavigationStack {
       Form {
-        Section("Type".localized) {
-          Picker("Type".localized, selection: $mediaType) {
-            ForEach(MediaType.allCases) { type in
-              Text(type.title.localized)
-                .tag(type)
-            }
-          }
-          .pickerStyle(.inline)
-        }
-
         Section("Sort".localized) {
           Picker("Sort".localized, selection: $shortcut) {
             ForEach(MediaShortcut.allCases) { shortcut in
@@ -56,6 +45,6 @@ struct ShortcutSelectionView: View {
 
 struct ShortcutSelectionView_Previews: PreviewProvider {
   static var previews: some View {
-    ShortcutSelectionView(shortcut: .constant(.fresh), mediaType: .constant(.movie))
+    ShortcutSelectionView(shortcut: .constant(.fresh))
   }
 }

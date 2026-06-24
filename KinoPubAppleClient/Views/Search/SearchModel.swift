@@ -32,6 +32,10 @@ class SearchModel: ObservableObject {
 
   @Published public var query: String = ""
   @Published public var results: [MediaItem] = []
+  /// Pagination for the current results query; drives load-more.
+  private var pagination: Pagination?
+  /// The query that the current `pagination`/`results` belong to.
+  private var pagedQuery: String = ""
   @Published public var genres: [MediaGenre] = []
   @Published public var genrePosters: [Int: String] = [:]
   @Published public var genreResults: [MediaItem] = []
@@ -90,22 +94,50 @@ class SearchModel: ObservableObject {
     let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else {
       results = []
+      pagination = nil
+      pagedQuery = ""
       searching = false
       return
     }
 
     searching = true
     results = MediaItem.skeletonMock()
+    pagination = nil
+    pagedQuery = trimmed
 
     do {
       let data = try await contentService.search(query: trimmed, contentType: nil, field: searchField, page: nil)
       results = data.items
+      pagination = data.pagination
     } catch {
       Logger.app.debug("search error: \(error)")
       results = []
+      pagination = nil
       errorHandler.setError(error)
     }
     searching = false
+  }
+
+  /// Loads the next page when the last result becomes visible (mirrors
+  /// `MediaCatalog.loadMoreContent`). Keeps it simple: no separate loading flag.
+  func loadMoreContent(after item: MediaItem) {
+    guard let pagination, pagination.current < pagination.total else { return }
+    guard let last = results.last, last.id == item.id, !(item.skeleton ?? false) else { return }
+
+    let nextPage = pagination.current + 1
+    let trimmed = pagedQuery
+    let field = searchField
+    Task {
+      do {
+        let data = try await contentService.search(query: trimmed, contentType: nil, field: field, page: nextPage)
+        // Guard against a query change while the page was in flight.
+        guard pagedQuery == trimmed else { return }
+        results.append(contentsOf: data.items)
+        self.pagination = data.pagination
+      } catch {
+        Logger.app.debug("search load-more error: \(error)")
+      }
+    }
   }
 
   // MARK: - Recent searches
@@ -152,7 +184,7 @@ class SearchModel: ObservableObject {
     guard genres.isEmpty else { return }
     browseLoading = true
     do {
-      genres = try await contentService.fetchGenres()
+      genres = try await contentService.fetchGenres(type: nil)
     } catch {
       // Browse genres are supplementary (cards fall back to a gradient), so a failure here
       // must not throw a backend-error banner over the search screen on open.
