@@ -298,32 +298,70 @@ struct MediaItemView: View {
       let season = currentSeason(in: seasons)
       VStack(alignment: .leading, spacing: 12) {
         seasonPicker(seasons: seasons, current: season)
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack(alignment: .top, spacing: 14) {
-            ForEach(season.episodes, id: \.id) { episode in
-              NavigationLink(value: itemModel.linkProvider.player(for: filledEpisode(episode, in: season))) {
-                EpisodeCard(imageURL: episode.thumbnail,
-                            overline: "Episode \(episode.number)",
-                            title: episode.fixedTitle,
-                            footnote: "\(max(episode.duration / 60, 1)) мин",
-                            progress: episodeProgress(episode))
+        ScrollViewReader { proxy in
+          ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: 14) {
+              ForEach(season.episodes, id: \.id) { episode in
+                NavigationLink(value: itemModel.linkProvider.player(for: filledEpisode(episode, in: season))) {
+                  EpisodeCard(imageURL: episode.thumbnail,
+                              overline: "Episode \(episode.number)",
+                              title: episode.fixedTitle,
+                              footnote: "\(max(episode.duration / 60, 1)) мин",
+                              progress: episodeProgress(episode))
+                }
+                #if os(macOS)
+                .buttonStyle(.plain)
+                #endif
+                .id(episode.id)
               }
-              #if os(macOS)
-              .buttonStyle(.plain)
-              #endif
             }
+            .padding(.horizontal, 20)
           }
-          .padding(.horizontal, 20)
+          // Once the real item loads, jump to the last episode the user watched.
+          .onChange(of: itemModel.itemLoaded) { loaded in
+            if loaded { scrollToResume(proxy: proxy, seasons: seasons) }
+          }
+          .onAppear {
+            if itemModel.itemLoaded { scrollToResume(proxy: proxy, seasons: seasons) }
+          }
         }
       }
     }
   }
 
+  /// The most recently watched (or in-progress) episode across all seasons.
+  private func lastWatchedEpisode(in seasons: [Season]) -> (season: Season, episode: Episode)? {
+    var best: (season: Season, episode: Episode)?
+    for season in seasons {
+      for episode in season.episodes where episode.watched > 0 || episode.watching.time > 0 {
+        if let current = best {
+          if (season.number, episode.number) > (current.season.number, current.episode.number) {
+            best = (season, episode)
+          }
+        } else {
+          best = (season, episode)
+        }
+      }
+    }
+    return best
+  }
+
+  /// Default to the season holding the last watched episode; fall back to the first season.
   private func currentSeason(in seasons: [Season]) -> Season {
     if let number = selectedSeasonNumber, let match = seasons.first(where: { $0.number == number }) {
       return match
     }
-    return seasons[0]
+    return lastWatchedEpisode(in: seasons)?.season ?? seasons[0]
+  }
+
+  private func scrollToResume(proxy: ScrollViewProxy, seasons: [Season]) {
+    // Only auto-scroll while showing the auto-selected season (don't fight manual season changes).
+    guard selectedSeasonNumber == nil,
+          let target = lastWatchedEpisode(in: seasons),
+          target.season.number == currentSeason(in: seasons).number else { return }
+    withAnimation {
+      proxy.scrollTo(target.episode.id, anchor: .leading)
+    }
   }
 
   @ViewBuilder
