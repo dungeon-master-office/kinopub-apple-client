@@ -115,7 +115,7 @@ class HomeModel: ObservableObject {
   }
 
   /// Builds a Continue Watching entry from a fully-loaded media item.
-  private static func continueItem(from item: MediaItem) -> ContinueItem {
+  nonisolated private static func continueItem(from item: MediaItem) -> ContinueItem {
     if item.isSeries, let seasons = item.seasons,
        let target = lastWatchingEpisode(in: seasons) {
       let progress = target.episode.duration > 0
@@ -132,7 +132,7 @@ class HomeModel: ObservableObject {
   }
 
   /// The most recent in-progress episode across all seasons.
-  private static func lastWatchingEpisode(in seasons: [Season]) -> (season: Season, episode: Episode)? {
+  nonisolated private static func lastWatchingEpisode(in seasons: [Season]) -> (season: Season, episode: Episode)? {
     var best: (season: Season, episode: Episode)?
     for season in seasons {
       for episode in season.episodes where episode.watching.time > 0 {
