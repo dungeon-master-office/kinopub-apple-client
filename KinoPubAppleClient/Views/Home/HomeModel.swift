@@ -28,6 +28,7 @@ class HomeModel: ObservableObject {
 
   @Published public var shelves: [Shelf] = HomeModel.skeletonShelves()
   @Published public var featured: [MediaItem] = []
+  @Published public var continueWatching: [MediaItem] = []
 
   init(itemsService: VideoContentService, authState: AuthState, errorHandler: ErrorHandler) {
     self.itemsService = itemsService
@@ -40,6 +41,10 @@ class HomeModel: ObservableObject {
       subscribeForAuth()
       return
     }
+
+    // The watch history powers the "Continue Watching" shelf. Fetch it alongside the other
+    // shelves, but isolate failures so a history error can't take down the whole Home screen.
+    async let history = itemsService.fetchHistory(page: nil)
 
     do {
       async let popularMovies = itemsService.fetch(shortcut: .popular, contentType: .movie, page: nil)
@@ -75,6 +80,9 @@ class HomeModel: ObservableObject {
       Logger.app.debug("fetch home error: \(error)")
       errorHandler.setError(error)
     }
+
+    // Best-effort: a history failure should never surface an error on Home.
+    continueWatching = Array(((try? await history)?.history.map { $0.item } ?? []).prefix(15))
   }
 
   private static func skeletonShelves() -> [Shelf] {

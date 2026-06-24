@@ -25,6 +25,9 @@ struct HomeView: View {
       ScrollView(.vertical) {
         LazyVStack(alignment: .leading, spacing: 28) {
           heroSection
+          if !model.continueWatching.isEmpty {
+            continueWatchingShelf
+          }
           ForEach(model.shelves) { shelf in
             shelfView(shelf)
           }
@@ -115,6 +118,23 @@ struct HomeView: View {
       }
     }
     .buttonStyle(PlainButtonStyle())
+  }
+
+  @ViewBuilder
+  private var continueWatchingShelf: some View {
+    MediaShelf(title: "Continue Watching") {
+      ForEach(model.continueWatching) { item in
+        NavigationLink(value: MainRoutes.details(item)) {
+          ContinueWatchingCard(imageURL: item.posters.wide ?? item.posters.big,
+                               title: item.localizedTitle,
+                               subtitle: item.duration.totalFormatted,
+                               progress: nil)
+        }
+#if os(macOS)
+        .buttonStyle(PlainButtonStyle())
+#endif
+      }
+    }
   }
 
   @ViewBuilder
