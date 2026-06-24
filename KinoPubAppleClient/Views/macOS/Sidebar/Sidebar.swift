@@ -7,73 +7,57 @@
 
 import Foundation
 import SwiftUI
+import KinoPubUI
+import KinoPubBackend
 
-#if os(macOS)
 struct Sidebar: View {
-  
-  @Binding var selection: NavigationTabs
-  
+
+  @Binding var selection: SidebarItem?
+
   var body: some View {
     List(selection: $selection) {
-      NavigationLink(value: NavigationTabs.main) {
-        Label("Main", systemImage: "house")
-          .foregroundStyle(Color.white)
+      Section("Library".localized) {
+        row(.new)
+        ForEach(SidebarItem.libraryCategories, id: \.self) { type in
+          row(.category(type))
+        }
       }
-      .listRowBackground(selection == .main ? Color.KinoPub.accent : Color.clear)
-      .tint(Color.clear)
-      
-      NavigationLink(value: NavigationTabs.bookmarks) {
-        Label("Bookmarks", systemImage: "bookmark")
-          .foregroundStyle(Color.white)
-      }
-      .listRowBackground(selection == .bookmarks ? Color.KinoPub.accent : Color.clear)
-      .tint(Color.clear)
 
-      NavigationLink(value: NavigationTabs.watching) {
-        Label("Watching", systemImage: "play.tv")
-          .foregroundStyle(Color.white)
+      Section("Other".localized) {
+        row(.watching)
+        row(.bookmarks)
+        row(.history)
+        row(.downloads)
+        row(.profile)
       }
-      .listRowBackground(selection == .watching ? Color.KinoPub.accent : Color.clear)
-      .tint(Color.clear)
-
-      NavigationLink(value: NavigationTabs.history) {
-        Label("History", systemImage: "clock.arrow.circlepath")
-          .foregroundStyle(Color.white)
-      }
-      .listRowBackground(selection == .history ? Color.KinoPub.accent : Color.clear)
-      .tint(Color.clear)
-
-      NavigationLink(value: NavigationTabs.downloads) {
-        Label("Downloads", systemImage: "arrow.down.circle")
-          .foregroundStyle(Color.white)
-      }
-      .listRowBackground(selection == .downloads ? Color.KinoPub.accent : Color.clear)
-      .tint(Color.clear)
-      
-      NavigationLink(value: NavigationTabs.profile) {
-        Label("Profile", systemImage: "person.crop.circle")
-          .foregroundStyle(Color.white)
-      }
-      .listRowBackground(selection == .profile ? Color.KinoPub.accent : Color.clear)
-      .tint(Color.clear)
     }
     .scrollContentBackground(.hidden)
     .background(Color.KinoPub.background)
-    .navigationTitle("Main")
+    .navigationTitle("kinopub")
 #if os(macOS)
-    .navigationSplitViewColumnWidth(min: 200, ideal: 200)
+    .navigationSplitViewColumnWidth(min: 220, ideal: 240)
 #endif
+  }
+
+  @ViewBuilder
+  func row(_ item: SidebarItem) -> some View {
+    NavigationLink(value: item) {
+      Label(item.title.localized, systemImage: item.systemImage)
+        .foregroundStyle(Color.white)
+    }
+    .listRowBackground(selection == item ? Color.KinoPub.accent : Color.clear)
+    .tint(Color.clear)
   }
 }
 
 struct Sidebar_Previews: PreviewProvider {
   struct Preview: View {
-    @State private var selection: NavigationTabs = NavigationTabs.main
+    @State private var selection: SidebarItem? = .new
     var body: some View {
       Sidebar(selection: $selection)
     }
   }
-  
+
   static var previews: some View {
     NavigationSplitView {
       Preview()
@@ -82,5 +66,3 @@ struct Sidebar_Previews: PreviewProvider {
     }
   }
 }
-
-#endif

@@ -8,9 +8,12 @@
 import SwiftUI
 import KinoPubUI
 import KinoPubBackend
+#if os(iOS)
+import UIKit
+#endif
 
 struct RootView: View {
-  
+
   var placement: ToolbarPlacement {
 #if os(iOS)
     .tabBar
@@ -18,10 +21,16 @@ struct RootView: View {
     .windowToolbar
 #endif
   }
-  
+
   var body: some View {
 #if os(iOS)
-    TabsNavigationView()
+    // iPad uses the classic two-column NavigationSplitView sidebar layout,
+    // iPhone keeps the bottom tab bar.
+    if UIDevice.current.userInterfaceIdiom == .pad {
+      SidebarView()
+    } else {
+      TabsNavigationView()
+    }
 #elseif os(macOS)
     SidebarView()
 #endif

@@ -31,4 +31,16 @@ public enum MediaType: String, Codable, CaseIterable, Identifiable {
     case .tvshow: return "TV Show"
     }
   }
+
+  public var systemImage: String {
+    switch self {
+    case .movie: return "movieclapper"
+    case .serial: return "tv"
+    case .threeD: return "cube"
+    case .concert: return "music.note"
+    case .documovie: return "film.stack"
+    case .docuserial: return "doc.on.doc"
+    case .tvshow: return "play.rectangle"
+    }
+  }
 }
