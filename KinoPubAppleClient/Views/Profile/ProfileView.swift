@@ -57,6 +57,13 @@ struct ProfileView: View {
             }
 
             Section {
+              NavigationLink("Device settings".localized) {
+                DeviceSettingsView(model: DeviceSettingsModel(deviceService: appContext.deviceService,
+                                                              errorHandler: errorHandler))
+              }
+            }
+
+            Section {
               Button(action: {
                 showLogoutAlert = true
               }, label: {
