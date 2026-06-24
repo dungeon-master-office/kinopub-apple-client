@@ -215,7 +215,7 @@ struct PersonSearchView: View {
       LazyVGrid(columns: resultsColumns, spacing: 16) {
         ForEach(model.results, id: \.id) { item in
           if item.skeleton ?? false {
-            PosterCard(imageURL: nil)
+            PosterCard(imageURL: nil, title: " ")
           } else {
             NavigationLink(value: linkProvider.link(for: item)) {
               PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)

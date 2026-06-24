@@ -194,7 +194,7 @@ struct SearchView: View {
       LazyVGrid(columns: resultsColumns, spacing: 16) {
         ForEach(filteredResults, id: \.id) { item in
           if item.skeleton ?? false {
-            PosterCard(imageURL: nil)
+            PosterCard(imageURL: nil, title: " ")
           } else {
             NavigationLink(value: SearchRoutes.details(item)) {
               PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
@@ -271,7 +271,7 @@ struct SearchView: View {
       LazyVGrid(columns: resultsColumns, spacing: 16) {
         ForEach(model.genreResults, id: \.id) { item in
           if item.skeleton ?? false {
-            PosterCard(imageURL: nil)
+            PosterCard(imageURL: nil, title: " ")
           } else {
             NavigationLink(value: SearchRoutes.details(item)) {
               PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)

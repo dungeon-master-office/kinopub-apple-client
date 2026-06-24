@@ -63,19 +63,35 @@ struct BookmarksView: View {
   }
   
   var bookmarksList: some View {
-    List {
-      ForEach(catalog.items) { bookmark in
-        NavigationLink(value: BookmarksRoutes.bookmark(bookmark)) {
-          Text(bookmark.title)
+    ScrollView {
+      LazyVStack(alignment: .leading, spacing: 28) {
+        ForEach(catalog.items) { bookmark in
+          MediaShelf(title: bookmark.title,
+                     onHeaderTap: {
+                       navigationState.bookmarksRoutes.append(BookmarksRoutes.bookmark(bookmark))
+                     }) {
+            if let items = catalog.folderItems[bookmark.id] {
+              ForEach(items) { item in
+                NavigationLink(value: BookmarksRoutes.details(item)) {
+                  PosterCard(imageURL: item.posters.medium,
+                             imdbRating: item.imdbRating,
+                             kinopoiskRating: item.kinopoiskRating)
+                }
+                #if os(macOS)
+                .buttonStyle(.plain)
+                #endif
+              }
+            } else {
+              // Loading placeholder shelf.
+              ForEach(0..<4, id: \.self) { _ in
+                PosterCard(imageURL: nil, title: " ")
+              }
+            }
+          }
         }
       }
+      .padding(.vertical, 16)
     }
-    #if os(iOS)
-    .listStyle(.insetGrouped)
-    #else
-    .listStyle(.inset)
-    #endif
-    .scrollContentBackground(.hidden)
     .background(Color.KinoPub.background)
   }
 }
