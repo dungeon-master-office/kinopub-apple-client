@@ -60,6 +60,28 @@ struct BookmarksRoutesLinkProvider: NavigationLinkProvider {
   }
 }
 
+struct HistoryRoutesLinkProvider: NavigationLinkProvider {
+  func link(for item: MediaItem) -> any Hashable {
+    HistoryRoutes.details(item)
+  }
+
+  func player(for item: any PlayableItem) -> any Hashable {
+    HistoryRoutes.player(item)
+  }
+
+  func trailerPlayer(for item: any PlayableItem) -> any Hashable {
+    HistoryRoutes.trailerPlayer(item)
+  }
+
+  func seasons(for seasons: [Season]) -> any Hashable {
+    HistoryRoutes.seasons(seasons)
+  }
+
+  func season(for season: Season) -> any Hashable {
+    HistoryRoutes.season(season)
+  }
+}
+
 struct DownloadsRoutesLinkProvider: NavigationLinkProvider {
   func link(for item: MediaItem) -> any Hashable {
     BookmarksRoutes.details(item)

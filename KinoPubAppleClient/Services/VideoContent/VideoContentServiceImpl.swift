@@ -63,4 +63,11 @@ final class VideoContentServiceImpl: VideoContentService {
     return response
   }
 
+  func fetchHistory(page: Int?) async throws -> HistoryData {
+    let request = HistoryRequest(page: page)
+    let response = try await apiClient.performRequest(with: request,
+                                                      decodingType: HistoryData.self)
+    return response
+  }
+
 }
