@@ -41,8 +41,8 @@ class FilterModel: ObservableObject {
     }
 
     var genres: [Int] = []
-    if let selectedGenre = selectedGenre, let genreId = Int(selectedGenre.id) {
-      genres.append(genreId)
+    if let selectedGenre = selectedGenre {
+      genres.append(selectedGenre.id)
     }
 
     var countries: [Int] = []

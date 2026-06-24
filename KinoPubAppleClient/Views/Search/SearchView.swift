@@ -152,7 +152,7 @@ struct SearchView: View {
           }
         } else {
           ForEach(model.genres, id: \.id) { genre in
-            NavigationLink(value: SearchRoutes.genre(Int(genre.id) ?? 0, genre.title)) {
+            NavigationLink(value: SearchRoutes.genre(genre.id, genre.title)) {
               BrowseCategoryCard(title: genre.title)
             }
 #if os(macOS)

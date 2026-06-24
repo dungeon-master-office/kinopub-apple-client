@@ -7,8 +7,8 @@
 
 import Foundation
 
-public struct MediaGenre: Codable {
-  public let id: String
+public struct MediaGenre: Codable, Identifiable, Hashable {
+  public let id: Int
   public let title: String
-  public let type: MediaType
+  public let type: MediaType?
 }

@@ -67,7 +67,8 @@ public struct PosterCard: View {
     .overlay(alignment: .bottom) {
       if hasRatings {
         ContentItemRatingView(imdbScore: imdbRating, kinopoiskScore: kinopoiskRating)
-          .scaleEffect(0.8, anchor: .bottom)
+          .fixedSize()
+          .scaleEffect(0.7, anchor: .bottom)
           .padding(.bottom, 6)
       }
     }
