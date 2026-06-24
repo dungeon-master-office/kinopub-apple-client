@@ -22,10 +22,20 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
   @Published public var activeDownloads: [URL: Download<Meta>] = [:]
   private var fileSaver: FileSaving
   private var database: DownloadedFilesDatabase<Meta>
+  private var controlDatabase: DownloadsControlDatabase<Meta>?
 
-  public init(fileSaver: FileSaving, database: DownloadedFilesDatabase<Meta>) {
+  /// Completion handler stored by the app delegate when the system relaunches the app to finish
+  /// background URLSession events. Invoked once the session reports it finished delivering events.
+  public var backgroundCompletionHandler: (() -> Void)?
+
+  public init(fileSaver: FileSaving,
+              database: DownloadedFilesDatabase<Meta>,
+              controlDatabase: DownloadsControlDatabase<Meta>? = nil) {
     self.fileSaver = fileSaver
     self.database = database
+    self.controlDatabase = controlDatabase
+    super.init()
+    restoreDownloads()
   }
 
   lazy public var session: URLSession = {
@@ -36,22 +46,58 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
 
   public func startDownload(url: URL, withMetadata metadata: Meta) -> Download<Meta> {
     let download = Download(url: url, metadata: metadata, manager: self)
+    observeStateChanges(of: download)
     download.resume()
     activeDownloads[url] = download
+    persist(download)
     return download
   }
-  
+
   public func removeDownload(for url: URL) {
     guard let download = activeDownloads[url] else {
       return
     }
-    
+
     download.pause()
     activeDownloads[url] = nil
+    controlDatabase?.remove(url: url)
   }
 
   public func completeDownload(_ url: URL) {
     activeDownloads[url] = nil
+    controlDatabase?.remove(url: url)
+  }
+
+  /// Rebuilds `activeDownloads` from persisted control info as paused `Download` objects so the user
+  /// can resume them after relaunching the app. Resume data may be `nil`, which is handled gracefully.
+  public func restoreDownloads() {
+    guard let stored = controlDatabase?.readData(), !stored.isEmpty else { return }
+    for info in stored {
+      let download = Download(url: info.originalURL,
+                              metadata: info.metadata,
+                              manager: self,
+                              resumeData: info.resumeData,
+                              progress: info.progress)
+      observeStateChanges(of: download)
+      activeDownloads[info.originalURL] = download
+      Logger.kit.debug("[DOWNLOAD] restored paused download for: \(info.originalURL)")
+    }
+  }
+
+  // MARK: - Persistence helpers
+
+  private func observeStateChanges(of download: Download<Meta>) {
+    download.onStateChange = { [weak self] download in
+      self?.persist(download)
+    }
+  }
+
+  private func persist(_ download: Download<Meta>) {
+    let info = DownloadControlInfo(originalURL: download.url,
+                                   resumeData: download.resumeData,
+                                   progress: download.progress,
+                                   metadata: download.metadata)
+    controlDatabase?.save(controlInfo: info)
   }
 
   // MARK: URLSessionDownloadDelegate methods
@@ -83,8 +129,14 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
     if totalBytesExpectedToWrite > 0, let download = activeDownloads[downloadTask.originalRequest?.url ?? URL(fileURLWithPath: "")] {
       let progress = Float(totalBytesWritten) / Float(totalBytesExpectedToWrite)
       Logger.kit.debug("[DOWNLOAD] progress for download: \(download.url), value: \(progress)")
+      // Persist a progress checkpoint (throttled to whole-percent steps) so a partially
+      // completed download survives a relaunch without writing the plist on every callback.
+      let shouldCheckpoint = Int(progress * 100) != Int(download.progress * 100)
       DispatchQueue.main.async {
         download.updateProgress(progress)
+        if shouldCheckpoint {
+          self.persist(download)
+        }
       }
     }
   }
@@ -93,6 +145,15 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
     if let error = error, let url = task.originalRequest?.url {
       Logger.kit.debug("[DOWNLOAD] Download error for \(url): \(error)")
       completeDownload(url)
+    }
+  }
+
+  public func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+    Logger.kit.debug("[DOWNLOAD] background session finished events")
+    DispatchQueue.main.async {
+      let handler = self.backgroundCompletionHandler
+      self.backgroundCompletionHandler = nil
+      handler?()
     }
   }
 }

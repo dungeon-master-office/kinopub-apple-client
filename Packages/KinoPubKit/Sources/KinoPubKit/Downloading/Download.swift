@@ -22,46 +22,61 @@ public class Download<Meta: Codable & Equatable>: ObservableObject {
   
   /// URL for the download
   public let url: URL
-  
+
   /// The current state of the download.
-  public private(set) var state: State = .notStarted
-  
+  public internal(set) var state: State = .notStarted
+
   /// Progress value
   @Published public private(set) var progress: Float = 0.0
-  
+
   /// Public metadata
   public let metadata: Meta
-  
+
   // - Internal
   internal var task: URLSessionDownloadTask?
-  
-  private var resumeData: Data?
-  
+
+  /// Resume data produced when the download is paused. Exposed so the manager can persist it
+  /// and restore paused downloads across app launches.
+  internal var resumeData: Data?
+
   private let manager: any DownloadManaging
-  
+
+  /// Notifies the manager that this download's persistable state changed (paused / progress checkpoint).
+  internal var onStateChange: ((Download<Meta>) -> Void)?
+
   /// Initializes a `Download` object.
   /// - Parameters:
   ///   - url: The URL of the resource to be downloaded.
   ///   - metadata: Metadata associated with the download.
   ///   - manager: An object that conforms to `DownloadManaging` to manage the download session.
-  public init(url: URL, metadata: Meta, manager: any DownloadManaging) {
+  ///   - resumeData: Optional resume data used to restore a previously paused download.
+  ///   - progress: Optional initial progress value used when restoring a download.
+  public init(url: URL,
+              metadata: Meta,
+              manager: any DownloadManaging,
+              resumeData: Data? = nil,
+              progress: Float = 0.0) {
     self.url = url
     self.metadata = metadata
     self.manager = manager
-    self.state = .queued
-    Logger.kit.debug("[DOWNLOAD] Download for url: \(url) is queued")
+    self.resumeData = resumeData
+    self.progress = progress
+    self.state = resumeData != nil ? .paused : .queued
+    Logger.kit.debug("[DOWNLOAD] Download for url: \(url) is \(self.state.rawValue)")
   }
-  
+
   /// Pauses the download. If the download is already paused or not in progress, this method has no effect.
   public func pause() {
     task?.cancel(byProducingResumeData: { [weak self] data in
-      self?.resumeData = data
-      self?.state = .paused
-      Logger.kit.debug("[DOWNLOAD] Download for url: \(self?.url.absoluteString ?? "") is paused")
+      guard let self else { return }
+      self.resumeData = data
+      self.state = .paused
+      Logger.kit.debug("[DOWNLOAD] Download for url: \(self.url.absoluteString) is paused")
+      self.onStateChange?(self)
     })
     task = nil
   }
-  
+
   /// Resumes the download. If the download is already in progress, this method has no effect.
   public func resume() {
     if let resumeData = self.resumeData {
@@ -72,12 +87,13 @@ public class Download<Meta: Codable & Equatable>: ObservableObject {
     state = .inProgress
     Logger.kit.debug("[DOWNLOAD] Download for url: \(self.url) is in progress")
     task?.resume()
+    onStateChange?(self)
   }
-  
+
   internal func updateProgress(_ progress: Float) {
     self.progress = progress
   }
-  
+
 }
 
 extension Download: Identifiable {}

@@ -60,7 +60,10 @@ struct AppContext: AppContextProtocol {
     
     let fileSaver = FileSaver()
     let downloadedFilesDatabase = DownloadedFilesDatabase<DownloadMeta>(fileSaver: fileSaver)
-    let downloadManager = DownloadManager<DownloadMeta>(fileSaver: fileSaver, database: downloadedFilesDatabase)
+    let downloadsControlDatabase = DownloadsControlDatabase<DownloadMeta>(fileSaver: fileSaver)
+    let downloadManager = DownloadManager<DownloadMeta>(fileSaver: fileSaver,
+                                                        database: downloadedFilesDatabase,
+                                                        controlDatabase: downloadsControlDatabase)
     // Api Client
     let apiClient = makeApiClient(with: configuration.baseURL, accessTokenService: accessTokenService)
     

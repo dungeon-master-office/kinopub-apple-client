@@ -25,6 +25,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
     return AppDelegate.orientationLock
   }
+
+  // Called when the app is relaunched in the background to finish events for a background URLSession.
+  // We store the completion handler and invoke it once the session reports it finished its events.
+  func application(_ application: UIApplication,
+                   handleEventsForBackgroundURLSession identifier: String,
+                   completionHandler: @escaping () -> Void) {
+    AppContext.shared.downloadManager.backgroundCompletionHandler = completionHandler
+  }
 }
 #endif
 

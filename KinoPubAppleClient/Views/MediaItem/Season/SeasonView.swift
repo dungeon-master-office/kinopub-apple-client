@@ -36,7 +36,9 @@ struct SeasonView: View {
       LazyVGrid(columns: gridLayout, content: {
         ForEach(model.season.episodes, id: \.id) { item in
           NavigationLink(value: model.linkProvider.player(for: model.filledEpisode(item))) {
-            SeasonItemView(episode: item)
+            SeasonItemView(episode: item, onDownload: { file in
+              model.startDownload(episode: item, file: file)
+            })
               .padding(.bottom, 16)
           }
 #if os(macOS)
