@@ -125,7 +125,7 @@ struct CollectionCard: View {
 
   var body: some View {
     Color.KinoPub.skeleton
-      .aspectRatio(16.0 / 9.0, contentMode: .fit)
+      .aspectRatio(3.0 / 4.0, contentMode: .fit)
       .frame(maxWidth: .infinity)
       .overlay {
         CachedAsyncImage(url: URL(string: imageURL ?? "")) { image in
