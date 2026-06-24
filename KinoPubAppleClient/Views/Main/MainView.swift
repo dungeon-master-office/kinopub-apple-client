@@ -63,7 +63,11 @@ struct MainView: View {
                               mediaType: $catalog.contentType)
       })
       .sheet(isPresented: $showFilterPicker, content: {
-        FilterView(model: FilterModel())
+        FilterView(model: FilterModel(), onApply: { filter in
+          catalog.apply(filter: filter)
+        }, onClear: {
+          catalog.clearFilter()
+        })
       })
       .navigationDestination(for: MainRoutes.self) { route in
         switch route {

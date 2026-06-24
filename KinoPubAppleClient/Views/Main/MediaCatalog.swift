@@ -24,6 +24,7 @@ class MediaCatalog: ObservableObject {
   @Published public var contentType: MediaType = .movie
   @Published public var shortcut: MediaShortcut = .hot
   @Published public var query: String = ""
+  @Published public var activeFilter: MediaItemsFilter?
 
   var title: String {
     contentType.title
@@ -46,6 +47,9 @@ class MediaCatalog: ObservableObject {
       let page = pagination != nil ? pagination!.current + 1 : nil
       if !query.isEmpty {
         let data = try await itemsService.search( query: query, page: page)
+        handleData(data)
+      } else if let activeFilter = activeFilter {
+        let data = try await itemsService.filter(filter: activeFilter, page: page)
         handleData(data)
       } else {
         let data = try await itemsService.fetch(shortcut: shortcut, contentType: contentType, page: page)
@@ -91,6 +95,20 @@ class MediaCatalog: ObservableObject {
     }
   }
 
+  @MainActor
+  func apply(filter: MediaItemsFilter) {
+    contentType = filter.contentType
+    activeFilter = filter
+    refresh()
+  }
+
+  @MainActor
+  func clearFilter() {
+    guard activeFilter != nil else { return }
+    activeFilter = nil
+    refresh()
+  }
+
   private func subscribe() {
     $contentType
       .dropFirst()
@@ -103,6 +121,7 @@ class MediaCatalog: ObservableObject {
       .dropFirst()
       .removeDuplicates()
       .sink { [weak self] _ in
+      self?.activeFilter = nil
       self?.refresh()
     }.store(in: &bag)
 

@@ -15,8 +15,15 @@ struct FilterView: View {
   @Environment(\.dismiss) private var dismiss
   @StateObject private var model: FilterModel
 
-  init(model: @autoclosure @escaping () -> FilterModel) {
+  private let onApply: (MediaItemsFilter) -> Void
+  private let onClear: () -> Void
+
+  init(model: @autoclosure @escaping () -> FilterModel,
+       onApply: @escaping (MediaItemsFilter) -> Void = { _ in },
+       onClear: @escaping () -> Void = {}) {
     _model = StateObject(wrappedValue: model())
+    self.onApply = onApply
+    self.onClear = onClear
   }
 
   var body: some View {
@@ -32,10 +39,13 @@ struct FilterView: View {
       }
       HStack {
         KinoPubButton(title: "Clear".localized, color: .red) {
+          model.clear()
+          onClear()
           dismiss()
         }
         .frame(width: 120, height: 30)
         KinoPubButton(title: "Apply".localized, color: .green) {
+          onApply(model.makeFilter())
           dismiss()
         }
         .frame(width: 120, height: 30)
