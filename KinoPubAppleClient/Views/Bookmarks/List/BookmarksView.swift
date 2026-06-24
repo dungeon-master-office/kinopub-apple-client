@@ -22,9 +22,7 @@ struct BookmarksView: View {
   
   var body: some View {
     NavigationStack(path: $navigationState.bookmarksRoutes) {
-      VStack {
-        bookmarksList
-      }
+      bookmarksList
       .navigationTitle("Bookmarks")
       .background(Color.KinoPub.background)
       .refreshable(action: catalog.refresh)
@@ -65,12 +63,20 @@ struct BookmarksView: View {
   }
   
   var bookmarksList: some View {
-    List(catalog.items) { bookmark in
-      NavigationLink(value: BookmarksRoutes.bookmark(bookmark)) {
-        Text(bookmark.title)
+    List {
+      ForEach(catalog.items) { bookmark in
+        NavigationLink(value: BookmarksRoutes.bookmark(bookmark)) {
+          Text(bookmark.title)
+        }
       }
     }
+    #if os(iOS)
+    .listStyle(.insetGrouped)
+    #else
+    .listStyle(.inset)
+    #endif
     .scrollContentBackground(.hidden)
+    .background(Color.KinoPub.background)
   }
 }
 
