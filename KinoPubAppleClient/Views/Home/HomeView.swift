@@ -61,6 +61,21 @@ struct HomeView: View {
           SeasonsView(model: SeasonsModel(seasons: seasons, linkProvider: MainRoutesLinkProvider()))
         case .season(let season):
           SeasonView(model: SeasonModel(season: season, linkProvider: MainRoutesLinkProvider()))
+        case .filteredCatalog(let filter, let title):
+          FilteredCatalogView(catalog: MediaCatalog(itemsService: appContext.contentService,
+                                                    authState: authState,
+                                                    errorHandler: errorHandler,
+                                                    filter: filter),
+                              title: title,
+                              linkProvider: MainRoutesLinkProvider())
+        case .personSearch(let query, let field, let title):
+          PersonSearchView(model: SearchModel(itemsService: appContext.contentService,
+                                              authState: authState,
+                                              errorHandler: errorHandler),
+                           query: query,
+                           field: field,
+                           title: title,
+                           linkProvider: MainRoutesLinkProvider())
         }
       }
       .handleError(state: $errorHandler.state)

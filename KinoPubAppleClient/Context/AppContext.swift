@@ -37,6 +37,7 @@ typealias AppContextProtocol = AuthorizationServiceProvider
 & UserServiceProvider
 & UserActionsServiceProvider
 & LocalWatchProgressProvider
+& TMDBServiceProvider
 
 // MARK: - AppContext
 
@@ -54,6 +55,7 @@ struct AppContext: AppContextProtocol {
   var downloadedFilesDatabase: DownloadedFilesDatabase<DownloadMeta>
   var actionsService: UserActionsService
   var localProgressStore: LocalWatchProgressStore
+  var tmdbService: TMDBService
 
   static let shared: AppContext = {
     let configuration = BundleConfiguration()
@@ -85,7 +87,8 @@ struct AppContext: AppContextProtocol {
                       downloadManager: downloadManager,
                       downloadedFilesDatabase: downloadedFilesDatabase,
                       actionsService: UserActionsServiceImpl(apiClient: apiClient),
-                      localProgressStore: LocalWatchProgressStore())
+                      localProgressStore: LocalWatchProgressStore(),
+                      tmdbService: TMDBServiceImpl(apiKey: configuration.tmdbAPIKey))
   }()
   
   // MARK: - API Client building
