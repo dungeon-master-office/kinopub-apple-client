@@ -60,15 +60,16 @@ struct MainView: View {
       }
       .background(Color.KinoPub.background)
       .sheet(isPresented: $showShortCutPicker, content: {
-        ShortcutSelectionView(shortcut: $catalog.shortcut,
-                              mediaType: $catalog.contentType)
+        ShortcutSelectionView(shortcut: $catalog.shortcut)
       })
       .sheet(isPresented: $showFilterPicker, content: {
-        FilterView(model: FilterModel(), onApply: { filter in
-          catalog.apply(filter: filter)
-        }, onClear: {
-          catalog.clearFilter()
-        })
+        FilterView(model: FilterModel(contentType: catalog.contentType,
+                                      filterDataService: appContext.contentService),
+                   onApply: { filter in
+                     catalog.apply(filter: filter)
+                   }, onClear: {
+                     catalog.clearFilter()
+                   })
       })
       .navigationDestination(for: MainRoutes.self) { route in
         switch route {
@@ -157,6 +158,7 @@ struct MainView_Previews: PreviewProvider {
 /// via the supplied `linkProvider`.
 struct FilteredCatalogView: View {
   @EnvironmentObject var errorHandler: ErrorHandler
+  @Environment(\.appContext) var appContext
   @StateObject private var catalog: MediaCatalog
   private let title: String
   private let linkProvider: NavigationLinkProvider
@@ -207,14 +209,16 @@ struct FilteredCatalogView: View {
       }
     }
     .sheet(isPresented: $showShortCutPicker) {
-      ShortcutSelectionView(shortcut: $catalog.shortcut, mediaType: $catalog.contentType)
+      ShortcutSelectionView(shortcut: $catalog.shortcut)
     }
     .sheet(isPresented: $showFilterPicker) {
-      FilterView(model: FilterModel(), onApply: { filter in
-        catalog.apply(filter: filter)
-      }, onClear: {
-        catalog.clearFilter()
-      })
+      FilterView(model: FilterModel(contentType: catalog.contentType,
+                                    filterDataService: appContext.contentService),
+                 onApply: { filter in
+                   catalog.apply(filter: filter)
+                 }, onClear: {
+                   catalog.clearFilter()
+                 })
     }
     .task {
       await catalog.fetchItems()
