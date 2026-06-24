@@ -153,7 +153,7 @@ struct SearchView: View {
         } else {
           ForEach(model.genres, id: \.id) { genre in
             NavigationLink(value: SearchRoutes.genre(genre.id, genre.title)) {
-              BrowseCategoryCard(title: genre.title)
+              BrowseCategoryCard(title: genre.title, imageURL: model.genrePosters[genre.id])
             }
 #if os(macOS)
             .buttonStyle(.plain)

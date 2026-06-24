@@ -33,6 +33,7 @@ class SearchModel: ObservableObject {
   @Published public var query: String = ""
   @Published public var results: [MediaItem] = []
   @Published public var genres: [MediaGenre] = []
+  @Published public var genrePosters: [Int: String] = [:]
   @Published public var genreResults: [MediaItem] = []
   @Published public var recentItems: [RecentSearchItem] = []
   @Published public var searching: Bool = false
@@ -130,6 +131,55 @@ class SearchModel: ObservableObject {
       errorHandler.setError(error)
     }
     browseLoading = false
+    // Genres render immediately; representative posters fill in asynchronously.
+    Task { await loadGenrePosters() }
+  }
+
+  /// Loads one representative poster per genre (top-rated movie in that genre) so the Browse
+  /// cards show real artwork instead of a flat gradient. Requests are bounded so we don't fire
+  /// 20+ at once; failures are ignored and that genre simply falls back to the gradient.
+  private func loadGenrePosters() async {
+    let genresToLoad = genres.filter { genrePosters[$0.id] == nil }
+    guard !genresToLoad.isEmpty else { return }
+
+    let maxConcurrent = 4
+    let service = contentService
+
+    await withTaskGroup(of: (Int, String?).self) { group in
+      var iterator = genresToLoad.makeIterator()
+      var inFlight = 0
+
+      func addTask(for genre: MediaGenre) {
+        group.addTask {
+          let filter = MediaItemsFilter(contentType: .movie,
+                                        genres: [genre.id],
+                                        countries: [],
+                                        year: nil,
+                                        sort: "rating-")
+          guard let data = try? await service.filter(filter: filter, page: nil),
+                let first = data.items.first else {
+            return (genre.id, nil)
+          }
+          return (genre.id, first.posters.wide ?? first.posters.medium)
+        }
+      }
+
+      // Prime the group up to the concurrency cap.
+      while inFlight < maxConcurrent, let genre = iterator.next() {
+        addTask(for: genre)
+        inFlight += 1
+      }
+
+      // As each result arrives, publish it and start the next genre to keep the cap full.
+      while let (id, poster) = await group.next() {
+        if let poster, !poster.isEmpty {
+          genrePosters[id] = poster
+        }
+        if let genre = iterator.next() {
+          addTask(for: genre)
+        }
+      }
+    }
   }
 
   func loadGenreResults(genreId: Int) async {
