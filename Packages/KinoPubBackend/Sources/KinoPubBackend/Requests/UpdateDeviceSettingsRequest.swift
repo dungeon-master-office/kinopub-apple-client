@@ -28,14 +28,21 @@ public struct UpdateDeviceSettingsRequest: Endpoint {
   public var parameters: [String: Any]? {
     // Bools are sent as 1/0 ints, matching the int-style params other endpoints
     // (MarkTime / ToggleWatching / ToggleBookmarkFolder) use over query params.
-    [
-      "useSsl": settings.useSsl ? 1 : 0,
-      "supportHevc": settings.supportHevc ? 1 : 0,
-      "supportHdr": settings.supportHdr ? 1 : 0,
-      "support4k": settings.support4k ? 1 : 0,
-      "mixedPlaylist": settings.mixedPlaylist ? 1 : 0,
-      "streamingType": settings.streamingType,
-      "serverLocation": settings.serverLocation
+    // Send both camelCase (documented) and snake_case key namings so the update applies
+    // regardless of which the backend expects; unknown keys are ignored.
+    let useSsl = settings.useSsl ? 1 : 0
+    let hevc = settings.supportHevc ? 1 : 0
+    let hdr = settings.supportHdr ? 1 : 0
+    let k4 = settings.support4k ? 1 : 0
+    let mixed = settings.mixedPlaylist ? 1 : 0
+    return [
+      "useSsl": useSsl, "use_ssl": useSsl,
+      "supportHevc": hevc, "support_hevc": hevc,
+      "supportHdr": hdr, "support_hdr": hdr,
+      "support4k": k4, "support_4k": k4,
+      "mixedPlaylist": mixed, "mixed_playlist": mixed,
+      "streamingType": settings.streamingType, "streaming_type": settings.streamingType,
+      "serverLocation": settings.serverLocation, "server_location": settings.serverLocation
     ]
   }
 

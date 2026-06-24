@@ -47,6 +47,8 @@ class DeviceSettingsModel: ObservableObject {
     defer { isSaving = false }
     do {
       try await deviceService.updateSettings(deviceId: deviceId, settings: settings)
+      // Reload from the server so the UI reflects exactly what was persisted.
+      settings = try await deviceService.fetchSettings(deviceId: deviceId)
     } catch {
       Logger.app.debug("save device settings error: \(error)")
       errorHandler.setError(error)

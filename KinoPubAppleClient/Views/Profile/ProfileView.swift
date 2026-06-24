@@ -34,7 +34,8 @@ struct ProfileView: View {
             Section {
               LabeledContent("User Name", value: model.userData.username)
                 .skeleton(enabled: model.userData.skeleton ?? false)
-              LabeledContent("User Subscription", value: "\(model.userData.subscription.days) \("days".localized)")
+              LabeledContent("User Subscription",
+                             value: "\(model.userData.subscription.remainingDays) \("days".localized) · \(model.userData.subscription.endDateFormatted)")
                 .skeleton(enabled: model.userData.skeleton ?? false)
               LabeledContent("Registration Date", value: "\(model.userData.registrationDateFormatted)")
                 .skeleton(enabled: model.userData.skeleton ?? false)

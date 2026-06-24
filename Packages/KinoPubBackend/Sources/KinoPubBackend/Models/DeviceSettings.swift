@@ -17,14 +17,12 @@ public struct DeviceSettings: Codable {
   public var streamingType: Int
   public var serverLocation: Int
 
-  private enum CodingKeys: String, CodingKey {
-    case useSsl = "use_ssl"
-    case supportHevc = "support_hevc"
-    case supportHdr = "support_hdr"
-    case support4k = "support_4k"
-    case mixedPlaylist = "mixed_playlist"
-    case streamingType = "streaming_type"
-    case serverLocation = "server_location"
+  private struct AnyKey: CodingKey {
+    var stringValue: String
+    init(_ value: String) { stringValue = value }
+    init?(stringValue: String) { self.stringValue = stringValue }
+    var intValue: Int? { nil }
+    init?(intValue: Int) { nil }
   }
 
   public init(useSsl: Bool = false,
@@ -44,40 +42,45 @@ public struct DeviceSettings: Codable {
   }
 
   public init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    // Decode defensively: missing flags default to false, missing ints to 0.
-    self.useSsl = DeviceSettings.decodeBool(container, .useSsl)
-    self.supportHevc = DeviceSettings.decodeBool(container, .supportHevc)
-    self.supportHdr = DeviceSettings.decodeBool(container, .supportHdr)
-    self.support4k = DeviceSettings.decodeBool(container, .support4k)
-    self.mixedPlaylist = DeviceSettings.decodeBool(container, .mixedPlaylist)
-    self.streamingType = DeviceSettings.decodeInt(container, .streamingType)
-    self.serverLocation = DeviceSettings.decodeInt(container, .serverLocation)
+    let container = try decoder.container(keyedBy: AnyKey.self)
+    // The API uses camelCase keys; older payloads use snake_case. Try both per field.
+    func boolFor(_ names: [String]) -> Bool {
+      for name in names {
+        let key = AnyKey(name)
+        if let value = try? container.decode(Bool.self, forKey: key) { return value }
+        if let value = try? container.decode(Int.self, forKey: key) { return value != 0 }
+        if let value = try? container.decode(String.self, forKey: key) {
+          return value == "1" || value.lowercased() == "true"
+        }
+      }
+      return false
+    }
+    func intFor(_ names: [String]) -> Int {
+      for name in names {
+        let key = AnyKey(name)
+        if let value = try? container.decode(Int.self, forKey: key) { return value }
+        if let value = try? container.decode(String.self, forKey: key), let parsed = Int(value) { return parsed }
+      }
+      return 0
+    }
+    self.useSsl = boolFor(["useSsl", "use_ssl"])
+    self.supportHevc = boolFor(["supportHevc", "support_hevc"])
+    self.supportHdr = boolFor(["supportHdr", "support_hdr"])
+    self.support4k = boolFor(["support4k", "support_4k"])
+    self.mixedPlaylist = boolFor(["mixedPlaylist", "mixed_playlist"])
+    self.streamingType = intFor(["streamingType", "streaming_type"])
+    self.serverLocation = intFor(["serverLocation", "server_location"])
   }
 
-  /// Accepts a flag as Bool, Int (1/0) or numeric String.
-  private static func decodeBool(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Bool {
-    if let value = try? container.decode(Bool.self, forKey: key) {
-      return value
-    }
-    if let value = try? container.decode(Int.self, forKey: key) {
-      return value != 0
-    }
-    if let value = try? container.decode(String.self, forKey: key) {
-      return value == "1" || value.lowercased() == "true"
-    }
-    return false
-  }
-
-  /// Accepts an int as Int or numeric String.
-  private static func decodeInt(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int {
-    if let value = try? container.decode(Int.self, forKey: key) {
-      return value
-    }
-    if let value = try? container.decode(String.self, forKey: key), let parsed = Int(value) {
-      return parsed
-    }
-    return 0
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: AnyKey.self)
+    try container.encode(useSsl, forKey: AnyKey("useSsl"))
+    try container.encode(supportHevc, forKey: AnyKey("supportHevc"))
+    try container.encode(supportHdr, forKey: AnyKey("supportHdr"))
+    try container.encode(support4k, forKey: AnyKey("support4k"))
+    try container.encode(mixedPlaylist, forKey: AnyKey("mixedPlaylist"))
+    try container.encode(streamingType, forKey: AnyKey("streamingType"))
+    try container.encode(serverLocation, forKey: AnyKey("serverLocation"))
   }
 
   public static func mock() -> DeviceSettings {

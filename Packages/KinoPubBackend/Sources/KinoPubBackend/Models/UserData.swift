@@ -54,6 +54,16 @@ public extension UserData {
   }
 }
 
+public extension UserData.Subscription {
+  /// Whole days remaining (rounded, never negative).
+  var remainingDays: Int { max(Int(days.rounded()), 0) }
+
+  /// Localized expiry date, e.g. "25 Jul 2026".
+  var endDateFormatted: String {
+    Date(timeIntervalSince1970: endTime).formatted(date: .abbreviated, time: .omitted)
+  }
+}
+
 public extension UserData {
   static func mock() -> UserData {
     UserData(username: "Test User",

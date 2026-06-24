@@ -84,48 +84,62 @@ struct SportView: View {
   // MARK: - Wide (iPad / macOS): channel list + inline 16:9 player
 
   private var wideLayout: some View {
-    HStack(spacing: 0) {
-      channelList
-        .frame(width: 320)
-      Divider()
-      playerPane
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    GeometryReader { geo in
+      if geo.size.width >= 700 {
+        // Roomy: list beside the player.
+        HStack(spacing: 0) {
+          channelList
+            .frame(width: 320)
+          Divider()
+          VStack(spacing: 0) {
+            playerHeader
+            Spacer(minLength: 0)
+          }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+      } else {
+        // Narrow: player on top, list below.
+        VStack(spacing: 0) {
+          playerHeader
+          Divider()
+          channelList
+        }
+      }
     }
     .onAppear {
       if selectedChannel == nil { selectedChannel = model.channels.first }
     }
   }
 
+  // Native list: the whole row is selectable (single-selection binding).
   private var channelList: some View {
-    ScrollView {
-      LazyVStack(spacing: 4) {
-        ForEach(model.channels) { channel in
-          Button {
-            selectedChannel = channel
-          } label: {
-            ChannelRow(channel: channel, isSelected: channel.id == selectedChannel?.id)
-          }
-          .buttonStyle(.plain)
-        }
+    List(selection: $selectedChannel) {
+      ForEach(model.channels) { channel in
+        ChannelRow(channel: channel, isSelected: channel.id == selectedChannel?.id)
+          .tag(channel)
+          .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+          .listRowBackground(Color.clear)
+          .listRowSeparator(.hidden)
       }
-      .padding(12)
     }
+    .listStyle(.plain)
+    .scrollContentBackground(.hidden)
+    .background(Color.KinoPub.background)
   }
 
   @ViewBuilder
-  private var playerPane: some View {
+  private var playerHeader: some View {
     if let channel = selectedChannel, let url = URL(string: channel.stream) {
-      VStack(alignment: .leading, spacing: 16) {
+      VStack(alignment: .leading, spacing: 12) {
         InlinePlayerView(url: url)
           .id(channel.id)
           .frame(maxWidth: 900)
         Text(channel.title)
-          .font(.system(size: 22, weight: .bold))
+          .font(.system(size: 20, weight: .bold))
           .foregroundStyle(Color.KinoPub.text)
-        Spacer()
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(20)
+      .padding(16)
     } else {
       VStack {
         Spacer()
