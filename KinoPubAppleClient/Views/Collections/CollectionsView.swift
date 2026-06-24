@@ -124,29 +124,37 @@ struct CollectionCard: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      CachedAsyncImage(url: URL(string: imageURL ?? "")) { image in
-        image
-          .resizable()
-          .renderingMode(.original)
-          .aspectRatio(contentMode: .fill)
-      } placeholder: {
-        Color.KinoPub.skeleton
-      }
-      .aspectRatio(16.0 / 9.0, contentMode: .fill)
+    Color.KinoPub.skeleton
+      .aspectRatio(16.0 / 9.0, contentMode: .fit)
       .frame(maxWidth: .infinity)
-      .clipped()
-      .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+      .overlay {
+        CachedAsyncImage(url: URL(string: imageURL ?? "")) { image in
+          image
+            .resizable()
+            .renderingMode(.original)
+            .aspectRatio(contentMode: .fill)
+        } placeholder: {
+          Color.KinoPub.skeleton
+        }
+      }
+      .overlay(alignment: .bottom) {
+        LinearGradient(colors: [.clear, .black.opacity(0.15), .black.opacity(0.85)],
+                       startPoint: .center, endPoint: .bottom)
+      }
+      .overlay(alignment: .bottomLeading) {
+        Text(collection.title)
+          .font(.system(size: 15, weight: .bold))
+          .foregroundStyle(.white)
+          .lineLimit(2)
+          .multilineTextAlignment(.leading)
+          .shadow(radius: 4)
+          .padding(10)
+      }
+      .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
       .overlay(
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
           .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
       )
-      Text(collection.title)
-        .font(.system(size: 14, weight: .semibold))
-        .foregroundStyle(Color.KinoPub.text)
-        .lineLimit(2)
-        .multilineTextAlignment(.leading)
-    }
   }
 }
 
