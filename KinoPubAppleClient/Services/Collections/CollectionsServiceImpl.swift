@@ -16,11 +16,11 @@ final class CollectionsServiceImpl: CollectionsService {
     self.apiClient = apiClient
   }
 
-  func fetchCollections(page: Int?) async throws -> [Collection] {
-    let request = CollectionsRequest(page: page)
+  func fetchCollections(page: Int?, sort: String?) async throws -> CollectionsData {
+    let request = CollectionsRequest(page: page, sort: sort)
     let response = try await apiClient.performRequest(with: request,
                                                       decodingType: CollectionsData.self)
-    return response.collections
+    return response
   }
 
   func fetchCollection(id: Int) async throws -> (Collection, [MediaItem]) {

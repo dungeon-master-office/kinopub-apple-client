@@ -31,8 +31,76 @@ struct CollectionDetailView: View {
     } else if model.items.isEmpty {
       emptyState
     } else {
-      itemsGrid
+      VStack(spacing: 0) {
+        metaHeader
+        itemsGrid
+      }
     }
+  }
+
+  // MARK: - Meta header
+
+  private var metaHeader: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack(spacing: 12) {
+        metaItem(systemImage: "film", value: "\(model.itemsCountText)")
+        if let watchers = model.collection.watchers {
+          metaItem(systemImage: "person.2", value: Self.compact(watchers))
+        }
+        if let views = model.collection.views {
+          metaItem(systemImage: "eye", value: Self.compact(views))
+        }
+        if let updated = model.collection.updated {
+          metaItem(systemImage: "clock", value: Self.dateText(from: updated))
+        }
+      }
+      sortMenu
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.horizontal, 20)
+    .padding(.top, 12)
+    .padding(.bottom, 4)
+  }
+
+  private func metaItem(systemImage: String, value: String) -> some View {
+    HStack(spacing: 4) {
+      Image(systemName: systemImage)
+        .font(.system(size: 12))
+      Text(value)
+        .font(.system(size: 13, weight: .medium))
+    }
+    .foregroundStyle(Color.KinoPub.subtitle)
+  }
+
+  private var sortMenu: some View {
+    Menu {
+      ForEach(CollectionItemsSort.allCases) { sort in
+        Button {
+          model.selectedSort = sort
+        } label: {
+          if model.selectedSort == sort {
+            Label(sort.localizedTitle, systemImage: "checkmark")
+          } else {
+            Text(sort.localizedTitle)
+          }
+        }
+      }
+    } label: {
+      HStack(spacing: 4) {
+        Image(systemName: "arrow.up.arrow.down")
+          .font(.system(size: 12))
+        Text(model.selectedSort.localizedTitle)
+          .font(.system(size: 13, weight: .semibold))
+      }
+      .foregroundStyle(Color.KinoPub.accent)
+      .padding(.horizontal, 12)
+      .padding(.vertical, 6)
+      .background {
+        Capsule(style: .continuous)
+          .fill(Color.KinoPub.selectionBackground)
+      }
+    }
+    .menuStyle(.borderlessButton)
   }
 
   private var itemsGrid: some View {
@@ -47,6 +115,29 @@ struct CollectionDetailView: View {
                              CollectionsRoutesLinkProvider().link(for: item)
                            })
     }
+  }
+
+  // MARK: - Formatting
+
+  /// Compact count, e.g. 12_345 -> "12.3K".
+  private static func compact(_ value: Int) -> String {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    formatter.maximumFractionDigits = 1
+    if value >= 1_000_000 {
+      return (formatter.string(from: NSNumber(value: Double(value) / 1_000_000)) ?? "\(value)") + "M"
+    } else if value >= 1_000 {
+      return (formatter.string(from: NSNumber(value: Double(value) / 1_000)) ?? "\(value)") + "K"
+    }
+    return "\(value)"
+  }
+
+  private static func dateText(from timestamp: Int) -> String {
+    let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
+    let formatter = DateFormatter()
+    formatter.dateStyle = .medium
+    formatter.timeStyle = .none
+    return formatter.string(from: date)
   }
 
   // MARK: - States

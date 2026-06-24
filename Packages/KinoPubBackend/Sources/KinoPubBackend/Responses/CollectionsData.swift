@@ -25,11 +25,12 @@ public struct CollectionsData: Decodable {
 
   public init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    // Decode defensively: API may use either "collections" or "items".
-    if let collections = try container.decodeIfPresent([Collection].self, forKey: .collections) {
-      self.collections = collections
+    // Decode defensively & lossily: API may use either "collections" or "items",
+    // and a single malformed entry must not drop the whole list.
+    if container.contains(.collections) {
+      self.collections = container.decodeLossyArray(Collection.self, forKey: .collections)
     } else {
-      self.collections = try container.decodeIfPresent([Collection].self, forKey: .items) ?? []
+      self.collections = container.decodeLossyArray(Collection.self, forKey: .items)
     }
     self.pagination = try container.decodeIfPresent(Pagination.self, forKey: .pagination)
   }

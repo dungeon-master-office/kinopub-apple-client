@@ -9,7 +9,7 @@ import Foundation
 import KinoPubBackend
 
 protocol CollectionsService {
-  func fetchCollections(page: Int?) async throws -> [Collection]
+  func fetchCollections(page: Int?, sort: String?) async throws -> CollectionsData
   func fetchCollection(id: Int) async throws -> (Collection, [MediaItem])
 }
 
@@ -19,8 +19,8 @@ protocol CollectionsServiceProvider {
 
 struct CollectionsServiceMock: CollectionsService {
 
-  func fetchCollections(page: Int?) async throws -> [Collection] {
-    return []
+  func fetchCollections(page: Int?, sort: String?) async throws -> CollectionsData {
+    return .mock(data: [])
   }
 
   func fetchCollection(id: Int) async throws -> (Collection, [MediaItem]) {
