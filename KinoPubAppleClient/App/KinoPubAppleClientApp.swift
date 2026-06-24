@@ -39,6 +39,12 @@ struct KinoPubAppleClientApp: App {
         .environmentObject(navigationState)
         .environmentObject(authState)
         .environmentObject(errorHandler)
+        // Register this device's name once authorized, so it isn't listed as "unknown".
+        .task(id: authState.userState) {
+          if authState.userState == .authorized {
+            await AppContext.shared.deviceService.registerDeviceName()
+          }
+        }
 #if os(macOS)
         .frame(minWidth: WindowSize.macos.width, minHeight: WindowSize.macos.height)
 #endif

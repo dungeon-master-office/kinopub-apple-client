@@ -12,6 +12,8 @@ protocol DeviceService {
   func fetchCurrentDevice() async throws -> DeviceInfo
   func fetchSettings(deviceId: Int) async throws -> DeviceSettings
   func updateSettings(deviceId: Int, settings: DeviceSettings) async throws
+  /// Registers this device's name/specs so it isn't listed as "unknown".
+  func registerDeviceName() async
 }
 
 protocol DeviceServiceProvider {
@@ -29,6 +31,10 @@ struct DeviceServiceMock: DeviceService {
   }
 
   func updateSettings(deviceId: Int, settings: DeviceSettings) async throws {
+    // no-op
+  }
+
+  func registerDeviceName() async {
     // no-op
   }
 }
