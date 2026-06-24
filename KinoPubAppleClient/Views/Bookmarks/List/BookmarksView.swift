@@ -84,7 +84,8 @@ struct BookmarksView: View {
             } else {
               // Loading placeholder shelf.
               ForEach(0..<4, id: \.self) { _ in
-                PosterCard(imageURL: nil, title: " ")
+                PosterCard(imageURL: nil, title: "Placeholder")
+                  .redacted(reason: .placeholder)
               }
             }
           }

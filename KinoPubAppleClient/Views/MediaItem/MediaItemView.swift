@@ -105,7 +105,7 @@ struct MediaItemView: View {
   // MARK: - Hero
 
   private var hero: some View {
-    HeroBackdrop(imageURL: mediaItem.posters.wide ?? mediaItem.posters.big, height: 460) {
+    HeroBackdrop(imageURL: mediaItem.posters.wide ?? mediaItem.posters.big, height: 460, tallBlur: true) {
       VStack(alignment: .leading, spacing: 10) {
         Text(mediaItem.localizedTitle)
           .font(.system(size: 34, weight: .bold))
