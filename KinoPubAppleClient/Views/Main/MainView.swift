@@ -46,15 +46,15 @@ struct MainView: View {
           Button {
             showShortCutPicker = true
           } label: {
-            Image(systemName: "arrow.up.arrow.down")
+            SortDotIcon(active: catalog.isSortNonDefault)
           }
         }
-        
+
         ToolbarItem(placement: toolbarItemPlacement) {
           Button {
             showFilterPicker = true
           } label: {
-            Image(systemName: "line.3.horizontal.decrease.circle")
+            FilterBadgeIcon(count: catalog.activeFilterCount)
           }
         }
       }
@@ -199,12 +199,12 @@ struct FilteredCatalogView: View {
     .toolbar {
       ToolbarItem(placement: toolbarItemPlacement) {
         Button { showShortCutPicker = true } label: {
-          Image(systemName: "arrow.up.arrow.down")
+          SortDotIcon(active: catalog.isSortNonDefault)
         }
       }
       ToolbarItem(placement: toolbarItemPlacement) {
         Button { showFilterPicker = true } label: {
-          Image(systemName: "line.3.horizontal.decrease.circle")
+          FilterBadgeIcon(count: catalog.activeFilterCount)
         }
       }
     }
@@ -278,5 +278,42 @@ struct PersonSearchView: View {
       model.preset(query: query, field: field)
     }
     .handleError(state: $errorHandler.state)
+  }
+}
+
+// MARK: - Toolbar indicators
+
+/// Filter icon with a native-looking count badge when filters are active.
+private struct FilterBadgeIcon: View {
+  let count: Int
+  var body: some View {
+    Image(systemName: "line.3.horizontal.decrease.circle")
+      .overlay(alignment: .topTrailing) {
+        if count > 0 {
+          Text("\(count)")
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 4)
+            .frame(minWidth: 16, minHeight: 16)
+            .background(Circle().fill(Color.KinoPub.accent))
+            .offset(x: 9, y: -9)
+        }
+      }
+  }
+}
+
+/// Sort icon with a small dot when the sort differs from the default.
+private struct SortDotIcon: View {
+  let active: Bool
+  var body: some View {
+    Image(systemName: "arrow.up.arrow.down")
+      .overlay(alignment: .topTrailing) {
+        if active {
+          Circle()
+            .fill(Color.KinoPub.accent)
+            .frame(width: 7, height: 7)
+            .offset(x: 5, y: -3)
+        }
+      }
   }
 }

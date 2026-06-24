@@ -267,9 +267,9 @@ struct MediaItemView: View {
 
   @ViewBuilder
   private var playButton: some View {
-    let title = (mediaItem.isSeries ? "Watch" : "Play").localized
-    if mediaItem.isSeries, let firstEpisode = firstPlayableEpisode {
-      NavigationLink(value: itemModel.linkProvider.player(for: firstEpisode)) {
+    let title = (hasResume ? "Continue" : (mediaItem.isSeries ? "Watch" : "Play")).localized
+    if mediaItem.isSeries, let episode = seriesPlayEpisode {
+      NavigationLink(value: itemModel.linkProvider.player(for: episode)) {
         playLabel(title)
       }
       #if os(macOS)
@@ -283,6 +283,43 @@ struct MediaItemView: View {
       .buttonStyle(.plain)
       #endif
     }
+  }
+
+  // MARK: - Continue ("Netflix-style") resume logic
+
+  /// Ordered (season, episode) pairs used to compute what to continue.
+  private var orderedEpisodes: [(season: Season, episode: Episode)] {
+    (mediaItem.seasons ?? [])
+      .sorted { $0.number < $1.number }
+      .flatMap { season in season.episodes.sorted { $0.number < $1.number }.map { (season, $0) } }
+  }
+
+  /// The series episode to continue: the in-progress one, else the episode right after the
+  /// last fully-watched one. Nil when there's nothing started / everything is finished.
+  private var continueTarget: (season: Season, episode: Episode)? {
+    let ordered = orderedEpisodes
+    if let inProgress = ordered.last(where: { $0.episode.watching.time > 0 }) {
+      return inProgress
+    }
+    if let lastWatched = ordered.lastIndex(where: { $0.episode.watched > 0 }) {
+      let next = lastWatched + 1
+      return next < ordered.count ? ordered[next] : nil
+    }
+    return nil
+  }
+
+  /// Whether the play button should read "Continue" rather than "Play"/"Watch".
+  private var hasResume: Bool {
+    if mediaItem.isSeries { return continueTarget != nil }
+    return (mediaItem.videos?.first?.watching.time ?? 0) > 0
+  }
+
+  /// Episode to start for a series: the continue target if any, else the first episode.
+  private var seriesPlayEpisode: Episode? {
+    if let target = continueTarget {
+      return filledEpisode(target.episode, in: target.season)
+    }
+    return firstPlayableEpisode
   }
 
   private func playLabel(_ title: String) -> some View {

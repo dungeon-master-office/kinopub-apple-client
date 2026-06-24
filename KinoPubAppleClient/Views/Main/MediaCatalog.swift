@@ -30,6 +30,16 @@ class MediaCatalog: ObservableObject {
     contentType.title
   }
 
+  /// Number of active filter facets (drives the toolbar filter badge).
+  var activeFilterCount: Int {
+    activeFilter?.activeCount ?? 0
+  }
+
+  /// Whether the sort/shortcut differs from the section default (drives the sort dot).
+  var isSortNonDefault: Bool {
+    shortcut != .hot
+  }
+
   init(itemsService: VideoContentService,
        authState: AuthState,
        errorHandler: ErrorHandler,

@@ -32,6 +32,23 @@ struct MediaItemsFilter: Equatable, Hashable {
   var want4K: Bool = false
   var wantAC3: Bool = false
 
+  /// Number of active filter facets (drives the toolbar badge). Excludes sort/type.
+  var activeCount: Int {
+    var count = 0
+    if !genres.isEmpty { count += 1 }
+    if !countries.isEmpty { count += 1 }
+    if year != nil { count += 1 }
+    if subtitles != nil { count += 1 }
+    if (kinopoiskMin ?? 0) > 0 { count += 1 }
+    if (imdbMin ?? 0) > 0 { count += 1 }
+    if period != nil { count += 1 }
+    if wantHD { count += 1 }
+    if withoutHD { count += 1 }
+    if want4K { count += 1 }
+    if wantAC3 { count += 1 }
+    return count
+  }
+
   // MARK: - Best-effort backend param mappings (see FilterItemsRequest for caveats)
 
   var imdbParam: String? {
