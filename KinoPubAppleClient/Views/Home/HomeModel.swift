@@ -38,6 +38,8 @@ class HomeModel: ObservableObject {
   @Published public var shelves: [Shelf] = HomeModel.skeletonShelves()
   @Published public var featured: [MediaItem] = []
   @Published public var continueWatching: [ContinueItem] = []
+  /// True until the Continue Watching row has resolved, so the UI can reserve its space.
+  @Published public var continueWatchingLoading: Bool = true
 
   init(itemsService: VideoContentService, authState: AuthState, errorHandler: ErrorHandler) {
     self.itemsService = itemsService
@@ -127,6 +129,7 @@ class HomeModel: ObservableObject {
       }
 
     continueWatching = localOnly + enriched
+    continueWatchingLoading = false
   }
 
   /// Builds a Continue Watching entry from a fully-loaded media item.

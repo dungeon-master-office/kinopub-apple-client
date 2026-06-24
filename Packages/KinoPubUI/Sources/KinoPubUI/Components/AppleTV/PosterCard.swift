@@ -100,4 +100,10 @@ public struct PosterCard: View {
       }
     }
   }
+
+  /// Unified loading placeholder used across all poster grids.
+  public static func placeholder(width: CGFloat = 140) -> some View {
+    PosterCard(imageURL: nil, title: "Placeholder", width: width)
+      .redacted(reason: .placeholder)
+  }
 }

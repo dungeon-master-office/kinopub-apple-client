@@ -17,11 +17,13 @@ public struct ContentItemView: View {
     self.mediaItem = mediaItem
   }
 
+  private var isPlaceholder: Bool { mediaItem.skeleton ?? false }
+
   public var body: some View {
     VStack(alignment: .center) {
       ZStack {
         image
-        if !(mediaItem.skeleton ?? false) {
+        if !isPlaceholder {
           ratingsBlock
         }
       }
@@ -31,6 +33,8 @@ public struct ContentItemView: View {
       }.padding(.horizontal, 8)
     }
     .background(Color.clear)
+    // Unified placeholder: native redaction (matches PosterCard.placeholder), no shimmer.
+    .redacted(reason: isPlaceholder ? .placeholder : [])
   }
 
   var image: some View {
@@ -49,33 +53,29 @@ public struct ContentItemView: View {
         }
       }
       .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-      .skeleton(enabled: mediaItem.skeleton ?? false)
   }
-  
+
   var ratingsBlock: some View {
     VStack {
       Spacer()
       ContentItemRatingView(imdbScore: mediaItem.imdbRating,
                             kinopoiskScore: mediaItem.kinopoiskRating)
-      .skeleton(enabled: mediaItem.skeleton ?? false)
       .padding(.bottom, 8)
     }
   }
 
   var title: some View {
-    Text(mediaItem.localizedTitle)
+    Text(isPlaceholder ? "Placeholder" : mediaItem.localizedTitle)
       .lineLimit(1)
       .font(.system(size: 16.0, weight: .medium))
       .foregroundStyle(Color.KinoPub.text)
-      .skeleton(enabled: mediaItem.skeleton ?? false)
   }
 
   var subtitle: some View {
-    Text(mediaItem.originalTitle)
+    Text(isPlaceholder ? "Placeholder" : mediaItem.originalTitle)
       .lineLimit(1)
       .font(.system(size: 14.0, weight: .medium))
       .foregroundStyle(Color.KinoPub.subtitle)
-      .skeleton(enabled: mediaItem.skeleton ?? false)
   }
 
 }

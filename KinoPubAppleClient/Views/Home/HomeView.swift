@@ -17,6 +17,7 @@ struct HomeView: View {
   @StateObject private var model: HomeModel
 
   @State private var heroIndex: Int = 0
+  @State private var isHeroInteracting: Bool = false
   private let heroTimer = Timer.publish(every: 6, on: .main, in: .common).autoconnect()
 
   init(model: @autoclosure @escaping () -> HomeModel) {
@@ -28,7 +29,9 @@ struct HomeView: View {
       ScrollView(.vertical) {
         LazyVStack(alignment: .leading, spacing: 28) {
           heroSection
-          if !model.continueWatching.isEmpty {
+          if model.continueWatchingLoading {
+            continueWatchingPlaceholderShelf
+          } else if !model.continueWatching.isEmpty {
             continueWatchingShelf
           }
           ForEach(model.shelves) { shelf in
@@ -107,8 +110,16 @@ struct HomeView: View {
       }
       .tabViewStyle(.page(indexDisplayMode: .always))
       .frame(height: heroHeight)
+      // Don't auto-advance while the user is swiping the gallery (resume shortly after).
+      .simultaneousGesture(
+        DragGesture()
+          .onChanged { _ in isHeroInteracting = true }
+          .onEnded { _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 8) { isHeroInteracting = false }
+          }
+      )
       .onReceive(heroTimer) { _ in
-        guard model.featured.count > 1 else { return }
+        guard !isHeroInteracting, model.featured.count > 1 else { return }
         withAnimation { heroIndex = (heroIndex + 1) % model.featured.count }
       }
 #else
@@ -152,6 +163,14 @@ struct HomeView: View {
   }
 
   @ViewBuilder
+  private var continueWatchingPlaceholderShelf: some View {
+    MediaShelf(title: "Continue Watching".localized) {
+      ForEach(0..<6, id: \.self) { _ in
+        ContinueWatchingCard.placeholder()
+      }
+    }
+  }
+
   private var continueWatchingShelf: some View {
     MediaShelf(title: "Continue Watching".localized) {
       ForEach(model.continueWatching) { entry in
