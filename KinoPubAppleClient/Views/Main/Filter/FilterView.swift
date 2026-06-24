@@ -21,7 +21,7 @@ struct FilterView: View {
   private let yearRange = Array(1912...2026)
   private let ratingRange = Array(0...10)
 
-  init(model: @autoclosure @escaping () -> FilterModel = FilterModel(),
+  init(model: @autoclosure @escaping () -> FilterModel,
        onApply: @escaping (MediaItemsFilter) -> Void = { _ in },
        onClear: @escaping () -> Void = {}) {
     _model = StateObject(wrappedValue: model())
@@ -186,8 +186,3 @@ struct FilterView: View {
   }
 }
 
-struct FilterView_Previews: PreviewProvider {
-  static var previews: some View {
-    FilterView(model: FilterModel(), onApply: { _ in }, onClear: {})
-  }
-}

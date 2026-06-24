@@ -7,6 +7,9 @@
 
 import Foundation
 
+/// Throwaway type used to consume an undecodable array element so a lossy decode can advance.
+private struct LossySkippedElement: Decodable {}
+
 public struct CollectionItemsData: Decodable {
 
   public let collection: Collection?
@@ -40,10 +43,6 @@ extension KeyedDecodingContainer {
   /// any element that fails to decode is skipped instead of throwing and dropping
   /// the entire array. Returns an empty array when the key is absent.
   func decodeLossyArray<T: Decodable>(_ type: T.Type, forKey key: Key) -> [T] {
-    // A throwaway wrapper that decodes a single element via an unkeyed container,
-    // tolerating individual element failures.
-    struct AnyDecodable: Decodable {}
-
     guard contains(key) else { return [] }
     guard var unkeyed = try? nestedUnkeyedContainer(forKey: key) else { return [] }
 
@@ -56,7 +55,7 @@ extension KeyedDecodingContainer {
         result.append(value)
       } else {
         // Element failed to decode: consume it so the loop advances.
-        _ = try? unkeyed.decode(AnyDecodable.self)
+        _ = try? unkeyed.decode(LossySkippedElement.self)
       }
     }
     return result
