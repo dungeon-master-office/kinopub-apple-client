@@ -12,6 +12,8 @@ class FileSaverMock: FileSaving {
 
   var shouldThrowError = false
   var didSaveFileCalled = false
+  var didRemoveFileCalled = false
+  var removedFileURL: URL?
   var savedFileSourceURL: URL?
   var savedFileDestinationURL: URL?
 
@@ -22,6 +24,15 @@ class FileSaverMock: FileSaving {
 
     if shouldThrowError {
       throw NSError(domain: "FileSaverMockErrorDomain", code: 123, userInfo: nil)
+    }
+  }
+
+  func removeFile(at sourceURL: URL) throws {
+    didRemoveFileCalled = true
+    removedFileURL = sourceURL
+
+    if shouldThrowError {
+      throw NSError(domain: "FileSaverMockErrorDomain", code: 124, userInfo: nil)
     }
   }
 

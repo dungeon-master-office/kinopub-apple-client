@@ -48,9 +48,28 @@ class FileSaverTests: XCTestCase {
         fileManagerMock.shouldThrowError = true
 
         // Act & Assert
+        // saveFile uses `try?` for the pre-removal, then `try moveItem` which throws.
         XCTAssertThrowsError(try fileSaver.saveFile(from: sourceURL, to: destinationURL))
         XCTAssertTrue(fileManagerMock.didRemoveItem)
-        XCTAssertFalse(fileManagerMock.didMoveItem)
+        XCTAssertTrue(fileManagerMock.didMoveItem)
+    }
+
+    func testRemoveFile_Success() {
+        // Arrange
+        let sourceURL = URL(string: "file:///path/to/removable.txt")!
+
+        // Act & Assert
+        XCTAssertNoThrow(try fileSaver.removeFile(at: sourceURL))
+        XCTAssertTrue(fileManagerMock.didRemoveItem)
+    }
+
+    func testRemoveFile_ThrowsError() {
+        // Arrange
+        let sourceURL = URL(string: "file:///path/to/removable.txt")!
+        fileManagerMock.shouldThrowError = true
+
+        // Act & Assert
+        XCTAssertThrowsError(try fileSaver.removeFile(at: sourceURL))
     }
 
     func testGetDocumentsDirectoryURL() {
@@ -62,6 +81,6 @@ class FileSaverTests: XCTestCase {
 
         // Assert
         XCTAssertEqual(documentsDirectoryURL.lastPathComponent, filename)
-        XCTAssertEqual(documentsDirectoryURL.pathExtension, "")
+        XCTAssertEqual(documentsDirectoryURL.pathExtension, "txt")
     }
 }

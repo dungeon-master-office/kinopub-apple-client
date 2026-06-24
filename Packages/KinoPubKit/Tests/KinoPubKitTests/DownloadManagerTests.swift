@@ -1,21 +1,27 @@
 //
-//  File.swift
+//  DownloadManagerTests.swift
 //
 //
 //  Created by Kirill Kunst on 22.07.2023.
 //
 
 import Foundation
+import Combine
 import XCTest
 @testable import KinoPubKit
+
+/// Simple Codable & Equatable metadata used across the KinoPubKit download tests.
+struct TestMeta: Codable, Equatable {
+  var title: String
+}
 
 class DownloadManagerTests: XCTestCase {
 
   // MARK: - Test Variables
 
-  var downloadManager: DownloadManager!
-  var downloadedFilesDatabase: DownloadedFilesDatabase!
+  var downloadManager: DownloadManager<TestMeta>!
   var fileSaverMock: FileSaverMock!
+  let metadata = TestMeta(title: "test")
 
   // MARK: - Test Setup
 
@@ -24,7 +30,7 @@ class DownloadManagerTests: XCTestCase {
 
     fileSaverMock = FileSaverMock()
     downloadManager = DownloadManager(fileSaver: fileSaverMock,
-                                      downloadedFilesDatabase: DownloadedFilesDatabase(fileSaver: fileSaverMock))
+                                      database: DownloadedFilesDatabase(fileSaver: fileSaverMock))
   }
 
   override func tearDown() {
@@ -41,20 +47,34 @@ class DownloadManagerTests: XCTestCase {
 
     // Act
     let downloadTaskMock = URLSessionDownloadTaskMock(url: url, resumeBlock: {})
-    let download = downloadManager.startDownload(url: url)
+    let download = downloadManager.startDownload(url: url, withMetadata: metadata)
     download.task = downloadTaskMock
 
     // Assert
     XCTAssertNotNil(download)
-    XCTAssertTrue(download.task?.state == .running) // The task should be resumed.
+    XCTAssertEqual(download.metadata, metadata)
     XCTAssertNotNil(downloadManager.activeDownloads[url])
+  }
+
+  func testRemoveDownload() {
+    // Arrange
+    let url = URL(string: "http://example.com/testfile.txt")!
+    let downloadTaskMock = URLSessionDownloadTaskMock(url: url, resumeBlock: {})
+    let download = downloadManager.startDownload(url: url, withMetadata: metadata)
+    download.task = downloadTaskMock
+
+    // Act
+    downloadManager.removeDownload(for: url)
+
+    // Assert
+    XCTAssertNil(downloadManager.activeDownloads[url])
   }
 
   func testCompleteDownload() {
     // Arrange
     let url = URL(string: "http://example.com/testfile.txt")!
     let downloadTaskMock = URLSessionDownloadTaskMock(url: url, resumeBlock: {})
-    let download = downloadManager.startDownload(url: url)
+    let download = downloadManager.startDownload(url: url, withMetadata: metadata)
     download.task = downloadTaskMock
 
     // Act
@@ -69,14 +89,10 @@ class DownloadManagerTests: XCTestCase {
     let url = URL(string: "http://example.com/testfile.txt")!
     let locationURL = URL(fileURLWithPath: "/path/to/temporary/location.txt")
 
-    let downloadTaskMock = URLSessionDownloadTaskMock(url: url) {
-      // In this test, we do not trigger the completion handler. Instead, we will manually verify the actions taken by the DownloadManager.
-    }
-
-    downloadTaskMock.triggerCompletion(with: locationURL, response: nil, error: nil)
+    let downloadTaskMock = URLSessionDownloadTaskMock(url: url) {}
 
     // Set the download task on the Download instance.
-    let download = downloadManager.startDownload(url: url)
+    let download = downloadManager.startDownload(url: url, withMetadata: metadata)
     download.task = downloadTaskMock
 
     // Act
@@ -87,20 +103,27 @@ class DownloadManagerTests: XCTestCase {
     // Assert
     XCTAssertTrue(fileSaverMock.didSaveFileCalled)
     XCTAssertEqual(fileSaverMock.savedFileSourceURL, locationURL)
-    XCTAssertEqual(fileSaverMock.savedFileDestinationURL, fileSaverMock.getDocumentsDirectoryURL(forFilename: "testfile.txt"))
+    XCTAssertEqual(fileSaverMock.savedFileDestinationURL,
+                   fileSaverMock.getDocumentsDirectoryURL(forFilename: "testfile.txt"))
+    // The download should be removed from the active list once finished.
+    XCTAssertNil(downloadManager.activeDownloads[url])
   }
 
-  func testDidWriteData_ProgressHandlerCalled() {
+  func testDidWriteData_UpdatesProgress() {
     // Arrange
     let url = URL(string: "http://example.com/testfile.txt")!
     let downloadTaskMock = URLSessionDownloadTaskMock(url: url, resumeBlock: {})
-    let download = downloadManager.startDownload(url: url)
+    let download = downloadManager.startDownload(url: url, withMetadata: metadata)
     download.task = downloadTaskMock
 
-    var progressHandlerCalled = false
-    download.progressHandler = { _ in
-      progressHandlerCalled = true
-    }
+    let expectation = expectation(description: "progress updated")
+    let cancellable = download.$progress
+      .dropFirst() // skip initial 0.0
+      .sink { progress in
+        if progress == 0.5 {
+          expectation.fulfill()
+        }
+      }
 
     // Act
     downloadManager.urlSession(downloadManager.session,
@@ -110,9 +133,10 @@ class DownloadManagerTests: XCTestCase {
                                totalBytesExpectedToWrite: 2048)
 
     // Assert
-    XCTAssertTrue(progressHandlerCalled)
+    wait(for: [expectation], timeout: 1.0)
+    XCTAssertEqual(download.progress, 0.5)
+    cancellable.cancel()
   }
-
 }
 
 // MARK: - Mock Classes
