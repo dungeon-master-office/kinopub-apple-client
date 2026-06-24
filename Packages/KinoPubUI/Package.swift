@@ -21,6 +21,9 @@ let package = Package(
       dependencies: [
         .product(name: "KinoPubBackend", package: "KinoPubBackend"),
         .product(name: "SkeletonUI", package: "SkeletonUI")
+      ],
+      resources: [
+        .process("Media.xcassets")
       ]),
     .testTarget(
       name: "KinoPubUITests",
