@@ -22,8 +22,7 @@ struct SidebarNavigationDetail: View {
     case .search:
       search
     case .new:
-      mainCatalog(contentType: .movie, shortcut: .fresh)
-        .id("library-new")
+      home
     case .category(let type):
       mainCatalog(contentType: type, shortcut: .hot)
         .id("library-\(type.rawValue)")
@@ -44,6 +43,12 @@ struct SidebarNavigationDetail: View {
     SearchView(model: SearchModel(itemsService: appContext.contentService,
                                   authState: authState,
                                   errorHandler: errorHandler))
+  }
+
+  var home: some View {
+    HomeView(model: HomeModel(itemsService: appContext.contentService,
+                              authState: authState,
+                              errorHandler: errorHandler))
   }
 
   func mainCatalog(contentType: MediaType, shortcut: MediaShortcut) -> some View {

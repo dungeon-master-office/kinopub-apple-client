@@ -12,7 +12,7 @@ public struct GenresRequest: Endpoint {
   public init() {}
 
   public var path: String {
-    "/v1/countries"
+    "/v1/genres"
   }
 
   public var method: String {

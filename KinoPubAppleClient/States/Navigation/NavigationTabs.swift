@@ -51,7 +51,7 @@ enum SidebarItem: Hashable, Identifiable {
   var title: String {
     switch self {
     case .search: return "Search"
-    case .new: return "New"
+    case .new: return "Home"
     case .category(let type): return type.title
     case .watching: return "Watching"
     case .bookmarks: return "Bookmarks"
@@ -64,7 +64,7 @@ enum SidebarItem: Hashable, Identifiable {
   var systemImage: String {
     switch self {
     case .search: return "magnifyingglass"
-    case .new: return "sparkles"
+    case .new: return "house"
     case .category(let type): return type.systemImage
     case .watching: return "play.tv"
     case .bookmarks: return "bookmark"

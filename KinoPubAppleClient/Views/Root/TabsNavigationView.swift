@@ -62,12 +62,12 @@ struct TabsNavigationView: View {
   }
 
   var mainTab: some View {
-    MainView(catalog: MediaCatalog(itemsService: appContext.contentService,
-                                   authState: authState,
-                                   errorHandler: errorHandler))
+    HomeView(model: HomeModel(itemsService: appContext.contentService,
+                              authState: authState,
+                              errorHandler: errorHandler))
     .tag(NavigationTabs.main)
     .tabItem {
-      Label("Main", systemImage: "house")
+      Label("Home", systemImage: "house")
     }
     .toolbarBackground(Color.KinoPub.background, for: placement)
   }
