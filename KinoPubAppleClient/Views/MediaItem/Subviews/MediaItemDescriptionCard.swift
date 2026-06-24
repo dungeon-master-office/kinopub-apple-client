@@ -14,12 +14,16 @@ struct MediaItemDescriptionCard: View {
   
   var mediaItem: MediaItem
   var isSkeleton: Bool
+  var bookmarkFolders: [Bookmark]
   var onDownload: (DownloadableMediaItem,FileInfo) -> Void
   var onWatchedToggle: () -> Void
+  var onWatchlistToggle: () -> Void
   var onBookmarkHandle: () -> Void
+  var onBookmarkFolderSelect: (Int) -> Void
   @State private var selectedDownloadableItem: DownloadableMediaItem?
   @State private var showDownloadPicker: Bool = false
   @State private var showDownloadableItemPicker: Bool = false
+  @State private var showBookmarkFolderPicker: Bool = false
 
   var body: some View {
     VStack(alignment: .leading) {
@@ -111,15 +115,53 @@ struct MediaItemDescriptionCard: View {
 #if os(macOS)
       .buttonStyle(PlainButtonStyle())
 #endif
-      
-      Button(action: { onBookmarkHandle() }, label: {
-        image(imageName: "folder")
+
+      Button(action: { onWatchlistToggle() }, label: {
+        image(imageName: "text.badge.plus")
       })
 #if os(macOS)
       .buttonStyle(PlainButtonStyle())
 #endif
+
+      Button(action: {
+        onBookmarkHandle()
+        showBookmarkFolderPicker = true
+      }, label: {
+        image(imageName: "folder")
+      })
+      // Picker to select bookmark folder to toggle the item in
+      .confirmationDialog("", isPresented: $showBookmarkFolderPicker, titleVisibility: .hidden) {
+        ForEach(bookmarkFolders) { folder in
+          Button(folder.title) {
+            onBookmarkFolderSelect(folder.id)
+          }
+        }
+      }
+#if os(macOS)
+      .buttonStyle(PlainButtonStyle())
+#endif
+
+      if let imdb = mediaItem.imdb, imdb > 0,
+         let imdbURL = URL(string: "https://www.imdb.com/title/tt\(String(format: "%07d", imdb))/") {
+        Link(destination: imdbURL) {
+          image(imageName: "film")
+        }
+#if os(macOS)
+        .buttonStyle(PlainButtonStyle())
+#endif
+      }
+
+      if let kinopoisk = mediaItem.kinopoisk, kinopoisk > 0,
+         let kinopoiskURL = URL(string: "https://www.kinopoisk.ru/film/\(kinopoisk)/") {
+        Link(destination: kinopoiskURL) {
+          image(imageName: "star.circle")
+        }
+#if os(macOS)
+        .buttonStyle(PlainButtonStyle())
+#endif
+      }
     }
-    
+
   }
   
   func image(imageName: String) -> some View {
@@ -133,7 +175,7 @@ struct MediaItemDescriptionCard: View {
 struct MediaItemDescriptionCard_Previews: PreviewProvider {
   struct Preview: View {
     var body: some View {
-      MediaItemDescriptionCard(mediaItem: MediaItem.mock(), isSkeleton: true, onDownload: { _,_  in }, onWatchedToggle: {}, onBookmarkHandle: {})
+      MediaItemDescriptionCard(mediaItem: MediaItem.mock(), isSkeleton: true, bookmarkFolders: [], onDownload: { _,_  in }, onWatchedToggle: {}, onWatchlistToggle: {}, onBookmarkHandle: {}, onBookmarkFolderSelect: { _ in })
     }
   }
   

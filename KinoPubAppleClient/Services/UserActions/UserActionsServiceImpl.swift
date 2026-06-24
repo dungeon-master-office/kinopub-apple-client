@@ -27,7 +27,23 @@ final class UserActionsServiceImpl: UserActionsService {
   }
   
   func toggleWatching(id: Int, video: Int?, season: Int?) async throws {
-    
+    let request = ToggleWatchingRequest(id: id, video: video ?? 0, season: season)
+    _ = try await apiClient.performRequest(with: request, decodingType: ToggleWatchingResponse.self)
   }
-  
+
+  func toggleWatchlist(id: Int) async throws {
+    let request = ToggleWatchlistRequest(id: id)
+    _ = try await apiClient.performRequest(with: request, decodingType: ToggleWatchingResponse.self)
+  }
+
+  func toggleBookmark(itemId: Int, folderId: Int) async throws {
+    let request = ToggleBookmarkFolderRequest(item: itemId, folder: folderId)
+    _ = try await apiClient.performRequest(with: request, decodingType: EmptyResponseData.self)
+  }
+
+  func fetchBookmarks() async throws -> [Bookmark] {
+    let request = BookmarksRequest()
+    return try await apiClient.performRequest(with: request, decodingType: ArrayData<Bookmark>.self).items
+  }
+
 }

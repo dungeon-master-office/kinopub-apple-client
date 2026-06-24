@@ -39,11 +39,14 @@ struct MediaItemView: View {
         VStack(spacing: 16) {
           headerView
           Grid(horizontalSpacing: 12, verticalSpacing: 12) {
-            MediaItemDescriptionCard(mediaItem: itemModel.mediaItem, 
+            MediaItemDescriptionCard(mediaItem: itemModel.mediaItem,
                                      isSkeleton: !itemModel.itemLoaded,
+                                     bookmarkFolders: itemModel.bookmarkFolders,
                                      onDownload: { itemModel.startDownload(item: $0, file: $1) },
-                                     onWatchedToggle: {},
-                                     onBookmarkHandle: {})
+                                     onWatchedToggle: { itemModel.toggleWatched() },
+                                     onWatchlistToggle: { itemModel.toggleWatchlist() },
+                                     onBookmarkHandle: { itemModel.loadBookmarkFolders() },
+                                     onBookmarkFolderSelect: { itemModel.toggleBookmark(folderId: $0) })
             MediaItemFieldsCard(mediaItem: itemModel.mediaItem, isSkeleton: !itemModel.itemLoaded)
           }
           .containerShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -60,6 +63,7 @@ struct MediaItemView: View {
     #endif
     .task {
       itemModel.fetchData()
+      itemModel.loadBookmarkFolders()
     }
     .handleError(state: $errorHandler.state)
   }

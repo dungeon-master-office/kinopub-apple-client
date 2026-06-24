@@ -13,7 +13,7 @@ public struct ToggleWatchingRequest: Endpoint {
   public var video: Int
   public var season: Int = -1
   
-  init(id: Int, video: Int, season: Int? = nil) {
+  public init(id: Int, video: Int, season: Int? = nil) {
     self.id = id
     self.video = video
     self.season = season ?? -1

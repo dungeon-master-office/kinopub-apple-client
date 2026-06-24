@@ -11,6 +11,9 @@ import KinoPubBackend
 protocol UserActionsService {
   func markWatch(id: Int, time: Int, video: Int?, season: Int?) async throws
   func toggleWatching(id: Int, video: Int?, season: Int?) async throws
+  func toggleWatchlist(id: Int) async throws
+  func toggleBookmark(itemId: Int, folderId: Int) async throws
+  func fetchBookmarks() async throws -> [Bookmark]
   func fetchWatchMark(id: Int, video: Int?, season: Int?) async throws -> WatchData
 }
 
@@ -24,9 +27,21 @@ struct UserActionsServiceMock: UserActionsService {
   }
   
   func toggleWatching(id: Int, video: Int?, season: Int?) async throws {
-    
+
   }
-  
+
+  func toggleWatchlist(id: Int) async throws {
+
+  }
+
+  func toggleBookmark(itemId: Int, folderId: Int) async throws {
+
+  }
+
+  func fetchBookmarks() async throws -> [Bookmark] {
+    []
+  }
+
   func fetchWatchMark(id: Int, video: Int?, season: Int?) async throws -> WatchData {
     WatchData.mock
   }
