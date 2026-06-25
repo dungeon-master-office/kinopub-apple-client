@@ -65,6 +65,7 @@ class PlayerManager: ObservableObject {
   private var watchMode: WatchMode
   private var downloadedFilesDatabase: DownloadedFilesDatabase<DownloadMeta>
   private var rateObservation: NSKeyValueObservation?
+  private var seekObservation: NSKeyValueObservation?
   private var actionsService: UserActionsService
   
   private var fileURL: URL? {
@@ -165,11 +166,21 @@ class PlayerManager: ObservableObject {
     guard let continueTime else {
       return
     }
-    
     let seekTime = CMTime(seconds: continueTime, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
-    player.seek(to: seekTime)
-    
     self.continueTime = nil
+
+    // Seek now if the item is ready; otherwise wait for it to become ready and seek once. Seeking
+    // a not-yet-ready item is silently dropped, which is why resume sometimes "played from start".
+    if player.currentItem?.status == .readyToPlay {
+      player.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
+    } else {
+      seekObservation = player.currentItem?.observe(\.status, options: [.new]) { [weak self] item, _ in
+        guard item.status == .readyToPlay else { return }
+        self?.player.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        self?.seekObservation?.invalidate()
+        self?.seekObservation = nil
+      }
+    }
   }
   
   func cancelContinueWatching() {
