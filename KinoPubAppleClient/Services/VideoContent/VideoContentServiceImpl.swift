@@ -43,6 +43,8 @@ final class VideoContentServiceImpl: VideoContentService {
                                      quality: filter.qualityParams,
                                      conditions: filter.conditionParams,
                                      period: filter.period,
+                                     language: filter.language,
+                                     translation: filter.translation,
                                      page: page)
     let response = try await apiClient.performRequest(with: request,
                                                       decodingType: PaginatedData<MediaItem>.self)

@@ -21,6 +21,8 @@ public struct FilterItemsRequest: Endpoint {
   private var quality: [String]?
   private var conditions: [String]?
   private var period: String?
+  private var language: String?
+  private var translation: String?
   private var page: Int?
 
   public init(contentType: MediaType? = nil,
@@ -35,6 +37,8 @@ public struct FilterItemsRequest: Endpoint {
               quality: [String]? = nil,
               conditions: [String]? = nil,
               period: String? = nil,
+              language: String? = nil,
+              translation: String? = nil,
               page: Int? = nil) {
     self.contentType = contentType
     self.genres = genres
@@ -48,6 +52,8 @@ public struct FilterItemsRequest: Endpoint {
     self.quality = quality
     self.conditions = conditions
     self.period = period
+    self.language = language
+    self.translation = translation
     self.page = page
   }
 
@@ -121,6 +127,16 @@ public struct FilterItemsRequest: Endpoint {
     if let period = period, !period.isEmpty {
       // Best-effort: web "Period" dropdown.
       params["period"] = period
+    }
+
+    if let language = language, !language.isEmpty {
+      // Best-effort: web "Язык" (audio language) dropdown.
+      params["lang"] = language
+    }
+
+    if let translation = translation, !translation.isEmpty {
+      // Best-effort: web "Перевод" (translation type) dropdown.
+      params["translation"] = translation
     }
 
     if let page = page {

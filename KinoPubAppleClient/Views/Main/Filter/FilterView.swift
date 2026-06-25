@@ -119,6 +119,27 @@ struct FilterView: View {
         }
       }
       .pickerStyle(.menu)
+
+      Picker("Language".localized, selection: $model.language) {
+        ForEach(LanguageOption.allCases) { option in
+          Text(option.titleKey.localized).tag(option.rawValue)
+        }
+      }
+      .pickerStyle(.menu)
+
+      Picker("Translation".localized, selection: $model.translation) {
+        ForEach(TranslationOption.allCases) { option in
+          Text(option.titleKey.localized).tag(option.rawValue)
+        }
+      }
+      .pickerStyle(.menu)
+
+      Picker("Age".localized, selection: $model.age) {
+        ForEach(AgeOption.allCases) { option in
+          Text(option.titleKey.localized).tag(option.rawValue)
+        }
+      }
+      .pickerStyle(.menu)
     }
   }
 

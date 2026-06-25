@@ -27,6 +27,8 @@ struct MediaItemsFilter: Equatable, Hashable {
   /// Minimum IMDb rating (0...10), when set.
   var imdbMin: Int?
   var period: String?
+  var language: String?
+  var translation: String?
   var wantHD: Bool = false
   var withoutHD: Bool = false
   var want4K: Bool = false
@@ -38,7 +40,10 @@ struct MediaItemsFilter: Equatable, Hashable {
     if !genres.isEmpty { count += 1 }
     if !countries.isEmpty { count += 1 }
     if year != nil { count += 1 }
+    if age != nil { count += 1 }
     if subtitles != nil { count += 1 }
+    if language != nil { count += 1 }
+    if translation != nil { count += 1 }
     if (kinopoiskMin ?? 0) > 0 { count += 1 }
     if (imdbMin ?? 0) > 0 { count += 1 }
     if period != nil { count += 1 }
@@ -96,6 +101,9 @@ class FilterModel: ObservableObject {
   @Published var subtitles: String = SubtitlesOption.any.rawValue
   @Published var sort: String = SortOption.updated.rawValue
   @Published var period: String = PeriodOption.any.rawValue
+  @Published var age: String = AgeOption.any.rawValue
+  @Published var language: String = LanguageOption.any.rawValue
+  @Published var translation: String = TranslationOption.any.rawValue
 
   @Published var yearFilterEnabled: Bool = false
   @Published var yearMin: Int = 1912
@@ -132,6 +140,9 @@ class FilterModel: ObservableObject {
     sort = filter.sort ?? SortOption.updated.rawValue
     subtitles = filter.subtitles ?? SubtitlesOption.any.rawValue
     period = filter.period ?? PeriodOption.any.rawValue
+    age = filter.age ?? AgeOption.any.rawValue
+    language = filter.language ?? LanguageOption.any.rawValue
+    translation = filter.translation ?? TranslationOption.any.rawValue
     if let year = filter.year {
       yearFilterEnabled = true
       let parts = year.split(separator: "-").compactMap { Int($0) }
@@ -192,12 +203,14 @@ class FilterModel: ObservableObject {
                             genres: genreIds,
                             countries: countryIds,
                             year: year,
-                            age: nil,
+                            age: age == AgeOption.any.rawValue ? nil : age,
                             sort: sort == SortOption.updated.rawValue ? nil : sort,
                             subtitles: subtitles == SubtitlesOption.any.rawValue ? nil : subtitles,
                             kinopoiskMin: kinopoiskFilterEnabled ? kinopoiskMin : nil,
                             imdbMin: imdbFilterEnabled ? imdbMin : nil,
                             period: period == PeriodOption.any.rawValue ? nil : period,
+                            language: language == LanguageOption.any.rawValue ? nil : language,
+                            translation: translation == TranslationOption.any.rawValue ? nil : translation,
                             wantHD: wantHD,
                             withoutHD: withoutHD,
                             want4K: want4K,
@@ -211,6 +224,9 @@ class FilterModel: ObservableObject {
     subtitles = SubtitlesOption.any.rawValue
     sort = SortOption.updated.rawValue
     period = PeriodOption.any.rawValue
+    age = AgeOption.any.rawValue
+    language = LanguageOption.any.rawValue
+    translation = TranslationOption.any.rawValue
     yearFilterEnabled = false
     yearMin = 1912
     yearMax = 2026
@@ -301,6 +317,78 @@ enum PeriodOption: String, CaseIterable, Identifiable {
     case .week: return "Week"
     case .month: return "Month"
     case .year: return "Year"
+    }
+  }
+}
+
+/// Age rating — mirrors the web "Возраст" dropdown (value is the minimum age).
+enum AgeOption: String, CaseIterable, Identifiable {
+  case any = ""
+  case zero = "0"
+  case six = "6"
+  case twelve = "12"
+  case sixteen = "16"
+  case eighteen = "18"
+
+  var id: String { rawValue }
+
+  var titleKey: String { self == .any ? "Any" : "\(rawValue)+" }
+}
+
+/// Audio language — mirrors the web "Язык" dropdown (best-effort param values).
+enum LanguageOption: String, CaseIterable, Identifiable {
+  case any = ""
+  case russian = "rus"
+  case english = "eng"
+  case ukrainian = "ukr"
+  case french = "fra"
+  case german = "ger"
+  case spanish = "spa"
+  case italian = "ita"
+  case portuguese = "por"
+  case japanese = "jpn"
+
+  var id: String { rawValue }
+
+  var titleKey: String {
+    switch self {
+    case .any: return "Any"
+    case .russian: return "Russian language"
+    case .english: return "English language"
+    case .ukrainian: return "Ukrainian language"
+    case .french: return "French language"
+    case .german: return "German language"
+    case .spanish: return "Spanish language"
+    case .italian: return "Italian language"
+    case .portuguese: return "Portuguese language"
+    case .japanese: return "Japanese language"
+    }
+  }
+}
+
+/// Translation type — mirrors the web "Перевод" dropdown (best-effort param values).
+enum TranslationOption: String, CaseIterable, Identifiable {
+  case any = ""
+  case dubbing = "dubbing"
+  case multivoice = "multi"
+  case twovoice = "two"
+  case onevoice = "one"
+  case author = "author"
+  case original = "original"
+  case neural = "neural"
+
+  var id: String { rawValue }
+
+  var titleKey: String {
+    switch self {
+    case .any: return "Any"
+    case .dubbing: return "Dubbing"
+    case .multivoice: return "Multi-voice"
+    case .twovoice: return "Two-voice"
+    case .onevoice: return "One-voice"
+    case .author: return "Author"
+    case .original: return "Original"
+    case .neural: return "Neural"
     }
   }
 }
