@@ -18,25 +18,33 @@ struct SidebarView: View {
   @EnvironmentObject var authState: AuthState
 
   var body: some View {
+    splitView
+      .sheet(isPresented: $authState.shouldShowAuthentication, content: {
+        authSheet
+      })
+      .environmentObject(navigationState)
+      .environmentObject(errorHandler)
+      .task {
+        await authState.check()
+      }
+  }
+
+  private var splitView: some View {
     NavigationSplitView(columnVisibility: $navigationState.columnVisibility) {
       Sidebar(selection: $navigationState.sidebarSelection)
     } detail: {
       SidebarNavigationDetail(selection: $navigationState.sidebarSelection)
-        // Each selection's detail is a NavigationStack with its own path *type* ([MainRoutes],
-        // [DownloadsRoutes], …). Without a stable per-selection identity, switching makes SwiftUI
-        // reconcile the column's old path against the new one and trap with
-        // AnyNavigationPath.Error.comparisonTypeMismatch. The id forces a fresh stack per section.
-        .id(navigationState.sidebarSelection)
     }
+    // Each selection's detail hosts a NavigationStack with its own path *type* ([MainRoutes],
+    // [DownloadsRoutes], [WatchingRoutes], …). NavigationSplitView keeps the detail column's
+    // navigation state itself, so switching sections makes SwiftUI reconcile the previous
+    // section's path against the new one and trap in NavigationColumnState with
+    // AnyNavigationPath.Error.comparisonTypeMismatch. Re-identifying the whole split view per
+    // selection tears down that column state so each section starts with a fresh, correctly-typed
+    // stack. (A detail-only .id is not enough — the column state lives on the split view.)
+    // The auth sheet + .task stay on the stable parent so they don't re-run on every switch.
+    .id(navigationState.sidebarSelection)
     .accentColor(Color.KinoPub.accent)
-    .sheet(isPresented: $authState.shouldShowAuthentication, content: {
-      authSheet
-    })
-    .environmentObject(navigationState)
-    .environmentObject(errorHandler)
-    .task {
-      await authState.check()
-    }
   }
 
   var authSheet: some View {
