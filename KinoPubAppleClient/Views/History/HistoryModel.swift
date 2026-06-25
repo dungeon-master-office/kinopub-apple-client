@@ -68,7 +68,7 @@ class HistoryModel: ObservableObject {
     return order
       .sorted(by: >)
       .map { day in
-        HistorySection(day: day, items: buckets[day]?.map { $0.item } ?? [])
+        HistorySection(day: day, items: buckets[day] ?? [])
       }
   }
 
@@ -137,7 +137,7 @@ class HistoryModel: ObservableObject {
 /// A single day's worth of history entries, used to render a grouped section.
 struct HistorySection: Identifiable {
   let day: Date
-  let items: [MediaItem]
+  let items: [HistoryItem]
 
   var id: Date { day }
 

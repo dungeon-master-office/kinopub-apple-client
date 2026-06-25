@@ -65,36 +65,16 @@ struct HistoryView: View {
   // MARK: - Filter tabs
 
   var filterTabs: some View {
-    ScrollView(.horizontal, showsIndicators: false) {
-      HStack(spacing: 8) {
-        filterPill(title: "All".localized, isSelected: catalog.selectedType == nil) {
-          catalog.selectedType = nil
-        }
-        ForEach(catalog.availableTypes) { type in
-          filterPill(title: type.title.localized, isSelected: catalog.selectedType == type) {
-            catalog.selectedType = type
-          }
-        }
-      }
-      .padding(.horizontal, 20)
-      .padding(.vertical, 10)
-    }
+    FilterChipBar(items: filterItems,
+                  selection: Binding(
+                    get: { catalog.selectedType?.rawValue ?? "all" },
+                    set: { catalog.selectedType = $0 == "all" ? nil : MediaType(rawValue: $0) }
+                  ))
   }
 
-  func filterPill(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-      Text(title)
-        .font(.system(size: 14, weight: .semibold))
-        .foregroundStyle(isSelected ? Color.white : Color.KinoPub.text)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background {
-          Capsule(style: .continuous)
-            .fill(isSelected ? Color.KinoPub.accent : Color.KinoPub.selectionBackground)
-        }
-    }
-    .buttonStyle(.plain)
-    .animation(.easeInOut(duration: 0.15), value: isSelected)
+  private var filterItems: [FilterChipItem] {
+    [FilterChipItem(id: "all", title: "All".localized)]
+      + catalog.availableTypes.map { FilterChipItem(id: $0.rawValue, title: $0.title.localized) }
   }
 
   // MARK: - History list
@@ -126,11 +106,11 @@ struct HistoryView: View {
         ForEach(catalog.groupedSections) { section in
           Section {
             LazyVGrid(columns: gridLayout(width: width), spacing: 24) {
-              ForEach(section.items, id: \.id) { item in
-                NavigationLink(value: HistoryRoutesLinkProvider().link(for: item)) {
-                  HistoryItemCell(mediaItem: item)
+              ForEach(section.items, id: \.uniqueID) { historyItem in
+                NavigationLink(value: HistoryRoutesLinkProvider().link(for: historyItem.item)) {
+                  HistoryItemCell(historyItem: historyItem)
                     .onAppear {
-                      catalog.loadMoreContent(after: item)
+                      catalog.loadMoreContent(after: historyItem.item)
                     }
                 }
                 .buttonStyle(.plain)
@@ -185,7 +165,9 @@ struct HistoryView: View {
 /// (poster + localized/original titles). Built in-app because the shared
 /// `ContentItemView` initializer is not public.
 struct HistoryItemCell: View {
-  let mediaItem: MediaItem
+  let historyItem: HistoryItem
+
+  private var mediaItem: MediaItem { historyItem.item }
 
   var body: some View {
     VStack(alignment: .center, spacing: 8) {
@@ -209,7 +191,8 @@ struct HistoryItemCell: View {
           .lineLimit(1)
           .font(.system(size: 16.0, weight: .medium))
           .foregroundStyle(Color.KinoPub.text)
-        Text(mediaItem.originalTitle)
+        // For series, show the watched season/episode; otherwise the original title.
+        Text(historyItem.episodeSubtitle ?? mediaItem.originalTitle)
           .lineLimit(1)
           .font(.system(size: 14.0, weight: .medium))
           .foregroundStyle(Color.KinoPub.subtitle)

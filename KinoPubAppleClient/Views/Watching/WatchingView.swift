@@ -64,19 +64,15 @@ struct WatchingView: View {
   }
 
   var filterPicker: some View {
-    Picker("", selection: Binding(get: { model.filter },
-                                  set: { model.select(filter: $0) })) {
-      ForEach(WatchingFilter.allCases) { filter in
-        Text(filter.title.localized).tag(filter)
-      }
-    }
-    .pickerStyle(.segmented)
-    .labelsHidden()
-    .frame(maxWidth: 520)
-    .frame(maxWidth: .infinity, alignment: .center)
-    .padding(.horizontal, 16)
-    .padding(.top, 8)
-    .padding(.bottom, 12)
+    FilterChipBar(items: WatchingFilter.allCases.map {
+                    FilterChipItem(id: "\($0.rawValue)", title: $0.title.localized)
+                  },
+                  selection: Binding(
+                    get: { "\(model.filter.rawValue)" },
+                    set: { if let raw = Int($0), let filter = WatchingFilter(rawValue: raw) {
+                      model.select(filter: filter)
+                    } }
+                  ))
   }
 
   @ViewBuilder
