@@ -8,6 +8,7 @@
 import SwiftUI
 import KinoPubBackend
 import KinoPubKit
+import KinoPubUI
 
 struct DownloadsView: View {
   
@@ -91,13 +92,8 @@ struct DownloadsView: View {
   }
   
   var emptyView: some View {
-    VStack {
-      Text("You don't have any downloads yet")
-        .font(Font.KinoPub.subheader)
-        .foregroundStyle(Color.KinoPub.text)
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color.KinoPub.background)
+    EmptyStateView(systemImage: "arrow.down.circle", title: "You don't have any downloads yet".localized)
+      .background(Color.KinoPub.background)
   }
 }
 

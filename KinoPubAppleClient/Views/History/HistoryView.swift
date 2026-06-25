@@ -142,15 +142,7 @@ struct HistoryView: View {
   }
 
   var emptyState: some View {
-    VStack(spacing: 8) {
-      Image(systemName: "clock.arrow.circlepath")
-        .font(.system(size: 42, weight: .light))
-        .foregroundStyle(Color.KinoPub.subtitle)
-      Text("No history yet".localized)
-        .font(.system(size: 16, weight: .medium))
-        .foregroundStyle(Color.KinoPub.subtitle)
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    EmptyStateView(systemImage: "clock.arrow.circlepath", title: "No history yet".localized)
   }
 
   func gridLayout(width: CGFloat) -> [GridItem] {

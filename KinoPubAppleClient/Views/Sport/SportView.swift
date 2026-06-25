@@ -164,18 +164,7 @@ struct SportView: View {
   }
 
   private var emptyState: some View {
-    VStack(spacing: 10) {
-      Spacer()
-      Image(systemName: "sportscourt")
-        .font(.system(size: 44))
-        .foregroundStyle(Color.KinoPub.subtitle)
-      Text("No live broadcasts right now")
-        .font(.system(size: 16, weight: .medium))
-        .foregroundStyle(Color.KinoPub.subtitle)
-        .multilineTextAlignment(.center)
-      Spacer()
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    EmptyStateView(systemImage: "sportscourt", title: "No live broadcasts right now".localized)
   }
 }
 

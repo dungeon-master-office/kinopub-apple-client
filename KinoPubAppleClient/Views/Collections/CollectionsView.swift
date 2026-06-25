@@ -120,18 +120,7 @@ struct CollectionsView: View {
   }
 
   private var emptyState: some View {
-    VStack(spacing: 10) {
-      Spacer()
-      Image(systemName: "rectangle.stack")
-        .font(.system(size: 44))
-        .foregroundStyle(Color.KinoPub.subtitle)
-      Text("No collections yet")
-        .font(.system(size: 16, weight: .medium))
-        .foregroundStyle(Color.KinoPub.subtitle)
-        .multilineTextAlignment(.center)
-      Spacer()
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    EmptyStateView(systemImage: "rectangle.stack", title: "No collections yet".localized)
   }
 }
 
