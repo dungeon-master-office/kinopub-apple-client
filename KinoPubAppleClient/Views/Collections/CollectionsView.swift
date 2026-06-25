@@ -36,12 +36,14 @@ struct CollectionsView: View {
 
   @ViewBuilder
   private var content: some View {
-    VStack(spacing: 0) {
+    // Chips live inside the scroll view so the large title collapses on scroll.
+    ScrollView {
       sortTabs
+        .padding(.bottom, 4)
       if model.isLoading {
-        loading
+        loading.frame(minHeight: 320)
       } else if model.collections.isEmpty {
-        emptyState
+        emptyState.frame(minHeight: 320)
       } else {
         grid
       }
@@ -63,22 +65,20 @@ struct CollectionsView: View {
   }
 
   private var grid: some View {
-    ScrollView {
-      LazyVGrid(columns: gridColumns, spacing: 16) {
-        ForEach(model.collections) { collection in
-          NavigationLink(value: Route.collection(collection)) {
-            CollectionCard(collection: collection)
-              .onAppear {
-                model.loadMoreContent(after: collection)
-              }
-          }
-#if os(macOS)
-          .buttonStyle(.plain)
-#endif
+    LazyVGrid(columns: gridColumns, spacing: 16) {
+      ForEach(model.collections) { collection in
+        NavigationLink(value: Route.collection(collection)) {
+          CollectionCard(collection: collection)
+            .onAppear {
+              model.loadMoreContent(after: collection)
+            }
         }
+#if os(macOS)
+        .buttonStyle(.plain)
+#endif
       }
-      .padding(16)
     }
+    .padding(16)
   }
 
   // MARK: - States

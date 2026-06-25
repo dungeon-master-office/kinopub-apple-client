@@ -24,13 +24,6 @@ struct HistoryView: View {
   var body: some View {
     NavigationStack(path: $navigationState.historyRoutes) {
       historyList
-        // Pin the filter chips below the collapsing large title (don't stack above the scroll view).
-        .safeAreaInset(edge: .top, spacing: 0) {
-          if !catalog.isLoadingSkeleton && !catalog.availableTypes.isEmpty {
-            filterTabs
-              .background(Color.KinoPub.background)
-          }
-        }
       .kinoScreen("History".localized)
       .task {
         await catalog.fetchItems()
@@ -80,6 +73,11 @@ struct HistoryView: View {
 
   func groupedList(width: CGFloat) -> some View {
     ScrollView {
+      // Chips scroll with the content so the large title collapses.
+      if !catalog.availableTypes.isEmpty {
+        filterTabs
+          .padding(.bottom, 4)
+      }
       LazyVStack(spacing: 24, pinnedViews: [.sectionHeaders]) {
         ForEach(catalog.groupedSections) { section in
           Section {

@@ -26,15 +26,16 @@ struct WatchingView: View {
 
   var body: some View {
     NavigationStack(path: $path) {
-      content
-        // Pin the filter chips below the (collapsing) large title instead of stacking them above the
-        // scroll view — so the title collapses on scroll like every other screen.
-        .safeAreaInset(edge: .top, spacing: 0) {
-          if model.tab == .newEpisodes {
-            episodesTypePicker
-              .background(Color.KinoPub.background)
-          }
+      // One scroll view with the chips as the first scrolling element, so the large title collapses
+      // on scroll like every other screen.
+      ScrollView {
+        if model.tab == .newEpisodes {
+          episodesTypePicker
+            .padding(.bottom, 4)
         }
+        gridBody
+      }
+      .refreshable { await model.refresh() }
       .kinoScreen((model.tab == .newEpisodes ? "New episodes" : "Watching").localized)
       .moreBackButton()
       .task {
@@ -42,6 +43,18 @@ struct WatchingView: View {
       }
       .routeDestinations()
       .handleError(state: $errorHandler.state)
+    }
+  }
+
+  @ViewBuilder
+  private var gridBody: some View {
+    if model.isLoading {
+      skeletonGrid
+    } else if model.serials.isEmpty {
+      EmptyStateView(systemImage: "play.tv", title: "No series here yet".localized)
+        .frame(minHeight: 320)
+    } else {
+      serialsGrid
     }
   }
 
@@ -57,52 +70,33 @@ struct WatchingView: View {
                   ))
   }
 
-  @ViewBuilder
-  var content: some View {
-    if model.isLoading {
-      // Same poster-placeholder grid as the catalogs, so the loading skeleton is consistent.
-      skeletonGrid
-    } else if model.serials.isEmpty {
-      EmptyStateView(systemImage: "play.tv", title: "No series here yet".localized)
-    } else {
-      serialsGrid
-    }
-  }
-
   private var gridColumns: [GridItem] {
     [GridItem(.adaptive(minimum: 150), spacing: 16, alignment: .top)]
   }
 
   var serialsGrid: some View {
-    ScrollView {
-      LazyVGrid(columns: gridColumns, spacing: 24) {
-        ForEach(model.serials) { serial in
-          NavigationLink(value: Route.detailsByID(serial.id)) {
-            WatchingSerialView(serial: serial)
-          }
-          #if os(macOS)
-          .buttonStyle(PlainButtonStyle())
-          #endif
+    LazyVGrid(columns: gridColumns, spacing: 24) {
+      ForEach(model.serials) { serial in
+        NavigationLink(value: Route.detailsByID(serial.id)) {
+          WatchingSerialView(serial: serial)
         }
+        #if os(macOS)
+        .buttonStyle(PlainButtonStyle())
+        #endif
       }
-      .padding(.horizontal, 20)
-      .padding(.top, 8)
     }
-    .refreshable {
-      await model.refresh()
-    }
+    .padding(.horizontal, 20)
+    .padding(.top, 8)
   }
 
   private var skeletonGrid: some View {
-    ScrollView {
-      LazyVGrid(columns: gridColumns, spacing: 24) {
-        ForEach(0..<12, id: \.self) { _ in
-          PosterCard.placeholder(width: 150)
-        }
+    LazyVGrid(columns: gridColumns, spacing: 24) {
+      ForEach(0..<12, id: \.self) { _ in
+        PosterCard.placeholder(width: 150)
       }
-      .padding(.horizontal, 20)
-      .padding(.top, 8)
     }
+    .padding(.horizontal, 20)
+    .padding(.top, 8)
   }
 }
 
