@@ -122,8 +122,9 @@ struct HistoryView: View {
   }
 
   func gridLayout(width: CGFloat) -> [GridItem] {
-    let cellSize: CGFloat = width <= 390 ? 150 : 172
-    return [GridItem(.adaptive(minimum: cellSize), spacing: 16, alignment: .top)]
+    // 150 keeps it at 2 columns on every iPhone (the old 172 fell to 1 column at the 393pt width)
+    // while still widening to more columns on iPad via the adaptive layout — matching the other grids.
+    [GridItem(.adaptive(minimum: 150), spacing: 16, alignment: .top)]
   }
 }
 
