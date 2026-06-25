@@ -35,8 +35,10 @@ internal class RequestBuilder {
           request = convertParamsToURL(for: url, request: request, endpoint: endpoint)
           break
         }
-        let bodyData = try? JSONSerialization.data(withJSONObject: parameters)
-        request.httpBody = bodyData
+        // kino.pub is a form/query API (OAuth token + device notify expect form-urlencoded),
+        // never JSON — encode the body accordingly.
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = formURLEncodedBody(from: parameters)
       }
     }
 
@@ -53,5 +55,17 @@ internal class RequestBuilder {
     }
     request.url = components.url
     return request
+  }
+
+  private func formURLEncodedBody(from parameters: [String: Any]) -> Data? {
+    var allowed = CharacterSet.urlQueryAllowed
+    // These are sub-delimiters in a query value and must be escaped in form bodies.
+    allowed.remove(charactersIn: "+&=?")
+    let pairs = parameters.sorted(by: { $0.key < $1.key }).map { (key, value) -> String in
+      let encodedKey = key.addingPercentEncoding(withAllowedCharacters: allowed) ?? key
+      let encodedValue = "\(value)".addingPercentEncoding(withAllowedCharacters: allowed) ?? ""
+      return "\(encodedKey)=\(encodedValue)"
+    }
+    return pairs.joined(separator: "&").data(using: .utf8)
   }
 }

@@ -40,5 +40,7 @@ public struct DeviceNotifyRequest: Endpoint {
     nil
   }
 
-  public var forceSendAsGetParams: Bool { true }
+  // Send title/hardware/software in the form-urlencoded body. kino.pub records device *activity*
+  // for a bare notify, but only applies the device name/specs when they arrive in the POST body.
+  public var forceSendAsGetParams: Bool { false }
 }

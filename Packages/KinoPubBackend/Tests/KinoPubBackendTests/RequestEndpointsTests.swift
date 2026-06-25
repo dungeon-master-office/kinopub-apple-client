@@ -41,13 +41,21 @@ final class RequestEndpointsTests: XCTestCase {
     return dict
   }
 
-  private func bodyDictionary(for endpoint: Endpoint) -> [String: Any] {
+  /// Parses an `application/x-www-form-urlencoded` request body into a dictionary.
+  private func bodyDictionary(for endpoint: Endpoint) -> [String: String] {
     let request = requestBuilder.build(with: endpoint)
-    guard let body = request?.httpBody,
-          let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else {
+    guard let body = request?.httpBody, let string = String(data: body, encoding: .utf8) else {
       return [:]
     }
-    return object
+    var dict = [String: String]()
+    for pair in string.split(separator: "&") {
+      let kv = pair.split(separator: "=", maxSplits: 1)
+      guard kv.count == 2 else { continue }
+      let key = String(kv[0]).removingPercentEncoding ?? String(kv[0])
+      let value = String(kv[1]).removingPercentEncoding ?? String(kv[1])
+      dict[key] = value
+    }
+    return dict
   }
 
   // MARK: - ToggleWatchingRequest
@@ -223,7 +231,7 @@ final class RequestEndpointsTests: XCTestCase {
     let endpoint = GenresRequest()
     let request = requestBuilder.build(with: endpoint)
 
-    XCTAssertEqual(request?.url?.path, "/v1/countries")
+    XCTAssertEqual(request?.url?.path, "/v1/genres")
     XCTAssertEqual(request?.httpMethod, "GET")
   }
 
@@ -265,9 +273,9 @@ final class RequestEndpointsTests: XCTestCase {
     XCTAssertEqual(items["grant_type"], DeviceCodeGrantType.deviceToken.rawValue)
   }
 
-  // MARK: - RefreshTokenRequest (POST -> JSON body)
+  // MARK: - RefreshTokenRequest (POST -> form-urlencoded body)
 
-  func testRefreshTokenRequest_PutsParamsInJSONBodyForPOST() {
+  func testRefreshTokenRequest_PutsParamsInFormBodyForPOST() {
     let endpoint = RefreshTokenRequest(clientID: "client",
                                        clientSecret: "secret",
                                        refreshToken: "refresh")
@@ -276,11 +284,30 @@ final class RequestEndpointsTests: XCTestCase {
 
     XCTAssertEqual(request?.url?.path, "/oauth2/token")
     XCTAssertEqual(request?.httpMethod, "POST")
-    // forceSendAsGetParams == false, so params are serialized in the body.
+    XCTAssertEqual(request?.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
+    // forceSendAsGetParams == false, so params are serialized in the body, not the query.
     XCTAssertNil(request?.url?.query)
-    XCTAssertEqual(body["grant_type"] as? String, "refresh_token")
-    XCTAssertEqual(body["client_id"] as? String, "client")
-    XCTAssertEqual(body["client_secret"] as? String, "secret")
-    XCTAssertEqual(body["refresh_token"] as? String, "refresh")
+    XCTAssertEqual(body["grant_type"], "refresh_token")
+    XCTAssertEqual(body["client_id"], "client")
+    XCTAssertEqual(body["client_secret"], "secret")
+    XCTAssertEqual(body["refresh_token"], "refresh")
+  }
+
+  // MARK: - DeviceNotifyRequest (POST -> form-urlencoded body)
+
+  func testDeviceNotifyRequest_PutsDeviceInfoInFormBody() {
+    let endpoint = DeviceNotifyRequest(title: "Kirill's iPhone",
+                                       hardware: "iPhone (iPhone16,2)",
+                                       software: "iOS 26.0")
+    let request = requestBuilder.build(with: endpoint)
+    let body = bodyDictionary(for: endpoint)
+
+    XCTAssertEqual(request?.url?.path, "/v1/device/notify")
+    XCTAssertEqual(request?.httpMethod, "POST")
+    // Must be in the body (kino.pub ignores notify name/specs sent as query params).
+    XCTAssertNil(request?.url?.query)
+    XCTAssertEqual(body["title"], "Kirill's iPhone")
+    XCTAssertEqual(body["hardware"], "iPhone (iPhone16,2)")
+    XCTAssertEqual(body["software"], "iOS 26.0")
   }
 }
