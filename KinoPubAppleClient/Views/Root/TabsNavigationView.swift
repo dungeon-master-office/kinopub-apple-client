@@ -77,6 +77,10 @@ struct TabsNavigationView: View {
     .onChange(of: networkMonitor.isOnline) { online in
       handleConnectivityChange(online: online)
     }
+    // Tapping a download notification opens Downloads (inside the "Ещё" tab).
+    .onReceive(NotificationCenter.default.publisher(for: .openDownloads)) { _ in
+      selectedTab = .more
+    }
     .sheet(isPresented: $authState.shouldShowAuthentication, content: {
       AuthView(model: AuthModel(authService: appContext.authService,
                                 authState: authState,
@@ -237,6 +241,10 @@ struct MoreView: View {
     }
     .onAppear {
       if !networkMonitor.isOnline, path.isEmpty { path.append(SidebarItem.downloads) }
+    }
+    // Tapping a download notification opens Downloads (TabsNavigationView already switched to this tab).
+    .onReceive(NotificationCenter.default.publisher(for: .openDownloads)) { _ in
+      path = NavigationPath([SidebarItem.downloads])
     }
   }
 

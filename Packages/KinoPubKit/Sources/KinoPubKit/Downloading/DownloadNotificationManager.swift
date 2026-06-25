@@ -10,6 +10,11 @@ import Foundation
 import OSLog
 import KinoPubLogging
 
+public extension Notification.Name {
+  /// Posted when the user taps a download notification, so the UI can open the Downloads screen.
+  static let openDownloads = Notification.Name("com.kinopub.openDownloads")
+}
+
 #if os(iOS)
 import UserNotifications
 
@@ -93,6 +98,16 @@ extension DownloadNotificationManager: UNUserNotificationCenterDelegate {
                                      willPresent notification: UNNotification,
                                      withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
     completionHandler([.banner, .sound])
+  }
+
+  // Tapping a download notification opens the Downloads screen.
+  public func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                     didReceive response: UNNotificationResponse,
+                                     withCompletionHandler completionHandler: @escaping () -> Void) {
+    DispatchQueue.main.async {
+      NotificationCenter.default.post(name: .openDownloads, object: nil)
+    }
+    completionHandler()
   }
 }
 
