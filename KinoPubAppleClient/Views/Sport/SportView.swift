@@ -53,7 +53,7 @@ struct SportView: View {
   @ViewBuilder
   private var content: some View {
     if model.isLoading {
-      loading
+      loadingPlaceholder
     } else if model.channels.isEmpty {
       emptyState
     } else if isWide {
@@ -61,6 +61,71 @@ struct SportView: View {
     } else {
       compactGrid
     }
+  }
+
+  // MARK: - Loading placeholder (no fullscreen spinner)
+
+  /// While channels load, mirror the real layout with redacted tiles/rows, and keep the player
+  /// area as a locked black 16:9 frame instead of a fullscreen loader.
+  @ViewBuilder
+  private var loadingPlaceholder: some View {
+    if isWide {
+      HStack(spacing: 0) {
+        skeletonList
+          .frame(width: 320)
+        Divider()
+        lockedPlayerPlaceholder
+          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+      }
+    } else {
+      ScrollView {
+        LazyVGrid(columns: gridColumns, spacing: 16) {
+          ForEach(0..<12, id: \.self) { _ in skeletonCard }
+        }
+        .padding(16)
+      }
+    }
+  }
+
+  private var skeletonCard: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      RoundedRectangle(cornerRadius: 10, style: .continuous)
+        .fill(Color.KinoPub.skeleton)
+        .aspectRatio(16.0 / 9.0, contentMode: .fit)
+      RoundedRectangle(cornerRadius: 4, style: .continuous)
+        .fill(Color.KinoPub.skeleton)
+        .frame(width: 90, height: 12)
+    }
+    .redacted(reason: .placeholder)
+  }
+
+  private var skeletonList: some View {
+    ScrollView {
+      VStack(spacing: 10) {
+        ForEach(0..<12, id: \.self) { _ in
+          HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+              .fill(Color.KinoPub.skeleton)
+              .frame(width: 60, height: 40)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+              .fill(Color.KinoPub.skeleton)
+              .frame(height: 12)
+            Spacer(minLength: 0)
+          }
+          .padding(.horizontal, 12)
+        }
+      }
+      .padding(.vertical, 10)
+    }
+  }
+
+  private var lockedPlayerPlaceholder: some View {
+    Rectangle()
+      .fill(Color.black)
+      .aspectRatio(16.0 / 9.0, contentMode: .fit)
+      .frame(maxWidth: 900)
+      .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+      .padding(16)
   }
 
   // MARK: - Compact (iPhone): smaller grid, tap opens the modal player
@@ -150,15 +215,6 @@ struct SportView: View {
   }
 
   // MARK: - States
-
-  private var loading: some View {
-    VStack {
-      Spacer()
-      ProgressView().tint(Color.KinoPub.accent)
-      Spacer()
-    }
-    .frame(maxWidth: .infinity)
-  }
 
   private var emptyState: some View {
     EmptyStateView(systemImage: "sportscourt", title: "No live broadcasts right now".localized)

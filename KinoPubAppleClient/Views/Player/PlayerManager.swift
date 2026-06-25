@@ -130,15 +130,29 @@ class PlayerManager: ObservableObject {
   }
   
   func fetchWatchMark() async {
+    // Only media has a resume point (live/trailers don't).
+    guard watchMode == .media else { return }
+
+    var remoteContinueTime: TimeInterval = 0
     do {
       watchMark = try await actionsService.fetchWatchMark(id: playItem.metadata.id, video: playItem.metadata.video, season: playItem.metadata.season)
       if let watchMark {
-        let remoteContinueTime = watchMark.item.videos?.first?.time ?? watchMark.item.seasons?.first?.episodes.first?.time
-        self.continueTime = remoteContinueTime ?? 0 > 0 ? remoteContinueTime : nil
+        remoteContinueTime = watchMark.item.videos?.first?.time ?? watchMark.item.seasons?.first?.episodes.first?.time ?? 0
       }
     } catch {
       Logger.app.error("Failed to fetch watch mark: \(error)")
     }
+
+    // Fall back to the local resume point: a movie/episode watched in-app records its position
+    // locally on every tick, so it resumes even when the server mark lags or the fetch fails.
+    let localContinueTime = AppContext.shared.localProgressStore.allEntries().first {
+      $0.id == playItem.metadata.id
+        && $0.season == playItem.metadata.season
+        && $0.episode == playItem.metadata.video
+    }?.position ?? 0
+
+    let best = max(remoteContinueTime, localContinueTime)
+    continueTime = best > 0 ? best : nil
   }
   
   // MARK: - Continue watching
