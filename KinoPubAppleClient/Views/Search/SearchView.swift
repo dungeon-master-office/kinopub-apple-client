@@ -37,8 +37,7 @@ struct SearchView: View {
         }
       }
       .searchable(text: $model.query, placement: .automatic, prompt: "Shows & Movies")
-      .navigationTitle("Search")
-      .background(Color.KinoPub.background)
+      .kinoScreen("Search".localized)
       .routeDestinations()
       .handleError(state: $errorHandler.state)
     }

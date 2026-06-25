@@ -32,11 +32,7 @@ struct WatchingView: View {
         }
         content
       }
-      .navigationTitle((model.tab == .newEpisodes ? "New episodes" : "Watching").localized)
-      #if !os(macOS)
-      .navigationBarTitleDisplayMode(.large)
-      #endif
-      .background(Color.KinoPub.background)
+      .kinoScreen((model.tab == .newEpisodes ? "New episodes" : "Watching").localized)
       .task {
         await model.fetchItems()
       }

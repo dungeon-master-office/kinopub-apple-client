@@ -88,7 +88,7 @@ struct ProfileView: View {
           .background(Color.KinoPub.background)
         }
       }
-      .navigationTitle("Profile")
+      .kinoScreen("Profile".localized)
       .onAppear(perform: {
         model.fetch()
       })

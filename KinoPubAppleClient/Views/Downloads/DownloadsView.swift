@@ -30,8 +30,7 @@ struct DownloadsView: View {
           downloadsList
         }
       }
-      .navigationTitle("Downloads")
-      .background(Color.KinoPub.background)
+      .kinoScreen("Downloads".localized)
       .routeDestinations()
       .onAppear(perform: {
         catalog.refresh()

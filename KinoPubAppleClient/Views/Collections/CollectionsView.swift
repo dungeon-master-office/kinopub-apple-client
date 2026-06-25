@@ -25,8 +25,7 @@ struct CollectionsView: View {
   var body: some View {
     NavigationStack(path: $navigationState.collectionsRoutes) {
       content
-        .navigationTitle("Collections")
-        .background(Color.KinoPub.background)
+        .kinoScreen("Collections".localized)
         .task { await model.fetchCollections() }
         .refreshable { await model.refresh() }
         .routeDestinations()

@@ -23,8 +23,7 @@ struct BookmarksView: View {
   var body: some View {
     NavigationStack(path: $navigationState.bookmarksRoutes) {
       bookmarksList
-      .navigationTitle("Bookmarks")
-      .background(Color.KinoPub.background)
+      .kinoScreen("Bookmarks".localized)
       .refreshable(action: catalog.refresh)
       .task {
         await catalog.fetchItems()
@@ -50,6 +49,7 @@ struct BookmarksView: View {
                              title: item.localizedTitle,
                              imdbRating: item.imdbRating,
                              kinopoiskRating: item.kinopoiskRating)
+                  .overlay(alignment: .topTrailing) { MediaCardStatusBadge(item: item) }
                 }
                 #if os(macOS)
                 .buttonStyle(.plain)

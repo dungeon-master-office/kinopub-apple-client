@@ -29,8 +29,7 @@ struct HistoryView: View {
         }
         historyList
       }
-      .navigationTitle("History")
-      .background(Color.KinoPub.background)
+      .kinoScreen("History".localized)
       .task {
         await catalog.fetchItems()
       }
@@ -74,7 +73,7 @@ struct HistoryView: View {
       await catalog.refresh()
     }, navigationLinkProvider: { item in
       RouteLinkProvider().link(for: item)
-    })
+    }, statusOverlay: { AnyView(MediaCardStatusBadge(item: $0)) })
   }
 
   func groupedList(width: CGFloat) -> some View {

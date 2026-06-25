@@ -43,7 +43,7 @@ struct MainView: View {
         }
       }
       .searchable(text: $catalog.query, placement: .automatic)
-      .navigationTitle(catalog.title.localized)
+      .kinoScreen(catalog.title.localized)
       .toolbar {
         ToolbarItem(placement: toolbarItemPlacement) {
           Button {
@@ -96,7 +96,7 @@ struct MainView: View {
         await catalog.refresh()
       }, navigationLinkProvider: { item in
         RouteLinkProvider().link(for: item)
-      })
+      }, statusOverlay: { AnyView(MediaCardStatusBadge(item: $0)) })
     }
   }
   
@@ -157,11 +157,10 @@ struct FilteredCatalogView: View {
         await catalog.refresh()
       }, navigationLinkProvider: { item in
         linkProvider.link(for: item)
-      })
+      }, statusOverlay: { AnyView(MediaCardStatusBadge(item: $0)) })
     }
     .searchable(text: $catalog.query, placement: .automatic)
-    .background(Color.KinoPub.background)
-    .navigationTitle(catalog.title.localized)
+    .kinoScreen(catalog.title.localized)
     .toolbar {
       ToolbarItem(placement: toolbarItemPlacement) {
         Button { showShortCutPicker = true } label: {
@@ -238,8 +237,7 @@ struct PersonSearchView: View {
       }
       .padding(16)
     }
-    .background(Color.KinoPub.background)
-    .navigationTitle(title)
+    .kinoScreen(title)
     .task {
       model.preset(query: query, field: field)
     }
