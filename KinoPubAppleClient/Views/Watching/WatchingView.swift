@@ -26,12 +26,15 @@ struct WatchingView: View {
 
   var body: some View {
     NavigationStack(path: $path) {
-      VStack(spacing: 0) {
-        if model.tab == .newEpisodes {
-          episodesTypePicker
+      content
+        // Pin the filter chips below the (collapsing) large title instead of stacking them above the
+        // scroll view — so the title collapses on scroll like every other screen.
+        .safeAreaInset(edge: .top, spacing: 0) {
+          if model.tab == .newEpisodes {
+            episodesTypePicker
+              .background(Color.KinoPub.background)
+          }
         }
-        content
-      }
       .kinoScreen((model.tab == .newEpisodes ? "New episodes" : "Watching").localized)
       .moreBackButton()
       .task {

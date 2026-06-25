@@ -23,12 +23,14 @@ struct HistoryView: View {
 
   var body: some View {
     NavigationStack(path: $navigationState.historyRoutes) {
-      VStack(spacing: 0) {
-        if !catalog.isLoadingSkeleton && !catalog.availableTypes.isEmpty {
-          filterTabs
+      historyList
+        // Pin the filter chips below the collapsing large title (don't stack above the scroll view).
+        .safeAreaInset(edge: .top, spacing: 0) {
+          if !catalog.isLoadingSkeleton && !catalog.availableTypes.isEmpty {
+            filterTabs
+              .background(Color.KinoPub.background)
+          }
         }
-        historyList
-      }
       .kinoScreen("History".localized)
       .task {
         await catalog.fetchItems()
