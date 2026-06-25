@@ -52,6 +52,14 @@ public struct HLSInterruptedDownload: Identifiable, Equatable {
   }
 }
 
+/// Outcome of trying to start an HLS download, so the UI can tell the user exactly what happened.
+public enum HLSDownloadStartResult: Equatable {
+  case started
+  case alreadyDownloading
+  case alreadyDownloaded
+  case failed(String)
+}
+
 /// Stable key used as the task description so we can re-associate background
 /// tasks with their metadata after an app relaunch.
 enum HLSDownloadKey {
@@ -68,6 +76,8 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
   @Published public private(set) var activeDownloads: [HLSActiveDownload] = []
   /// Downloads whose background task didn't survive a force-quit — shown so the user can re-download.
   @Published public private(set) var interrupted: [HLSInterruptedDownload] = []
+  /// Last download failure reason, surfaced to the user so a failed download isn't silent.
+  @Published public var lastError: String?
 
   private let store: HLSDownloadsStore
   /// Maximum desired resolution height (px) used to derive a bitrate cap, or nil
@@ -175,27 +185,32 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
 
   // MARK: - Public API
 
-  /// Starts (or no-ops if already running) an HLS download of `hlsURL` for `meta`.
-  public func startDownload(meta: DownloadMeta, hlsURL: URL) {
+  /// Starts (or no-ops if already running) an HLS download of `hlsURL` for `meta`, returning what
+  /// happened so the caller can tell the user (including *why* it didn't start).
+  @discardableResult
+  public func startDownload(meta: DownloadMeta, hlsURL: URL) -> HLSDownloadStartResult {
     let key = HLSDownloadKey.make(for: meta)
 
     // Already downloading?
     if activeDownloads.contains(where: { $0.id == key }) {
       Logger.kit.debug("[HLS] download already active for key \(key)")
-      return
+      return .alreadyDownloading
     }
     // Already downloaded?
     if store.asset(forId: meta.id, video: meta.metadata.video, season: meta.metadata.season) != nil {
       Logger.kit.debug("[HLS] asset already downloaded for key \(key)")
-      return
+      return .alreadyDownloaded
     }
-    launch(meta: meta, hlsURL: hlsURL, retryCount: 0)
+    return launch(meta: meta, hlsURL: hlsURL, retryCount: 0)
+      ? .started
+      : .failed(lastError ?? "Couldn't start download".localized)
   }
 
   /// Builds and resumes an aggregate download. Attempts 0…maxRetries-2 grab every audio (озвучка) +
   /// subtitle track; the final attempt narrows to the preferred selection (video + default audio) so
   /// a heavily rate-limited title can still complete rather than failing outright.
-  private func launch(meta: DownloadMeta, hlsURL: URL, retryCount: Int) {
+  @discardableResult
+  private func launch(meta: DownloadMeta, hlsURL: URL, retryCount: Int) -> Bool {
     let key = HLSDownloadKey.make(for: meta)
     let asset = AVURLAsset(url: hlsURL)
     let narrow = retryCount >= maxRetries - 1
@@ -227,8 +242,10 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
                                                         options: options.isEmpty ? nil : options) else {
       Logger.kit.error("[HLS] failed to create aggregate download task for key \(key)")
       activeDownloads.removeAll(where: { $0.id == key })
+      lastError = String(format: "Couldn't start downloading “%@” (the server didn't return a valid HLS stream).".localized,
+                         meta.notificationTitle)
       onDownloadFailed?(meta)
-      return
+      return false
     }
 
     task.taskDescription = key
@@ -244,7 +261,9 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
       activeDownloads.append(HLSActiveDownload(id: key, meta: meta, progress: 0))
     }
     task.resume()
+    lastError = nil
     Logger.kit.debug("[HLS] started download for key \(key) (attempt \(retryCount + 1), narrow: \(narrow))")
+    return true
   }
 
   /// Cancels an in-flight download for the given key.
@@ -434,6 +453,8 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
       Logger.kit.error("[HLS] download failed for key \(key): \(error)")
       activeDownloads.removeAll(where: { $0.id == key })
       removePending(key: key)
+      lastError = String(format: "“%@” failed to download: %@".localized,
+                         ctx.meta.notificationTitle, error.localizedDescription)
       onDownloadFailed?(ctx.meta)
       return
     }
@@ -442,6 +463,8 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
     guard let location = ctx.downloadURL else {
       Logger.kit.error("[HLS] download finished but no location for key \(key)")
       removePending(key: key)
+      lastError = String(format: "“%@” failed to download (no file was produced).".localized,
+                         ctx.meta.notificationTitle)
       onDownloadFailed?(ctx.meta)
       return
     }
@@ -487,6 +510,7 @@ public final class HLSAssetDownloadManager: ObservableObject {
 
   @Published public private(set) var activeDownloads: [HLSActiveDownload] = []
   @Published public private(set) var interrupted: [HLSInterruptedDownload] = []
+  @Published public var lastError: String?
 
   public var onDownloadFinished: ((DownloadMeta) -> Void)?
   public var onDownloadFailed: ((DownloadMeta) -> Void)?
@@ -494,8 +518,10 @@ public final class HLSAssetDownloadManager: ObservableObject {
   public init(store: HLSDownloadsStore,
               maxResolutionProvider: @escaping () -> Int? = { nil }) {}
 
-  public func startDownload(meta: DownloadMeta, hlsURL: URL) {
+  @discardableResult
+  public func startDownload(meta: DownloadMeta, hlsURL: URL) -> HLSDownloadStartResult {
     Logger.kit.debug("[HLS] HLS downloads are not supported on this platform; ignoring.")
+    return .failed("HLS downloads are not supported on this platform.")
   }
 
   public func cancelDownload(key: String) {}

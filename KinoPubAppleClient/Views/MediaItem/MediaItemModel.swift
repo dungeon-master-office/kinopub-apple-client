@@ -243,8 +243,16 @@ class MediaItemModel: ObservableObject {
     // Prefer the HLS master so the offline copy keeps full quality + every audio track (озвучка) +
     // subtitles, switchable during playback (mp4 would bake in a single track). macOS falls back to mp4.
     if let hlsURL = URL(string: file.url.hls4) {
-      AppContext.shared.hlsDownloadManager.startDownload(meta: meta, hlsURL: hlsURL)
-      toastMessage = .success("Download started".localized)
+      switch AppContext.shared.hlsDownloadManager.startDownload(meta: meta, hlsURL: hlsURL) {
+      case .started:
+        toastMessage = .success("Download started".localized)
+      case .alreadyDownloading:
+        toastMessage = .info("Already downloading".localized)
+      case .alreadyDownloaded:
+        toastMessage = .info("Already downloaded".localized)
+      case .failed(let reason):
+        toastMessage = .error(reason)
+      }
       return
     }
 #endif

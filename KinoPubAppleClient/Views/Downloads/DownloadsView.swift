@@ -18,6 +18,7 @@ struct DownloadsView: View {
   @StateObject private var catalog: DownloadsCatalog
   @Environment(\.sectionEmbedded) private var sectionEmbedded
   @State private var showStorage = false
+  @State private var errorToast: ToastMessage?
 
   init(catalog: @autoclosure @escaping () -> DownloadsCatalog) {
     _catalog = StateObject(wrappedValue: catalog())
@@ -47,6 +48,10 @@ struct DownloadsView: View {
     })
     .sheet(isPresented: $showStorage, onDismiss: { catalog.refresh() }) {
       StorageBreakdownView()
+    }
+    .toast(message: $errorToast, duration: 5)
+    .onChange(of: catalog.downloadError) { error in
+      if let error { errorToast = .error(error) }
     }
   }
   

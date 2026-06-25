@@ -27,6 +27,8 @@ class DownloadsCatalog: ObservableObject {
   @Published public var hlsInterrupted: [HLSInterruptedDownload] = []
   /// Total on-disk size of all completed downloads (HLS .movpkg + mp4), for the storage footer.
   @Published public var totalBytes: Int64 = 0
+  /// Last HLS download failure reason (mirrored from the manager) so the screen can show it.
+  @Published public var downloadError: String?
 
   private var hlsManager: HLSAssetDownloadManager { AppContext.shared.hlsDownloadManager }
   private var hlsStore: HLSDownloadsStore { AppContext.shared.hlsDownloadsStore }
@@ -70,7 +72,8 @@ class DownloadsCatalog: ObservableObject {
         guard let self else { return }
         self.hlsActive = self.hlsManager.activeDownloads
         self.hlsCompleted = self.hlsStore.readData()
-        self.hlsInterrupted = self.hlsManager.interrupted
+        self.hlsInterrupted = Self.interruptedExcludingCompleted(self.hlsManager.interrupted, completed: self.hlsCompleted)
+        self.downloadError = self.hlsManager.lastError
       })
       .store(in: &cancellables)
     recomputeTotalSize()
