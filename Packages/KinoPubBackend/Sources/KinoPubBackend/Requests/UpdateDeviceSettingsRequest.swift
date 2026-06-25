@@ -50,5 +50,8 @@ public struct UpdateDeviceSettingsRequest: Endpoint {
     nil
   }
 
-  public var forceSendAsGetParams: Bool { true }
+  // Send the settings in the form-urlencoded body (not the query string) — like /v1/device/notify,
+  // kino.pub only applies these when they arrive in the POST body, so query params silently no-op
+  // and the settings appear to "reset" after saving.
+  public var forceSendAsGetParams: Bool { false }
 }

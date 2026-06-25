@@ -170,7 +170,11 @@ struct MediaItemView: View {
     if mediaItem.year > 0 {
       items.append(.init(text: "\(mediaItem.year)", isBadge: false))
     }
-    // Movies show their runtime in the hero; for series the durations live in the info block below.
+    // Year + country in the hero for both movies and series.
+    if let country = mediaItem.countries.first?.title, !country.isEmpty {
+      items.append(.init(text: country, isBadge: false))
+    }
+    // Movies also show their runtime in the hero; for series the durations live in the info block.
     if !mediaItem.isSeries {
       let duration = mediaItem.duration.totalFormatted
       if !duration.isEmpty {
