@@ -22,6 +22,11 @@ struct SidebarView: View {
       Sidebar(selection: $navigationState.sidebarSelection)
     } detail: {
       SidebarNavigationDetail(selection: $navigationState.sidebarSelection)
+        // Each selection's detail is a NavigationStack with its own path *type* ([MainRoutes],
+        // [DownloadsRoutes], …). Without a stable per-selection identity, switching makes SwiftUI
+        // reconcile the column's old path against the new one and trap with
+        // AnyNavigationPath.Error.comparisonTypeMismatch. The id forces a fresh stack per section.
+        .id(navigationState.sidebarSelection)
     }
     .accentColor(Color.KinoPub.accent)
     .sheet(isPresented: $authState.shouldShowAuthentication, content: {
