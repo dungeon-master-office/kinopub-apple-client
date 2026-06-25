@@ -8,7 +8,7 @@
 import Foundation
 import KinoPubBackend
 
-enum NavigationTabs {
+enum NavigationTabs: Hashable {
   case search
   case main
   case sport
@@ -19,6 +19,8 @@ enum NavigationTabs {
   case history
   case downloads
   case profile
+  /// A library category (Movies, Serials, …). Surfaces in the iPhone "More" overflow.
+  case category(MediaType)
 }
 
 /// Sidebar destinations for the iPad / macOS two-column layout.

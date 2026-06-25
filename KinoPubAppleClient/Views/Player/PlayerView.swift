@@ -36,7 +36,8 @@ struct PlayerView: View {
       .onAppear {
         UIApplication.shared.isIdleTimerDisabled = true
         configureAudioSession()
-        AppDelegate.orientationLock = .landscape
+        // Don't force-rotate into landscape on open — let the current orientation stand (the native
+        // player still rotates freely when the user physically turns the device).
         toggleSidebar()
         Task { await playerManager.fetchWatchMark() }
       }

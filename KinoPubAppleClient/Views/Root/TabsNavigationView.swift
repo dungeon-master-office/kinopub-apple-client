@@ -35,14 +35,20 @@ struct TabsNavigationView: View {
   
   var body: some View {
     TabView(selection: $selectedTab) {
+      // Bottom bar (the first four) + system "More" (Еще) for the rest:
+      // Поиск · Я смотрю · Главная (center) · История · Ещё
       searchTab
+      watchingTab
       mainTab
+      historyTab
+      // —— overflow into "Ещё", mirroring the iPad sidebar (incl. the library categories) ——
+      ForEach(SidebarItem.libraryCategories, id: \.self) { type in
+        categoryTab(type)
+      }
       sportTab
       collectionsTab
-      bookmarksTab
       newEpisodesTab
-      watchingTab
-      historyTab
+      bookmarksTab
       downloadsTab
       profileTab
     }
@@ -143,6 +149,24 @@ struct TabsNavigationView: View {
     .tag(NavigationTabs.main)
     .tabItem {
       Label("Home", systemImage: "house")
+    }
+    .toolbarBackground(Color.KinoPub.background, for: placement)
+  }
+
+  /// A library category (Movies, Serials, …) — only surfaced on iPhone via the "More" (Ещё) overflow,
+  /// mirroring the iPad sidebar's Library section.
+  private func categoryTab(_ type: MediaType) -> some View {
+    networkGated {
+      MainView(catalog: MediaCatalog(itemsService: appContext.contentService,
+                                     authState: authState,
+                                     errorHandler: errorHandler,
+                                     contentType: type,
+                                     shortcut: .hot,
+                                     filter: nil))
+    }
+    .tag(NavigationTabs.category(type))
+    .tabItem {
+      Label(type.title, systemImage: type.systemImage)
     }
     .toolbarBackground(Color.KinoPub.background, for: placement)
   }

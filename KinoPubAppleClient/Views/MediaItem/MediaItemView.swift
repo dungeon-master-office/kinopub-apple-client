@@ -16,6 +16,7 @@ struct MediaItemView: View {
 
   @EnvironmentObject var errorHandler: ErrorHandler
   @EnvironmentObject private var navigationState: NavigationState
+  @EnvironmentObject private var libraryState: MediaLibraryStore
   @Environment(\.appContext) private var appContext
 #if os(iOS)
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -106,6 +107,11 @@ struct MediaItemView: View {
     .task {
       itemModel.fetchData()
       itemModel.loadBookmarkFolders()
+    }
+    // Returning from the player: re-read local progress for instant feedback and refetch the
+    // server so the resume button and episode progress bars reflect what was just watched.
+    .onAppear {
+      itemModel.refreshOnReappear()
     }
     // Cache artwork/title locally so a started title can resume in Continue Watching.
     .onChange(of: itemModel.itemLoaded) { loaded in
@@ -209,31 +215,49 @@ struct MediaItemView: View {
 
   @ViewBuilder
   private var heroActions: some View {
-    HStack(spacing: 12) {
-      playButton
-      // Watchlist ("Буду смотреть") is a serials-only feature on kino.pub; for movies use Bookmarks.
-      if mediaItem.isSeries {
-        watchlistButton
-      } else {
-        // Whole-item "watched" applies to movies; series are marked per-episode (long-press).
-        watchedButton
+    if usesSidebarSections {
+      // Wide (iPad/macOS): everything on one row.
+      HStack(spacing: 12) {
+        playButton
+        secondaryActions
       }
-      bookmarkMenu
-      downloadButton
-      if mediaItem.trailer?.url != nil {
-        NavigationLink(value: itemModel.linkProvider.trailerPlayer(for: mediaItem)) {
-          circleIcon("film")
+    } else {
+      // Narrow (iPhone): the play button gets its own full-width row; the circle actions sit below.
+      VStack(spacing: 14) {
+        playButton
+        HStack(spacing: 12) {
+          secondaryActions
+          Spacer(minLength: 0)
         }
-        #if os(macOS)
-        .buttonStyle(.plain)
-        #endif
-        .accessibilityLabel("Trailer")
       }
     }
   }
 
+  @ViewBuilder
+  private var secondaryActions: some View {
+    // Watchlist ("Буду смотреть") is a serials-only feature on kino.pub; for movies use Bookmarks.
+    if mediaItem.isSeries {
+      watchlistButton
+    } else {
+      // Whole-item "watched" applies to movies; series are marked per-episode (long-press).
+      watchedButton
+    }
+    bookmarkMenu
+    downloadButton
+    if mediaItem.trailer?.url != nil {
+      NavigationLink(value: itemModel.linkProvider.trailerPlayer(for: mediaItem)) {
+        circleIcon("film")
+      }
+      #if os(macOS)
+      .buttonStyle(.plain)
+      #endif
+      .accessibilityLabel("Trailer")
+    }
+  }
+
   private var watchlistButton: some View {
-    let inWatchlist = mediaItem.inWatchlist == true
+    // Optimistic client state first, server flag as the fallback.
+    let inWatchlist = libraryState.inWatchlist(itemId: mediaItem.id) ?? (mediaItem.inWatchlist == true)
     return circleIconButton(inWatchlist ? "checkmark" : "plus",
                             accessibility: inWatchlist ? "Remove from Watchlist" : "Add to Watchlist") {
       itemModel.toggleWatchlist()
@@ -250,15 +274,24 @@ struct MediaItemView: View {
 
   @ViewBuilder
   private var bookmarkMenu: some View {
-    if !itemModel.bookmarkFolders.isEmpty {
+    if !libraryState.bookmarkFolders.isEmpty {
       Menu {
-        ForEach(itemModel.bookmarkFolders) { folder in
-          Button(folder.title) {
+        ForEach(libraryState.bookmarkFolders) { folder in
+          let isOn = libraryState.isBookmarked(itemId: mediaItem.id, folderId: folder.id)
+          Button {
             itemModel.toggleBookmark(folderId: folder.id, folderTitle: folder.title)
+          } label: {
+            // A checkmark marks folders this item is already in (was previously write-only/blind).
+            if isOn {
+              Label(folder.title, systemImage: "checkmark")
+            } else {
+              Text(folder.title)
+            }
           }
         }
       } label: {
-        circleIcon("folder")
+        // Fill the icon when the item is in at least one folder.
+        circleIcon(libraryState.isInAnyBookmarkFolder(itemId: mediaItem.id) ? "folder.fill" : "folder")
       }
       #if os(macOS)
       .menuStyle(.borderlessButton)
@@ -272,7 +305,7 @@ struct MediaItemView: View {
     Menu {
       downloadMenu
     } label: {
-      circleIcon("arrow.down.to.line")
+      circleIcon(movieDownloadGlyph)
     }
     .menuIndicator(.hidden)
 #if os(macOS)
@@ -284,16 +317,18 @@ struct MediaItemView: View {
   @ViewBuilder
   private var playButton: some View {
     let title = (hasResume ? "Continue" : (mediaItem.isSeries ? "Watch" : "Play")).localized
+    // On a narrow screen the play button spans the full width on its own row.
+    let fullWidth = !usesSidebarSections
     if mediaItem.isSeries, let episode = seriesPlayEpisode {
       NavigationLink(value: itemModel.linkProvider.player(for: episode)) {
-        playLabel(title, subtitle: resumeSubtitle)
+        playLabel(title, subtitle: resumeSubtitle, fullWidth: fullWidth)
       }
       #if os(macOS)
       .buttonStyle(.plain)
       #endif
     } else {
       NavigationLink(value: itemModel.linkProvider.player(for: mediaItem)) {
-        playLabel(title, subtitle: resumeSubtitle)
+        playLabel(title, subtitle: resumeSubtitle, fullWidth: fullWidth)
       }
       #if os(macOS)
       .buttonStyle(.plain)
@@ -303,15 +338,18 @@ struct MediaItemView: View {
 
   // MARK: - Continue ("Netflix-style") resume logic — shared with Home via MediaItem.continueEpisode()
 
-  /// The series episode to continue (shared logic with the Home shelf).
+  /// The series episode to continue (shared logic with the Home shelf). Falls back to the local
+  /// store so a just-watched episode resumes instantly, before the server refetch lands.
   private var continueTarget: (season: Season, episode: Episode)? {
-    mediaItem.continueEpisode()
+    mediaItem.continueEpisode() ?? itemModel.localSeriesContinue()
   }
 
   /// Whether the play button should read "Continue" rather than "Play"/"Watch".
   private var hasResume: Bool {
     if mediaItem.isSeries { return continueTarget != nil }
-    return (mediaItem.videos?.first?.watching.time ?? 0) > 0
+    let serverTime = mediaItem.videos?.first?.watching.time ?? 0
+    let localTime = itemModel.localResumeSeconds(season: nil, episode: mediaItem.videos?.first?.number)
+    return serverTime > 0 || localTime > 0
   }
 
   /// Episode to start for a series: the continue target if any, else the first episode.
@@ -322,7 +360,7 @@ struct MediaItemView: View {
     return firstPlayableEpisode
   }
 
-  private func playLabel(_ title: String, subtitle: String? = nil) -> some View {
+  private func playLabel(_ title: String, subtitle: String? = nil, fullWidth: Bool = false) -> some View {
     HStack(spacing: 10) {
       Image(systemName: "play.fill")
       VStack(alignment: .leading, spacing: 1) {
@@ -337,6 +375,7 @@ struct MediaItemView: View {
     .foregroundStyle(.white)
     .padding(.horizontal, 22)
     .padding(.vertical, subtitle == nil ? 12 : 8)
+    .frame(maxWidth: fullWidth ? .infinity : nil)
     .background(Capsule().fill(Color.KinoPub.accent))
   }
 
@@ -345,13 +384,13 @@ struct MediaItemView: View {
     guard hasResume else { return nil }
     if mediaItem.isSeries, let target = continueTarget {
       let base = "S\(target.season.number) · E\(target.episode.number)"
-      let time = target.episode.watching.time
+      let time = max(target.episode.watching.time,
+                     itemModel.localResumeSeconds(season: target.season.number, episode: target.episode.number))
       return time > 0 ? "\(base) · \(Self.resumeTime(time))" : base
     }
-    if let time = mediaItem.videos?.first?.watching.time, time > 0 {
-      return Self.resumeTime(time)
-    }
-    return nil
+    let time = max(mediaItem.videos?.first?.watching.time ?? 0,
+                   itemModel.localResumeSeconds(season: nil, episode: mediaItem.videos?.first?.number))
+    return time > 0 ? Self.resumeTime(time) : nil
   }
 
   private static func resumeTime(_ seconds: Int) -> String {
@@ -368,6 +407,34 @@ struct MediaItemView: View {
       .foregroundStyle(.white)
       .frame(width: 50, height: 50)
       .background(Circle().fill(Color.white.opacity(0.18)))
+  }
+
+  /// Download icon glyph for a movie's download button, reflecting the client library state.
+  private var movieDownloadGlyph: String {
+    guard !mediaItem.isSeries else { return "arrow.down.to.line" }
+    switch libraryState.downloadStatus(itemId: mediaItem.id, video: mediaItem.videos?.first?.number, season: nil) {
+    case .downloaded: return "arrow.down.circle.fill"
+    case .downloading: return "arrow.down.circle"
+    case .none: return "arrow.down.to.line"
+    }
+  }
+
+  /// Small badge on an episode card showing whether it's downloaded or downloading.
+  @ViewBuilder
+  private func downloadBadge(itemId: Int, video: Int?, season: Int?) -> some View {
+    switch libraryState.downloadStatus(itemId: itemId, video: video, season: season) {
+    case .downloaded:
+      Image(systemName: "arrow.down.circle.fill")
+        .font(.system(size: 18))
+        .foregroundStyle(.white, Color.KinoPub.accent)
+        .padding(8)
+    case .downloading:
+      ProgressView()
+        .controlSize(.small)
+        .padding(8)
+    case .none:
+      EmptyView()
+    }
   }
 
   private func circleIconButton(_ systemName: String,
@@ -470,7 +537,7 @@ struct MediaItemView: View {
                               overline: "\("Episode".localized) \(episode.number)",
                               title: episode.fixedTitle,
                               footnote: "\(max(episode.duration / 60, 1)) мин",
-                              progress: episodeProgress(episode))
+                              progress: episodeProgress(episode, in: season))
                   .overlay(alignment: .topTrailing) {
                     if itemModel.isEpisodeWatched(episode) {
                       Image(systemName: "checkmark.circle.fill")
@@ -478,6 +545,9 @@ struct MediaItemView: View {
                         .foregroundStyle(.white, Color.KinoPub.accent)
                         .padding(8)
                     }
+                  }
+                  .overlay(alignment: .bottomTrailing) {
+                    downloadBadge(itemId: episode.id, video: episode.number, season: season.number)
                   }
                 }
                 #if os(macOS)
@@ -590,12 +660,16 @@ struct MediaItemView: View {
     return episode
   }
 
-  private func episodeProgress(_ episode: Episode) -> Double? {
+  private func episodeProgress(_ episode: Episode, in season: Season) -> Double? {
     if itemModel.isEpisodeWatched(episode) { return 1.0 }
+    var serverProgress: Double?
     if episode.duration > 0, episode.watching.time > 0 {
-      return min(max(Double(episode.watching.time) / Double(episode.duration), 0.02), 1.0)
+      serverProgress = Double(episode.watching.time) / Double(episode.duration)
     }
-    return nil
+    // Overlay the local resume point so a just-watched episode shows progress instantly.
+    let localProgress = itemModel.localProgressFraction(season: season.number, episode: episode.number)
+    guard let best = [serverProgress, localProgress].compactMap({ $0 }).max() else { return nil }
+    return min(max(best, 0.02), 1.0)
   }
 
   // MARK: - Trailers

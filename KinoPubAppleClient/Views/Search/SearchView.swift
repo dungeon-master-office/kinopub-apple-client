@@ -16,7 +16,6 @@ struct SearchView: View {
   @Environment(\.appContext) var appContext
   @StateObject private var model: SearchModel
 
-  private let browseColumns = [GridItem(.adaptive(minimum: 220), spacing: 16)]
   private let resultsColumns = [GridItem(.adaptive(minimum: 130), spacing: 16)]
 
   init(model: @autoclosure @escaping () -> SearchModel) {
@@ -40,9 +39,6 @@ struct SearchView: View {
       .searchable(text: $model.query, placement: .automatic, prompt: "Shows & Movies")
       .navigationTitle("Search")
       .background(Color.KinoPub.background)
-      .task {
-        await model.loadGenres()
-      }
       .routeDestinations()
       .handleError(state: $errorHandler.state)
     }
@@ -50,14 +46,19 @@ struct SearchView: View {
 
   // MARK: - Discovery (empty query)
 
+  @ViewBuilder
   var discoveryContent: some View {
-    VStack(alignment: .leading, spacing: 24) {
-      if !model.recentItems.isEmpty {
+    if !model.recentItems.isEmpty {
+      VStack(alignment: .leading, spacing: 24) {
         recentSection
       }
-      browseSection
+      .padding(16)
+    } else {
+      EmptyStateView(systemImage: "magnifyingglass",
+                     title: "Search".localized,
+                     message: "Find movies, shows, actors and directors.".localized)
+        .padding(.top, 80)
     }
-    .padding(16)
   }
 
   var recentSection: some View {
@@ -114,36 +115,6 @@ struct SearchView: View {
     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
   }
 
-  var browseSection: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Text("Browse")
-        .font(Font.KinoPub.subheader)
-        .foregroundStyle(Color.KinoPub.text)
-
-      LazyVGrid(columns: browseColumns, spacing: 16) {
-        if model.genres.isEmpty {
-          ForEach(MediaType.allCases) { type in
-            NavigationLink(value: Route.genre(0, type.title)) {
-              BrowseCategoryCard(title: type.title)
-            }
-#if os(macOS)
-            .buttonStyle(.plain)
-#endif
-          }
-        } else {
-          ForEach(model.genres, id: \.id) { genre in
-            NavigationLink(value: Route.genre(genre.id, genre.title)) {
-              BrowseCategoryCard(title: genre.title, imageURL: model.genrePosters[genre.id])
-            }
-#if os(macOS)
-            .buttonStyle(.plain)
-#endif
-          }
-        }
-      }
-    }
-  }
-
   // MARK: - Results (non-empty query)
 
   var resultsContent: some View {
@@ -160,6 +131,7 @@ struct SearchView: View {
           } else {
             NavigationLink(value: Route.details(item)) {
               PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
+                .overlay(alignment: .topTrailing) { MediaCardStatusBadge(item: item) }
             }
 #if os(macOS)
             .buttonStyle(.plain)
