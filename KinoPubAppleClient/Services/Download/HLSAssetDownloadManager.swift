@@ -62,11 +62,13 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
   // Per-running-task state.
   private struct TaskContext {
     let meta: DownloadMeta
-    var loadedTimeRanges: [CMTimeRange] = []
-    var fullRange: CMTimeRange = CMTimeRange()
+    let hlsURL: URL
+    let retryCount: Int
     var downloadURL: URL?      // the .movpkg location handed to us by the delegate
   }
   private var contexts: [Int: TaskContext] = [:]   // keyed by task.taskIdentifier
+  /// kino.pub rate-limits (HTTP 429) aggressive HLS downloads; we retry with backoff this many times.
+  private let maxRetries = 5
 
   public init(store: HLSDownloadsStore,
               maxResolutionProvider: @escaping () -> Int? = { nil }) {
@@ -99,13 +101,19 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
       Logger.kit.debug("[HLS] asset already downloaded for key \(key)")
       return
     }
+    launch(meta: meta, hlsURL: hlsURL, retryCount: 0)
+  }
 
+  /// Builds and resumes an aggregate download. Attempts 0…maxRetries-2 grab every audio (озвучка) +
+  /// subtitle track; the final attempt narrows to the preferred selection (video + default audio) so
+  /// a heavily rate-limited title can still complete rather than failing outright.
+  private func launch(meta: DownloadMeta, hlsURL: URL, retryCount: Int) {
+    let key = HLSDownloadKey.make(for: meta)
     let asset = AVURLAsset(url: hlsURL)
+    let narrow = retryCount >= maxRetries - 1
 
-    // Collect ALL audio + subtitle options so every озвучка / subtitle track is
-    // downloaded and remains switchable offline.
     var mediaSelections: [AVMediaSelection] = []
-    if let baseSelection = asset.preferredMediaSelection.mutableCopy() as? AVMutableMediaSelection {
+    if !narrow, let baseSelection = asset.preferredMediaSelection.mutableCopy() as? AVMutableMediaSelection {
       for characteristic in [AVMediaCharacteristic.audible, .legible] {
         guard let group = asset.mediaSelectionGroup(forMediaCharacteristic: characteristic) else { continue }
         for option in group.options {
@@ -115,13 +123,11 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
         }
       }
     }
-    // Always include at least the preferred selection (video + default tracks).
+    // Always include the preferred selection (video + default tracks).
     mediaSelections.append(asset.preferredMediaSelection)
 
     var options: [String: Any] = [:]
     if let maxResolution = maxResolutionProvider() {
-      // Rough heuristic: ~2 Mbps per 360 lines of height (so 1080p ≈ 6 Mbps).
-      // AVFoundation will pick the highest variant at or below this bitrate.
       let bitrate = max(800_000, (maxResolution / 360) * 2_000_000)
       options[AVAssetDownloadTaskMinimumRequiredMediaBitrateKey] = bitrate
     }
@@ -132,15 +138,20 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
                                                         assetArtworkData: nil,
                                                         options: options.isEmpty ? nil : options) else {
       Logger.kit.error("[HLS] failed to create aggregate download task for key \(key)")
+      activeDownloads.removeAll(where: { $0.id == key })
       onDownloadFailed?(meta)
       return
     }
 
     task.taskDescription = key
-    contexts[task.taskIdentifier] = TaskContext(meta: meta)
-    activeDownloads.append(HLSActiveDownload(id: key, meta: meta, progress: 0))
+    contexts[task.taskIdentifier] = TaskContext(meta: meta, hlsURL: hlsURL, retryCount: retryCount)
+    if let idx = activeDownloads.firstIndex(where: { $0.id == key }) {
+      activeDownloads[idx].progress = 0   // keep the row visible across retries
+    } else {
+      activeDownloads.append(HLSActiveDownload(id: key, meta: meta, progress: 0))
+    }
     task.resume()
-    Logger.kit.debug("[HLS] started download for key \(key)")
+    Logger.kit.debug("[HLS] started download for key \(key) (attempt \(retryCount + 1), narrow: \(narrow))")
   }
 
   /// Cancels an in-flight download for the given key.
@@ -222,19 +233,36 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
     guard let ctx = contexts[id] else { return }
     let key = task.taskDescription ?? HLSDownloadKey.make(for: ctx.meta)
     contexts[id] = nil
-    activeDownloads.removeAll(where: { $0.id == key })
 
     if let error = error as NSError? {
       // Cancellation isn't a "failure" worth notifying about.
       if error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled {
         Logger.kit.debug("[HLS] download cancelled for key \(key)")
+        activeDownloads.removeAll(where: { $0.id == key })
         return
       }
+      // kino.pub rate-limits aggressive HLS downloads (HTTP 429 → CoreMedia -16845). These are
+      // transient: wait with exponential backoff and resume — AVFoundation keeps the partial
+      // .movpkg, and the final retry narrows to the default track so it can finish.
+      let rateLimited = error.code == -16845 || error.localizedDescription.contains("429")
+      if rateLimited, ctx.retryCount < maxRetries {
+        let delays: [UInt64] = [5, 15, 30, 60, 120]
+        let seconds = delays[min(ctx.retryCount, delays.count - 1)]
+        let next = ctx.retryCount + 1
+        Logger.kit.error("[HLS] rate-limited (429) for key \(key); retry \(next + 1) in \(seconds)s")
+        Task { @MainActor [weak self] in
+          try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+          self?.launch(meta: ctx.meta, hlsURL: ctx.hlsURL, retryCount: next)
+        }
+        return  // keep the active row visible while we wait
+      }
       Logger.kit.error("[HLS] download failed for key \(key): \(error)")
+      activeDownloads.removeAll(where: { $0.id == key })
       onDownloadFailed?(ctx.meta)
       return
     }
 
+    activeDownloads.removeAll(where: { $0.id == key })
     guard let location = ctx.downloadURL else {
       Logger.kit.error("[HLS] download finished but no location for key \(key)")
       onDownloadFailed?(ctx.meta)
