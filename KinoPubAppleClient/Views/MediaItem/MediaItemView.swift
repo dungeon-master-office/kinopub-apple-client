@@ -456,9 +456,7 @@ struct MediaItemView: View {
         Menu("\("Season".localized) \(season.number)") {
           seasonDownloadMenu(for: season)
           ForEach(season.episodes, id: \.id) { episode in
-            Menu("S\(season.number)E\(episode.number)") {
-              qualityButtons(for: episodeDownloadable(episode, in: season))
-            }
+            episodeDownloadSubmenu(episode, in: season)
           }
         }
       }
@@ -474,6 +472,28 @@ struct MediaItemView: View {
         qualityButtons(for: movieDownloadable)
       }
     }
+  }
+
+  /// Per-episode entry in the season download menu. Shows the episode name (not just "S1E1") and
+  /// disables itself when that episode is already downloaded or downloading.
+  @ViewBuilder
+  private func episodeDownloadSubmenu(_ episode: Episode, in season: Season) -> some View {
+    let title = episodeMenuTitle(episode, in: season)
+    switch libraryState.downloadStatus(itemId: mediaItem.id, video: episode.number, season: season.number) {
+    case .downloaded:
+      Button { } label: { Label(title, systemImage: "checkmark.circle.fill") }.disabled(true)
+    case .downloading:
+      Button { } label: { Label(title, systemImage: "arrow.down.circle") }.disabled(true)
+    case .none:
+      Menu(title) { qualityButtons(for: episodeDownloadable(episode, in: season)) }
+    }
+  }
+
+  /// "S1E1 · Episode name" (or just "S1E1" when the episode has no distinct title).
+  private func episodeMenuTitle(_ episode: Episode, in season: Season) -> String {
+    let code = "S\(season.number)E\(episode.number)"
+    let name = episode.title.trimmingCharacters(in: .whitespaces)
+    return name.isEmpty ? code : "\(code) · \(name)"
   }
 
   /// "Download whole season" entry: one tap per quality (plus a best-available option) that queues
@@ -538,6 +558,18 @@ struct MediaItemView: View {
     }
   }
 
+  /// Long-press preview for an episode card — the card on a padded background so its rounded corners
+  /// (and the text under the thumbnail) aren't clipped by the context-menu lift.
+  private func episodePreview(_ episode: Episode, in season: Season) -> some View {
+    EpisodeCard(imageURL: episode.thumbnail,
+                overline: "\("Episode".localized) \(episode.number)",
+                title: episode.fixedTitle,
+                footnote: "\(max(episode.duration / 60, 1)) мин",
+                progress: episodeProgress(episode, in: season))
+      .padding(14)
+      .background(Color.KinoPub.background)
+  }
+
   private var firstPlayableEpisode: Episode? {
     guard let season = mediaItem.seasons?.first,
           let episode = season.episodes.first else { return nil }
@@ -583,8 +615,6 @@ struct MediaItemView: View {
                 .buttonStyle(.plain)
                 #endif
                 .id(episode.id)
-                // Keep the long-press lift preview from being clipped by the horizontal ScrollView.
-                .contextMenuPreviewShape(cornerRadius: 12)
                 .contextMenu {
                   Button {
                     itemModel.toggleEpisodeWatched(episode: episode, season: season.number)
@@ -594,6 +624,10 @@ struct MediaItemView: View {
                           systemImage: watched ? "checkmark.circle" : "circle")
                   }
                   episodeDownloadMenu(episode, in: season)
+                } preview: {
+                  // Custom preview: the default lift clips the card's rounded bottom corners (over the
+                  // text). Render the card on its own padded platter so nothing is cut off.
+                  episodePreview(episode, in: season)
                 }
               }
             }
