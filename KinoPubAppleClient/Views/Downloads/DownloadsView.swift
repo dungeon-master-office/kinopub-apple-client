@@ -46,48 +46,60 @@ struct DownloadsView: View {
     })
   }
   
+  private var hasActive: Bool { !catalog.activeDownloads.isEmpty || !catalog.hlsActive.isEmpty }
+  private var hasCompleted: Bool { !catalog.downloadedItems.isEmpty || !catalog.hlsCompleted.isEmpty }
+
   var downloadsList: some View {
     List {
-      activeDownloadsList
-      hlsActiveList
-      hlsInterruptedList
-      downloadedFilesList
-      hlsCompletedList
+      if hasActive {
+        Section {
+          activeDownloadsList
+          hlsActiveList
+        } header: { sectionHeader("Active") }
+      }
+      if !catalog.hlsInterrupted.isEmpty {
+        Section {
+          hlsInterruptedList
+        } header: { sectionHeader("Interrupted") }
+      }
+      if hasCompleted {
+        Section {
+          downloadedFilesList
+          hlsCompletedList
+        } header: { sectionHeader("Downloaded") }
+      }
     }
     .listStyle(.inset)
     .scrollContentBackground(.hidden)
     .background(Color.KinoPub.background)
   }
 
+  /// Floating glass-capsule section header — matches the History sticky headers (Liquid Glass on OS 26).
+  private func sectionHeader(_ key: String) -> some View {
+    Text(key.localized)
+      .font(.system(size: 14, weight: .semibold))
+      .foregroundStyle(Color.KinoPub.text)
+      .textCase(nil)
+      .padding(.horizontal, 14)
+      .padding(.vertical, 7)
+      .glassCapsule()
+      .listRowInsets(EdgeInsets(top: 8, leading: 4, bottom: 6, trailing: 4))
+      .listRowBackground(Color.clear)
+  }
+
   /// Interrupted HLS downloads (force-quit). Tap to re-download; swipe to dismiss + clean up.
-  @ViewBuilder
   var hlsInterruptedList: some View {
-    if !catalog.hlsInterrupted.isEmpty {
-      Section("Interrupted".localized) {
-        ForEach(catalog.hlsInterrupted) { item in
-          Button {
-            catalog.retryHLSInterrupted(item)
-          } label: {
-            HStack(spacing: 12) {
-              DownloadedItemView(mediaItem: item.meta, progress: nil) { _ in }
-              Spacer(minLength: 0)
-              VStack(spacing: 2) {
-                Image(systemName: "arrow.clockwise.circle.fill")
-                  .font(.title2)
-                  .foregroundStyle(Color.KinoPub.accent)
-                Text("Re-download".localized)
-                  .font(.system(size: 11, weight: .medium))
-                  .foregroundStyle(Color.KinoPub.subtitle)
-              }
-            }
-          }
-          .buttonStyle(.plain)
-          .contextMenu { detailLink(for: item.meta) }
-        }
-        .onDelete(perform: { catalog.dismissHLSInterrupted(at: $0) })
-        .listRowBackground(Color.KinoPub.background)
+    ForEach(catalog.hlsInterrupted) { item in
+      Button {
+        catalog.retryHLSInterrupted(item)
+      } label: {
+        DownloadedItemView(mediaItem: item.meta, progress: nil, state: .interrupted) { _ in }
       }
+      .buttonStyle(.plain)
+      .contextMenu { detailLink(for: item.meta) }
     }
+    .onDelete(perform: { catalog.dismissHLSInterrupted(at: $0) })
+    .listRowBackground(Color.KinoPub.background)
   }
 
   /// In-progress HLS downloads (offline, with all tracks/subs). Not navigable until finished.

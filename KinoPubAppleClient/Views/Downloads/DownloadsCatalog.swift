@@ -58,7 +58,7 @@ class DownloadsCatalog: ObservableObject {
     // HLS: completed assets (reconciled against disk) + in-flight downloads.
     self.hlsCompleted = hlsStore.reconcile()
     self.hlsActive = hlsManager.activeDownloads
-    self.hlsInterrupted = hlsManager.interrupted
+    self.hlsInterrupted = Self.interruptedExcludingCompleted(hlsManager.interrupted, completed: self.hlsCompleted)
     cancellables.removeAll()
     // Republish when the HLS manager's downloads change (progress / completion). objectWillChange
     // fires before the change, so read on the next main-queue tick to pick up new values.
@@ -109,6 +109,15 @@ class DownloadsCatalog: ObservableObject {
       hlsStore.remove(hlsCompleted[index])
     }
     hlsCompleted.remove(atOffsets: indexSet)
+  }
+
+  /// A completed download must never also appear as "interrupted" (e.g. a stale pending entry whose
+  /// asset is already on disk) — drop any interrupted item that matches a completed one.
+  private static func interruptedExcludingCompleted(_ interrupted: [HLSInterruptedDownload],
+                                                    completed: [HLSDownloadedAsset]) -> [HLSInterruptedDownload] {
+    interrupted.filter { item in
+      !completed.contains(where: { HLSDownloadsStore.sameItem($0.meta, item.meta) })
+    }
   }
 
   /// Re-download an interrupted HLS item (its background task didn't survive a force-quit).

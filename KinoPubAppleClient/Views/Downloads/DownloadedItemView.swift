@@ -10,13 +10,21 @@ import SwiftUI
 import KinoPubBackend
 import KinoPubUI
 
+public enum DownloadRowState {
+  /// In-progress shows %/pause; finished shows a "downloaded" checkmark.
+  case auto
+  /// Interrupted (force-quit) shows a "re-download" affordance instead of a (false) checkmark.
+  case interrupted
+}
+
 public struct DownloadedItemView: View {
-  
+
   private var mediaItem: DownloadMeta
   private var progress: Float?
   private var fileURL: URL?
   private var speed: Double?
   private var remaining: TimeInterval?
+  private var state: DownloadRowState
   private var onDownloadStateChange: (Bool) -> Void
 
   public init(mediaItem: DownloadMeta,
@@ -24,12 +32,14 @@ public struct DownloadedItemView: View {
               fileURL: URL? = nil,
               speed: Double? = nil,
               remaining: TimeInterval? = nil,
+              state: DownloadRowState = .auto,
               onDownloadStateChange: @escaping (Bool) -> Void) {
     self.mediaItem = mediaItem
     self.progress = progress
     self.fileURL = fileURL
     self.speed = speed
     self.remaining = remaining
+    self.state = state
     self.onDownloadStateChange = onDownloadStateChange
   }
 
@@ -70,11 +80,25 @@ public struct DownloadedItemView: View {
         .padding(.trailing, 16)
       } else {
         Spacer()
-        // Clear "downloaded" indicator for finished files.
-        Image(systemName: "checkmark.circle.fill")
-          .font(.system(size: 20))
-          .foregroundStyle(Color.KinoPub.accent)
+        switch state {
+        case .interrupted:
+          // Force-quit download: offer a re-download instead of a (misleading) checkmark.
+          VStack(spacing: 2) {
+            Image(systemName: "arrow.clockwise.circle.fill")
+              .font(.system(size: 22))
+              .foregroundStyle(.white, Color.KinoPub.accent)
+            Text("Re-download".localized)
+              .font(.system(size: 10, weight: .medium))
+              .foregroundStyle(Color.KinoPub.subtitle)
+          }
           .padding(.trailing, 16)
+        case .auto:
+          // Clear "downloaded" indicator for finished files.
+          Image(systemName: "checkmark.circle.fill")
+            .font(.system(size: 20))
+            .foregroundStyle(Color.KinoPub.accent)
+            .padding(.trailing, 16)
+        }
       }
     }
     .padding(.vertical, 8)
