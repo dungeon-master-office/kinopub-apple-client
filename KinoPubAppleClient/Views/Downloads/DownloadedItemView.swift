@@ -116,10 +116,31 @@ public struct DownloadedItemView: View {
   }()
 
   private var fileSizeString: String? {
-    guard let fileURL,
-          let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-          let bytes = attrs[.size] as? Int64, bytes > 0 else { return nil }
+    guard let fileURL else { return nil }
+    let bytes = Self.byteSize(of: fileURL)
+    guard bytes > 0 else { return nil }
     return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+  }
+
+  /// On-disk size of the download. An mp4 is a single file; an HLS download is a `.movpkg` *bundle*
+  /// (a directory), so `attributesOfItem` returns only the tiny directory entry — we must sum the
+  /// contents to report the real size.
+  private static func byteSize(of url: URL) -> Int64 {
+    let fm = FileManager.default
+    var isDirectory: ObjCBool = false
+    guard fm.fileExists(atPath: url.path, isDirectory: &isDirectory) else { return 0 }
+    guard isDirectory.boolValue else {
+      let attrs = try? fm.attributesOfItem(atPath: url.path)
+      return (attrs?[.size] as? Int64) ?? 0
+    }
+    let keys: [URLResourceKey] = [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .fileSizeKey]
+    guard let enumerator = fm.enumerator(at: url, includingPropertiesForKeys: keys) else { return 0 }
+    var total: Int64 = 0
+    for case let child as URL in enumerator {
+      let values = try? child.resourceValues(forKeys: Set(keys))
+      total += Int64(values?.totalFileAllocatedSize ?? values?.fileAllocatedSize ?? values?.fileSize ?? 0)
+    }
+    return total
   }
   
   var image: some View {
