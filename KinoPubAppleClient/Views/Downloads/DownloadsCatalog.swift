@@ -23,6 +23,8 @@ class DownloadsCatalog: ObservableObject {
   /// Offline HLS downloads (in-progress + completed), accessed via AppContext.shared.
   @Published public var hlsActive: [HLSActiveDownload] = []
   @Published public var hlsCompleted: [HLSDownloadedAsset] = []
+  /// HLS downloads interrupted by a force-quit (can't resume) — offered for re-download.
+  @Published public var hlsInterrupted: [HLSInterruptedDownload] = []
 
   private var hlsManager: HLSAssetDownloadManager { AppContext.shared.hlsDownloadManager }
   private var hlsStore: HLSDownloadsStore { AppContext.shared.hlsDownloadsStore }
@@ -30,7 +32,8 @@ class DownloadsCatalog: ObservableObject {
   var cancellables = [AnyCancellable]()
 
   var isEmpty: Bool {
-    downloadedItems.isEmpty && activeDownloads.isEmpty && hlsActive.isEmpty && hlsCompleted.isEmpty
+    downloadedItems.isEmpty && activeDownloads.isEmpty && hlsActive.isEmpty
+      && hlsCompleted.isEmpty && hlsInterrupted.isEmpty
   }
   
   init(downloadsDatabase: DownloadedFilesDatabase<DownloadMeta>, downloadManager: DownloadManager<DownloadMeta>) {
@@ -55,6 +58,7 @@ class DownloadsCatalog: ObservableObject {
     // HLS: completed assets (reconciled against disk) + in-flight downloads.
     self.hlsCompleted = hlsStore.reconcile()
     self.hlsActive = hlsManager.activeDownloads
+    self.hlsInterrupted = hlsManager.interrupted
     cancellables.removeAll()
     // Republish when the HLS manager's downloads change (progress / completion). objectWillChange
     // fires before the change, so read on the next main-queue tick to pick up new values.
@@ -64,6 +68,7 @@ class DownloadsCatalog: ObservableObject {
         guard let self else { return }
         self.hlsActive = self.hlsManager.activeDownloads
         self.hlsCompleted = self.hlsStore.readData()
+        self.hlsInterrupted = self.hlsManager.interrupted
       })
       .store(in: &cancellables)
     self.activeDownloads.forEach({
@@ -104,6 +109,19 @@ class DownloadsCatalog: ObservableObject {
       hlsStore.remove(hlsCompleted[index])
     }
     hlsCompleted.remove(atOffsets: indexSet)
+  }
+
+  /// Re-download an interrupted HLS item (its background task didn't survive a force-quit).
+  func retryHLSInterrupted(_ item: HLSInterruptedDownload) {
+    hlsManager.retryInterrupted(item.id)
+    hlsInterrupted.removeAll { $0.id == item.id }
+  }
+
+  func dismissHLSInterrupted(at indexSet: IndexSet) {
+    for index in indexSet {
+      hlsManager.dismissInterrupted(hlsInterrupted[index].id)
+    }
+    hlsInterrupted.remove(atOffsets: indexSet)
   }
   
   func toggle(download: Download<DownloadMeta>) {

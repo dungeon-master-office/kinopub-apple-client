@@ -93,7 +93,18 @@ public struct MediaItem: Codable, Hashable {
 
 public extension MediaItem {
   var isSeries: Bool {
-    !(seasons?.isEmpty ?? false)
+    // Drive off the content type — reliable even in list contexts where `seasons` isn't loaded yet.
+    // (The old `!(seasons?.isEmpty ?? false)` returned TRUE for movies, whose `seasons` is nil.)
+    if let mediaType = MediaType(rawValue: type) {
+      switch mediaType {
+      case .serial, .docuserial, .tvshow:
+        return true
+      case .movie, .documovie, .concert, .threeD:
+        return false
+      }
+    }
+    // Unknown type: fall back to whether real seasons are present.
+    return !(seasons?.isEmpty ?? true)
   }
 
   /// Ordered (season, episode) pairs across all seasons.

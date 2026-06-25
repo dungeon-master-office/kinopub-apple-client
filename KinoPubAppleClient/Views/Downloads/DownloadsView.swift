@@ -50,12 +50,44 @@ struct DownloadsView: View {
     List {
       activeDownloadsList
       hlsActiveList
+      hlsInterruptedList
       downloadedFilesList
       hlsCompletedList
     }
     .listStyle(.inset)
     .scrollContentBackground(.hidden)
     .background(Color.KinoPub.background)
+  }
+
+  /// Interrupted HLS downloads (force-quit). Tap to re-download; swipe to dismiss + clean up.
+  @ViewBuilder
+  var hlsInterruptedList: some View {
+    if !catalog.hlsInterrupted.isEmpty {
+      Section("Interrupted".localized) {
+        ForEach(catalog.hlsInterrupted) { item in
+          Button {
+            catalog.retryHLSInterrupted(item)
+          } label: {
+            HStack(spacing: 12) {
+              DownloadedItemView(mediaItem: item.meta, progress: nil) { _ in }
+              Spacer(minLength: 0)
+              VStack(spacing: 2) {
+                Image(systemName: "arrow.clockwise.circle.fill")
+                  .font(.title2)
+                  .foregroundStyle(Color.KinoPub.accent)
+                Text("Re-download".localized)
+                  .font(.system(size: 11, weight: .medium))
+                  .foregroundStyle(Color.KinoPub.subtitle)
+              }
+            }
+          }
+          .buttonStyle(.plain)
+          .contextMenu { detailLink(for: item.meta) }
+        }
+        .onDelete(perform: { catalog.dismissHLSInterrupted(at: $0) })
+        .listRowBackground(Color.KinoPub.background)
+      }
+    }
   }
 
   /// In-progress HLS downloads (offline, with all tracks/subs). Not navigable until finished.
@@ -118,8 +150,11 @@ struct DownloadsView: View {
   /// `DownloadMeta.id` is the series/movie content id, so detailsByID opens the right title.
   @ViewBuilder
   private func detailLink(for meta: DownloadMeta) -> some View {
+    // A series episode always carries a season/episode number; a movie has neither — reliable even
+    // for older saved entries whose `episode` label may be wrong.
+    let isSeries = meta.metadata.season != nil || meta.metadata.video != nil
     NavigationLink(value: Route.detailsByID(meta.id)) {
-      Label(meta.episode != nil ? "Go to Series".localized : "Go to Movie".localized,
+      Label(isSeries ? "Go to Series".localized : "Go to Movie".localized,
             systemImage: "info.circle")
     }
   }
