@@ -28,6 +28,14 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
   /// background URLSession events. Invoked once the session reports it finished delivering events.
   public var backgroundCompletionHandler: (() -> Void)?
 
+  /// Invoked on the main thread when a download finishes successfully. The app uses this to post a
+  /// local notification and to advance season-download groups. Kept generic so KinoPubKit stays
+  /// UI- and platform-agnostic.
+  public var onDownloadFinished: ((_ url: URL, _ metadata: Meta) -> Void)?
+
+  /// Invoked on the main thread when a download fails with an error.
+  public var onDownloadFailed: ((_ url: URL, _ metadata: Meta, _ error: Error) -> Void)?
+
   public init(fileSaver: FileSaving,
               database: DownloadedFilesDatabase<Meta>,
               controlDatabase: DownloadsControlDatabase<Meta>? = nil) {
@@ -123,6 +131,26 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
     guard let sourceURL = downloadTask.originalRequest?.url, let download = activeDownloads[sourceURL] else { return }
     Logger.kit.debug("[DOWNLOAD] Download finished: \(location)")
 
+    // URLSession reports an HTTP error (403 / expired signature / etc.) as a successful "finish" and
+    // hands us the tiny error body. Saving it produced broken ~160-byte "videos", so reject anything
+    // that isn't a 2xx response or is implausibly small for media.
+    if let http = downloadTask.response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+      Logger.kit.error("[DOWNLOAD] HTTP \(http.statusCode) for \(sourceURL) — discarding error body")
+      try? FileManager.default.removeItem(at: location)
+      completeDownload(sourceURL)
+      return
+    }
+    // Only reject when we can actually read a (small) size — a real video is many MB, so anything
+    // under ~100 KB is an error page. If the file's attributes can't be read, fall through and let
+    // the file saver handle it (keeps this mockable in tests).
+    if let attrs = try? FileManager.default.attributesOfItem(atPath: location.path),
+       let fileSize = attrs[.size] as? Int64, fileSize < 100_000 {
+      Logger.kit.error("[DOWNLOAD] file too small (\(fileSize) bytes) for \(sourceURL) — likely an error page, discarding")
+      try? FileManager.default.removeItem(at: location)
+      completeDownload(sourceURL)
+      return
+    }
+
     let destinationURL = fileSaver.getDocumentsDirectoryURL(forFilename: sourceURL.lastPathComponent)
 
     do {
@@ -135,6 +163,8 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       Logger.kit.error("[DOWNLOAD] Error during moving file: \(error)")
     }
 
+    let metadata = download.metadata
+    onMain { self.onDownloadFinished?(sourceURL, metadata) }
     completeDownload(sourceURL)
   }
 
@@ -162,6 +192,11 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
   public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
     if let error = error, let url = task.originalRequest?.url {
       Logger.kit.debug("[DOWNLOAD] Download error for \(url): \(error)")
+      // A cancellation that produced resume data is a pause, not a failure — don't notify the user.
+      let isPause = (error as NSError).code == NSURLErrorCancelled
+      if !isPause, let metadata = activeDownloads[url]?.metadata {
+        onMain { self.onDownloadFailed?(url, metadata, error) }
+      }
       completeDownload(url)
     }
   }
