@@ -302,14 +302,26 @@ struct MediaItemView: View {
   /// last fully-watched one. Nil when there's nothing started / everything is finished.
   private var continueTarget: (season: Season, episode: Episode)? {
     let ordered = orderedEpisodes
-    if let inProgress = ordered.last(where: { $0.episode.watching.time > 0 }) {
-      return inProgress
+    guard let idx = ordered.lastIndex(where: { $0.episode.watching.time > 0 || $0.episode.watched > 0 }) else {
+      return nil
     }
-    if let lastWatched = ordered.lastIndex(where: { $0.episode.watched > 0 }) {
-      let next = lastWatched + 1
+    let entry = ordered[idx]
+    // If that episode is finished (marked watched, or watched to near the end), jump to the next.
+    if entry.episode.watched > 0 || Self.isFinished(entry.episode) {
+      let next = idx + 1
       return next < ordered.count ? ordered[next] : nil
     }
-    return nil
+    return entry
+  }
+
+  /// An episode counts as "finished" once the remaining time is within a small threshold
+  /// (~8% of its length, clamped to 60...180s) — so we offer the next one, not the very end.
+  private static func isFinished(_ episode: Episode) -> Bool {
+    let duration = episode.duration
+    let time = episode.watching.time
+    guard duration > 0, time > 0 else { return false }
+    let threshold = min(max(Int(Double(duration) * 0.08), 60), 180)
+    return time >= duration - threshold
   }
 
   /// Whether the play button should read "Continue" rather than "Play"/"Watch".
@@ -567,7 +579,9 @@ struct MediaItemView: View {
 
   private func episodeProgress(_ episode: Episode) -> Double? {
     if episode.watched > 0 { return 1.0 }
-    if episode.watching.time > 0 { return 0.5 }
+    if episode.duration > 0, episode.watching.time > 0 {
+      return min(max(Double(episode.watching.time) / Double(episode.duration), 0.02), 1.0)
+    }
     return nil
   }
 

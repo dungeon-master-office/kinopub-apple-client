@@ -112,11 +112,38 @@ class FilterModel: ObservableObject {
   @Published var want4K: Bool = false
   @Published var wantAC3: Bool = false
 
+  /// The filter the sheet was opened with, so reopening reflects the applied state.
+  private let initialFilter: MediaItemsFilter?
+
   init(contentType: MediaType = .movie,
-       filterDataService: VideoContentService? = nil) {
+       filterDataService: VideoContentService? = nil,
+       initialFilter: MediaItemsFilter? = nil) {
     self.contentType = contentType
     self.filterDataService = filterDataService
+    self.initialFilter = initialFilter
+    applyInitialScalars()
     Task { await loadOptions() }
+  }
+
+  /// Restores the non-list selections (sort/subtitles/year/ratings/quality) from the
+  /// active filter so the sheet doesn't reset every time it's reopened.
+  private func applyInitialScalars() {
+    guard let filter = initialFilter else { return }
+    sort = filter.sort ?? SortOption.updated.rawValue
+    subtitles = filter.subtitles ?? SubtitlesOption.any.rawValue
+    period = filter.period ?? PeriodOption.any.rawValue
+    if let year = filter.year {
+      yearFilterEnabled = true
+      let parts = year.split(separator: "-").compactMap { Int($0) }
+      yearMin = parts.first ?? yearMin
+      yearMax = parts.count > 1 ? parts[1] : (parts.first ?? yearMax)
+    }
+    if let kp = filter.kinopoiskMin, kp > 0 { kinopoiskFilterEnabled = true; kinopoiskMin = kp }
+    if let imdb = filter.imdbMin, imdb > 0 { imdbFilterEnabled = true; imdbMin = imdb }
+    wantHD = filter.wantHD
+    withoutHD = filter.withoutHD
+    want4K = filter.want4K
+    wantAC3 = filter.wantAC3
   }
 
   /// Loads genres (scoped to the section type) and countries for the pickers.
@@ -132,6 +159,15 @@ class FilterModel: ObservableObject {
     } catch {
       // Country options are optional; fall back to "Any" only.
       Logger.app.debug("filter: fetch countries error: \(error)")
+    }
+    // Now that the lists are loaded, restore the selected genre/country from the active filter.
+    if let filter = initialFilter {
+      if let genreId = filter.genres.first {
+        selectedGenre = genres.first { $0.id == genreId }
+      }
+      if let countryId = filter.countries.first {
+        selectedCountry = countries.first { $0.id == countryId }
+      }
     }
   }
 
@@ -191,43 +227,59 @@ class FilterModel: ObservableObject {
 
 // MARK: - Dropdown option enums (mirror the web filter)
 
-/// Sort field for the catalog (suffix `-` = DESC per kino.pub API).
+/// Sort field for the catalog — mirrors the web "Сортировка" dropdown (suffix `-` = DESC).
 enum SortOption: String, CaseIterable, Identifiable {
   case updated = "updated-"
   case created = "created-"
-  case year = "year-"
-  case title = "title"
   case rating = "rating-"
   case views = "views-"
-  case watchers = "watchers-"
+  case kinopoisk = "kinopoisk_rating-"
+  case imdb = "imdb_rating-"
 
   var id: String { rawValue }
 
   /// Localization key (resolved with `.localized`).
   var titleKey: String {
     switch self {
-    case .updated: return "Date updated"
-    case .created: return "Date created"
-    case .year: return "Year"
-    case .title: return "Title"
-    case .rating: return "Rating"
-    case .views: return "Views"
-    case .watchers: return "Watchers"
+    case .updated: return "By update"
+    case .created: return "Added"
+    case .rating: return "By rating"
+    case .views: return "By views"
+    case .kinopoisk: return "By Kinopoisk"
+    case .imdb: return "By IMDb"
     }
   }
 }
 
-/// Subtitles availability (best-effort param values).
+/// Subtitle language — mirrors the web "Субтитры" dropdown (it's a language list).
 enum SubtitlesOption: String, CaseIterable, Identifiable {
   case any = ""
-  case withSubtitles = "1"
+  case russian = "rus"
+  case english = "eng"
+  case ukrainian = "ukr"
+  case french = "fra"
+  case german = "ger"
+  case spanish = "spa"
+  case italian = "ita"
+  case portuguese = "por"
+  case finnish = "fin"
+  case polish = "pol"
 
   var id: String { rawValue }
 
   var titleKey: String {
     switch self {
     case .any: return "Any"
-    case .withSubtitles: return "With subtitles"
+    case .russian: return "Russian"
+    case .english: return "English"
+    case .ukrainian: return "Ukrainian"
+    case .french: return "French"
+    case .german: return "German"
+    case .spanish: return "Spanish"
+    case .italian: return "Italian"
+    case .portuguese: return "Portuguese"
+    case .finnish: return "Finnish"
+    case .polish: return "Polish"
     }
   }
 }

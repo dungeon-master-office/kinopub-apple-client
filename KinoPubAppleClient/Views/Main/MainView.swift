@@ -64,7 +64,8 @@ struct MainView: View {
       })
       .sheet(isPresented: $showFilterPicker, content: {
         FilterView(model: FilterModel(contentType: catalog.contentType,
-                                      filterDataService: appContext.contentService),
+                                      filterDataService: appContext.contentService,
+                                      initialFilter: catalog.activeFilter),
                    onApply: { filter in
                      catalog.apply(filter: filter)
                    }, onClear: {
@@ -283,7 +284,8 @@ struct PersonSearchView: View {
 
 // MARK: - Toolbar indicators
 
-/// Filter icon with a native-looking count badge when filters are active.
+/// Filter icon with a count badge when filters are active. The trailing/top padding reserves
+/// room so the badge sits inside the toolbar item's bounds and isn't clipped.
 private struct FilterBadgeIcon: View {
   let count: Int
   var body: some View {
@@ -296,9 +298,11 @@ private struct FilterBadgeIcon: View {
             .padding(.horizontal, 4)
             .frame(minWidth: 16, minHeight: 16)
             .background(Circle().fill(Color.KinoPub.accent))
-            .offset(x: 9, y: -9)
+            .offset(x: 7, y: -7)
         }
       }
+      .padding(.top, 8)
+      .padding(.trailing, 8)
   }
 }
 
@@ -312,8 +316,10 @@ private struct SortDotIcon: View {
           Circle()
             .fill(Color.KinoPub.accent)
             .frame(width: 7, height: 7)
-            .offset(x: 5, y: -3)
+            .offset(x: 4, y: -4)
         }
       }
+      .padding(.top, 6)
+      .padding(.trailing, 6)
   }
 }
