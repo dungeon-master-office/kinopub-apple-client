@@ -11,9 +11,14 @@ public struct WatchingSerialsRequest: Endpoint {
 
   // 0 — all unwatched serials with new episodes, 1 — only serials in the watchlist
   private var subscribed: Int?
+  // Content-type sub-filter for the new-episodes tab (serial / docuserial / tvshow),
+  // mirroring the web /media/new-serial-episodes?type=… . Best-effort: when nil the
+  // existing subscribed-only behaviour is unchanged.
+  private var type: String?
 
-  public init(subscribed: Int? = nil) {
+  public init(subscribed: Int? = nil, type: String? = nil) {
     self.subscribed = subscribed
+    self.type = type
   }
 
   public var path: String {
@@ -25,10 +30,14 @@ public struct WatchingSerialsRequest: Endpoint {
   }
 
   public var parameters: [String: Any]? {
-    guard let subscribed = subscribed else {
-      return nil
+    var params: [String: Any] = [:]
+    if let subscribed = subscribed {
+      params["subscribed"] = subscribed
     }
-    return ["subscribed": subscribed]
+    if let type = type {
+      params["type"] = type
+    }
+    return params.isEmpty ? nil : params
   }
 
   public var headers: [String: String]? {

@@ -11,26 +11,43 @@ import OSLog
 import KinoPubLogging
 import Combine
 
-enum WatchingFilter: Int, CaseIterable, Identifiable {
-  // Declaration order drives `allCases` (and thus the segmented control order):
-  // "My Series" first, "New Episodes" second. Raw values stay fixed so they keep
-  // mapping to the `subscribed` API parameter (watchlist = 1, newEpisodes = 0).
-  case watchlist = 1
-  case newEpisodes = 0
+// Top-level tabs of the "Watching" screen, mirroring kino.pub:
+// - newEpisodes: serials with new (unwatched) episodes, with a content-type sub-filter
+// - watchlist: the full list of subscribed serials ("My series")
+enum WatchingTab: String, CaseIterable, Identifiable {
+  case newEpisodes = "new"
+  case watchlist
 
-  var id: Int { rawValue }
+  var id: String { rawValue }
 
   var title: String {
     switch self {
     case .newEpisodes:
-      return "New Episodes"
+      return "New episodes"
     case .watchlist:
-      return "My Series"
+      return "My series"
+    }
+  }
+}
+
+// Content-type sub-tabs shown under "New episodes", mirroring the web
+// /media/new-serial-episodes?type=serial|docuserial|tvshow.
+enum WatchingEpisodesType: String, CaseIterable, Identifiable {
+  case serial
+  case docuserial
+  case tvshow
+
+  var id: String { rawValue }
+
+  var mediaType: MediaType {
+    switch self {
+    case .serial: return .serial
+    case .docuserial: return .docuserial
+    case .tvshow: return .tvshow
     }
   }
 
-  // `subscribed` query parameter: 0 — all unwatched serials with new episodes, 1 — watchlist only
-  var subscribed: Int { rawValue }
+  var title: String { mediaType.title }
 }
 
 @MainActor
@@ -43,12 +60,14 @@ class WatchingModel: ObservableObject {
 
   @Published public var serials: [WatchingSerial] = []
   @Published public var isLoading: Bool = true
-  @Published public var filter: WatchingFilter = .watchlist
+  @Published public var tab: WatchingTab = .newEpisodes
+  @Published public var episodesType: WatchingEpisodesType = .serial
 
   init(itemsService: VideoContentService, authState: AuthState, errorHandler: ErrorHandler) {
     self.contentService = itemsService
     self.authState = authState
     self.errorHandler = errorHandler
+    subscribeForReload()
   }
 
   func fetchItems() async {
@@ -59,7 +78,15 @@ class WatchingModel: ObservableObject {
 
     isLoading = true
     do {
-      let data = try await contentService.fetchWatchingSerials(subscribed: filter.subscribed)
+      let data: ArrayData<WatchingSerial>
+      switch tab {
+      case .newEpisodes:
+        // New-episodes tab: unwatched serials with new episodes, narrowed by content type.
+        data = try await contentService.fetchWatchingSerials(subscribed: 0, type: episodesType.rawValue)
+      case .watchlist:
+        // My-series tab: the full watchlist, all content types.
+        data = try await contentService.fetchWatchingSerials(subscribed: 1, type: nil)
+      }
       serials = data.items
       isLoading = false
     } catch {
@@ -69,13 +96,14 @@ class WatchingModel: ObservableObject {
     }
   }
 
-  func select(filter: WatchingFilter) {
-    guard filter != self.filter else { return }
-    self.filter = filter
-    serials = []
-    Task {
-      await fetchItems()
-    }
+  func select(tab: WatchingTab) {
+    guard tab != self.tab else { return }
+    self.tab = tab
+  }
+
+  func select(episodesType: WatchingEpisodesType) {
+    guard episodesType != self.episodesType else { return }
+    self.episodesType = episodesType
   }
 
   @Sendable @MainActor
@@ -83,6 +111,20 @@ class WatchingModel: ObservableObject {
     errorHandler.reset()
     Logger.app.debug("refetch watching serials")
     await fetchItems()
+  }
+
+  // Refetch whenever the tab or the new-episodes content-type changes.
+  private func subscribeForReload() {
+    Publishers.Merge(
+      $tab.removeDuplicates().map { _ in () },
+      $episodesType.removeDuplicates().map { _ in () }
+    )
+    .dropFirst()
+    .sink { [weak self] _ in
+      self?.serials = []
+      Task { await self?.fetchItems() }
+    }
+    .store(in: &bag)
   }
 
   private func subscribeForAuth() {

@@ -24,7 +24,10 @@ struct WatchingView: View {
   var body: some View {
     NavigationStack(path: $navigationState.watchingRoutes) {
       VStack(spacing: 0) {
-        filterPicker
+        tabPicker
+        if model.tab == .newEpisodes {
+          episodesTypePicker
+        }
         content
       }
       .navigationTitle("Watching".localized)
@@ -63,14 +66,26 @@ struct WatchingView: View {
     }
   }
 
-  var filterPicker: some View {
-    FilterChipBar(items: WatchingFilter.allCases.map {
-                    FilterChipItem(id: "\($0.rawValue)", title: $0.title.localized)
+  var tabPicker: some View {
+    FilterChipBar(items: WatchingTab.allCases.map {
+                    FilterChipItem(id: $0.rawValue, title: $0.title.localized)
                   },
                   selection: Binding(
-                    get: { "\(model.filter.rawValue)" },
-                    set: { if let raw = Int($0), let filter = WatchingFilter(rawValue: raw) {
-                      model.select(filter: filter)
+                    get: { model.tab.rawValue },
+                    set: { if let tab = WatchingTab(rawValue: $0) {
+                      model.select(tab: tab)
+                    } }
+                  ))
+  }
+
+  var episodesTypePicker: some View {
+    FilterChipBar(items: WatchingEpisodesType.allCases.map {
+                    FilterChipItem(id: $0.rawValue, title: $0.title.localized)
+                  },
+                  selection: Binding(
+                    get: { model.episodesType.rawValue },
+                    set: { if let type = WatchingEpisodesType(rawValue: $0) {
+                      model.select(episodesType: type)
                     } }
                   ))
   }
@@ -83,11 +98,7 @@ struct WatchingView: View {
         .tint(Color.KinoPub.accent)
       Spacer()
     } else if model.serials.isEmpty {
-      Spacer()
-      Text("No series here yet")
-        .font(.system(size: 16.0, weight: .medium))
-        .foregroundStyle(Color.KinoPub.subtitle)
-      Spacer()
+      EmptyStateView(systemImage: "play.tv", title: "No series here yet".localized)
     } else {
       serialsGrid
     }
