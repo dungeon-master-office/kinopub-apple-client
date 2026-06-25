@@ -25,7 +25,7 @@ struct HomeView: View {
   }
 
   var body: some View {
-    NavigationStack(path: $navigationState.mainRoutes) {
+    NavigationStack(path: $navigationState.homeRoutes) {
       ScrollView(.vertical) {
         LazyVStack(alignment: .leading, spacing: 28) {
           heroSection
@@ -191,7 +191,7 @@ struct HomeView: View {
   private func shelfView(_ shelf: HomeModel.Shelf) -> some View {
     MediaShelf(title: shelf.title,
                onHeaderTap: shelf.filter.map { filter in
-                 { navigationState.mainRoutes.append(.filteredCatalog(filter, shelf.title)) }
+                 { navigationState.homeRoutes.append(.filteredCatalog(filter, shelf.title)) }
                }) {
       ForEach(shelf.items) { item in
         NavigationLink(value: MainRoutes.details(item)) {

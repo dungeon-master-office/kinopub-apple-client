@@ -17,6 +17,9 @@ struct MainView: View {
   @StateObject private var catalog: MediaCatalog
   @State private var showShortCutPicker: Bool = false
   @State private var showFilterPicker: Bool = false
+  // Local path: each category catalog owns its navigation so two stacks never share a binding
+  // (sharing navigationState.mainRoutes with Home crashed when switching sidebar sections).
+  @State private var path: [MainRoutes] = []
   
   init(catalog: @autoclosure @escaping () -> MediaCatalog) {
     _catalog = StateObject(wrappedValue: catalog())
@@ -31,7 +34,7 @@ struct MainView: View {
   }
   
   var body: some View {
-    NavigationStack(path: $navigationState.mainRoutes) {
+    NavigationStack(path: $path) {
       VStack {
         if catalog.items.isEmpty && !catalog.query.isEmpty {
           emptyView
