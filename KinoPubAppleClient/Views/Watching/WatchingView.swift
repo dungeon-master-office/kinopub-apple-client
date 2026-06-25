@@ -33,6 +33,7 @@ struct WatchingView: View {
         content
       }
       .kinoScreen((model.tab == .newEpisodes ? "New episodes" : "Watching").localized)
+      .moreBackButton()
       .task {
         await model.fetchItems()
       }

@@ -42,6 +42,7 @@ struct SportView: View {
     NavigationStack(path: $path) {
       content
         .kinoScreen("Sport".localized)
+        .moreBackButton()
         .task { await model.fetchChannels() }
         .refreshable { await model.refresh() }
         .routeDestinations()

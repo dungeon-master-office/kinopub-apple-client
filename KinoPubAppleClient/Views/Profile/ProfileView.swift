@@ -89,6 +89,7 @@ struct ProfileView: View {
         }
       }
       .kinoScreen("Profile".localized)
+      .moreBackButton()
       .onAppear(perform: {
         model.fetch()
       })

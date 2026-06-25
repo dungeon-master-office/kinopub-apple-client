@@ -31,6 +31,7 @@ struct DownloadsView: View {
         }
       }
       .kinoScreen("Downloads".localized)
+      .moreBackButton()
       .routeDestinations()
       .onAppear(perform: {
         catalog.refresh()

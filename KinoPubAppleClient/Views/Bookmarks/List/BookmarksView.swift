@@ -24,6 +24,7 @@ struct BookmarksView: View {
     NavigationStack(path: $navigationState.bookmarksRoutes) {
       bookmarksList
       .kinoScreen("Bookmarks".localized)
+      .moreBackButton()
       .refreshable(action: catalog.refresh)
       .task {
         await catalog.fetchItems()

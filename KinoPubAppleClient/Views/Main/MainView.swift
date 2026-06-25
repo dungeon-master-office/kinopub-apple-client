@@ -44,6 +44,7 @@ struct MainView: View {
       }
       .searchable(text: $catalog.query, placement: .automatic)
       .kinoScreen(catalog.title.localized)
+      .moreBackButton()
       .toolbar {
         ToolbarItem(placement: toolbarItemPlacement) {
           Button {
@@ -161,6 +162,7 @@ struct FilteredCatalogView: View {
     }
     .searchable(text: $catalog.query, placement: .automatic)
     .kinoScreen(catalog.title.localized)
+    .moreBackButton()
     .toolbar {
       ToolbarItem(placement: toolbarItemPlacement) {
         Button { showShortCutPicker = true } label: {

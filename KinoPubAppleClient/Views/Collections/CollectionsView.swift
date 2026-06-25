@@ -26,6 +26,7 @@ struct CollectionsView: View {
     NavigationStack(path: $navigationState.collectionsRoutes) {
       content
         .kinoScreen("Collections".localized)
+        .moreBackButton()
         .task { await model.fetchCollections() }
         .refreshable { await model.refresh() }
         .routeDestinations()

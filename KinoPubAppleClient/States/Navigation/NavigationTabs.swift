@@ -19,7 +19,9 @@ enum NavigationTabs: Hashable {
   case history
   case downloads
   case profile
-  /// A library category (Movies, Serials, …). Surfaces in the iPhone "More" overflow.
+  /// The custom iPhone "Ещё" tab (hosts everything the iPad sidebar has).
+  case more
+  /// A library category (Movies, Serials, …).
   case category(MediaType)
 }
 
