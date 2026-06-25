@@ -11,11 +11,17 @@ import KinoPubLogging
 
 public protocol DownloadManaging {
   associatedtype Meta: Codable & Equatable
-  
+
   var session: URLSession { get }
   func startDownload(url: URL, withMetadata metadata: Meta) -> Download<Meta>
   func removeDownload(for url: URL)
   func completeDownload(_ url: URL)
+}
+
+/// Lets a download's metadata supply a human-readable base filename (no extension), so saved files
+/// read like "Бесстыжие S10E1 (480p).mp4" in the Files app instead of an opaque CDN hash.
+public protocol DownloadFileNaming {
+  var downloadFileBaseName: String? { get }
 }
 
 public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDownloadDelegate, DownloadManaging {
@@ -151,13 +157,22 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       return
     }
 
-    let destinationURL = fileSaver.getDocumentsDirectoryURL(forFilename: sourceURL.lastPathComponent)
+    // Prefer a human-readable filename (keeps the source extension); fall back to the URL's last path
+    // component. This is what shows in the Files app.
+    let filename: String = {
+      let ext = sourceURL.pathExtension
+      if let base = (download.metadata as? DownloadFileNaming)?.downloadFileBaseName, !base.isEmpty {
+        return ext.isEmpty ? base : "\(base).\(ext)"
+      }
+      return sourceURL.lastPathComponent
+    }()
+    let destinationURL = fileSaver.getDocumentsDirectoryURL(forFilename: filename)
 
     do {
       try fileSaver.saveFile(from: location, to: destinationURL)
-      Logger.kit.info("[DOWNLOAD] File: \(location) moved to documents folder")
+      Logger.kit.info("[DOWNLOAD] File: \(location) moved to documents folder as \(filename)")
 
-      let fileInfo = DownloadedFileInfo(originalURL: sourceURL, localFilename: sourceURL.lastPathComponent, downloadDate: Date(), metadata: download.metadata)
+      let fileInfo = DownloadedFileInfo(originalURL: sourceURL, localFilename: filename, downloadDate: Date(), metadata: download.metadata)
       database.save(fileInfo: fileInfo)
     } catch {
       Logger.kit.error("[DOWNLOAD] Error during moving file: \(error)")

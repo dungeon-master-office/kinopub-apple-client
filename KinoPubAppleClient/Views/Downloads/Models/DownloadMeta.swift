@@ -7,6 +7,7 @@
 
 import Foundation
 import KinoPubBackend
+import KinoPubKit
 
 public struct DownloadMeta: PlayableItem, Codable, Equatable {
   public var id: Int
@@ -23,7 +24,30 @@ public struct DownloadMeta: PlayableItem, Codable, Equatable {
   public var episode: String?
 }
 
+extension DownloadMeta: DownloadFileNaming {
+  /// Human-readable base filename for the saved file, e.g. "Бесстыжие S10E1 (480p)".
+  public var downloadFileBaseName: String? {
+    var name = localizedTitle
+    if let episode, !episode.isEmpty { name += " \(episode)" }
+    if let quality, !quality.isEmpty { name += " (\(quality))" }
+    // Strip characters that are illegal / awkward in a filename.
+    let cleaned = name
+      .components(separatedBy: CharacterSet(charactersIn: "/\\:?%*|\"<>"))
+      .joined(separator: " ")
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    return cleaned.isEmpty ? nil : cleaned
+  }
+}
+
 extension DownloadMeta {
+  /// Human-readable label for download notifications, e.g. "S1E3 · Title" or just "Title".
+  var notificationTitle: String {
+    [episode, localizedTitle]
+      .compactMap { $0 }
+      .filter { !$0.isEmpty }
+      .joined(separator: " · ")
+  }
+
   static func make(from item: DownloadableMediaItem, quality: String? = nil) -> DownloadMeta {
     return DownloadMeta(id: item.mediaItem.id,
                         files: item.files,
