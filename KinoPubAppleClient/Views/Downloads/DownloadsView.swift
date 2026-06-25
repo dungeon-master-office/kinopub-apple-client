@@ -61,7 +61,10 @@ struct DownloadsView: View {
   /// In-progress HLS downloads (offline, with all tracks/subs). Not navigable until finished.
   var hlsActiveList: some View {
     ForEach(catalog.hlsActive) { download in
-      DownloadedItemView(mediaItem: download.meta, progress: download.progress) { _ in }
+      DownloadedItemView(mediaItem: download.meta,
+                         progress: download.progress,
+                         speed: download.speed,
+                         remaining: download.remaining) { _ in }
     }
     .onDelete(perform: { catalog.cancelHLSDownload(at: $0) })
     .listRowBackground(Color.KinoPub.background)

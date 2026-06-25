@@ -26,11 +26,17 @@ public struct HLSActiveDownload: Identifiable, Equatable {
   public let id: String        // taskDescription key (meta id + video + season)
   public let meta: DownloadMeta
   public var progress: Float
+  /// Current transfer rate in bytes/sec (from the .movpkg growing on disk).
+  public var speed: Double
+  /// Estimated time remaining, derived from the progress rate.
+  public var remaining: TimeInterval?
 
-  public init(id: String, meta: DownloadMeta, progress: Float) {
+  public init(id: String, meta: DownloadMeta, progress: Float, speed: Double = 0, remaining: TimeInterval? = nil) {
     self.id = id
     self.meta = meta
     self.progress = progress
+    self.speed = speed
+    self.remaining = remaining
   }
 }
 
@@ -65,6 +71,13 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
     let hlsURL: URL
     let retryCount: Int
     var downloadURL: URL?      // the .movpkg location handed to us by the delegate
+    // Speed (from the .movpkg growing on disk) + ETA (from the progress rate).
+    var lastBytes: Int64 = 0
+    var lastBytesTime: Date?
+    var speed: Double = 0
+    var lastProgress: Float = 0
+    var lastProgressTime: Date?
+    var remaining: TimeInterval?
   }
   private var contexts: [Int: TaskContext] = [:]   // keyed by task.taskIdentifier
   /// kino.pub rate-limits (HTTP 429) aggressive HLS downloads; we retry with backoff this many times.
@@ -211,7 +224,7 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
                          timeRangeExpectedToLoad: CMTimeRange,
                          for mediaSelection: AVMediaSelection) {
     let id = aggregateAssetDownloadTask.taskIdentifier
-    guard contexts[id] != nil else { return }
+    guard var ctx = contexts[id] else { return }
 
     var loadedSeconds = 0.0
     for value in loadedTimeRanges {
@@ -221,9 +234,38 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
     guard expected > 0 else { return }
     let progress = Float(min(1.0, loadedSeconds / expected))
 
+    let now = Date()
+    // ETA from the progress rate (cheap, no disk access).
+    if let last = ctx.lastProgressTime {
+      let dt = now.timeIntervalSince(last)
+      if dt >= 1.0, progress > ctx.lastProgress {
+        let rate = Double(progress - ctx.lastProgress) / dt   // fraction / sec
+        if rate > 0 { ctx.remaining = Double(1 - progress) / rate }
+        ctx.lastProgress = progress
+        ctx.lastProgressTime = now
+      }
+    } else {
+      ctx.lastProgress = progress
+      ctx.lastProgressTime = now
+    }
+    // Speed from the .movpkg growing on disk, sampled every ~2s (enumerating the bundle isn't free).
+    if let location = ctx.downloadURL,
+       ctx.lastBytesTime == nil || now.timeIntervalSince(ctx.lastBytesTime ?? now) >= 2.0 {
+      let bytes = HLSDownloadsStore.directorySize(at: location)
+      if let lastTime = ctx.lastBytesTime {
+        let dt = now.timeIntervalSince(lastTime)
+        if dt > 0 { ctx.speed = max(0, Double(bytes - ctx.lastBytes) / dt) }
+      }
+      ctx.lastBytes = bytes
+      ctx.lastBytesTime = now
+    }
+    contexts[id] = ctx
+
     if let key = aggregateAssetDownloadTask.taskDescription,
        let idx = activeDownloads.firstIndex(where: { $0.id == key }) {
       activeDownloads[idx].progress = progress
+      activeDownloads[idx].speed = ctx.speed
+      activeDownloads[idx].remaining = ctx.remaining
     }
   }
 
