@@ -56,14 +56,37 @@ final class AuthState: ObservableObject {
       shouldShowAuthentication = false
       Logger.app.debug("Auth state: authorized")
     } catch {
-      await MainActor.run {
+      // We already have a stored token here. A connectivity failure (offline) must NOT drop us to the
+      // activation screen — only a genuine server rejection of the token should. Otherwise an
+      // already-activated device is asked to re-activate every time it's offline.
+      if Self.isConnectivityError(error) {
+        userState = .authorized
+        shouldShowAuthentication = false
+        Logger.app.debug("Token refresh skipped (offline); keeping existing session")
+      } else {
         userState = .unauthorized
         shouldShowAuthentication = true
         Logger.app.debug("Failed to refresh token, auth state: unauthorized")
       }
     }
   }
-  
+
+  /// True for a transient connectivity failure (no network) vs. the server rejecting the token.
+  /// Offline requests surface as `URLError`; a rejected token decodes into a `BackendError`.
+  private static func isConnectivityError(_ error: Error) -> Bool {
+    if let apiError = error as? APIClientError {
+      switch apiError {
+      case .urlError:
+        return true
+      case .networkError(let underlying):
+        return underlying is URLError
+      default:
+        return false
+      }
+    }
+    return error is URLError
+  }
+
   /// Logs out the user.
   func logout() {
     authService.logout()
