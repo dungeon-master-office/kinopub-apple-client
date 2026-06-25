@@ -85,6 +85,11 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
     let hlsURL: URL
     let retryCount: Int
     var downloadURL: URL?      // the .movpkg location handed to us by the delegate
+    // Aggregate progress across every media selection (video + each audio track + subtitles): the
+    // delegate reports progress PER selection (each restarts from 0), so we keep the latest fraction
+    // of each and average over the total, instead of showing one selection's progress and resetting.
+    var totalSelections: Int = 1
+    var selectionFractions: [String: Double] = [:]
     // Speed (from the .movpkg growing on disk) + ETA (from the progress rate).
     var lastBytes: Int64 = 0
     var lastBytesTime: Date?
@@ -228,6 +233,7 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
 
     task.taskDescription = key
     contexts[task.taskIdentifier] = TaskContext(meta: meta, hlsURL: hlsURL, retryCount: retryCount)
+    contexts[task.taskIdentifier]?.totalSelections = max(1, mediaSelections.count)
     // Persist so a relaunch can resume (task survived) or re-offer (force-quit) this download.
     savePending(PendingHLSDownload(key: key, meta: meta, hlsURLString: hlsURL.absoluteString,
                                    retryCount: retryCount, partialRelativePath: nil))
@@ -297,6 +303,21 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
     }
   }
 
+  /// A stable identifier for a media selection (its chosen audio + subtitle options), so progress
+  /// callbacks for the same selection update one bucket instead of creating a new one each time.
+  private static func selectionKey(for selection: AVMediaSelection) -> String {
+    guard let asset = selection.asset else { return "default" }
+    var parts: [String] = []
+    for characteristic in [AVMediaCharacteristic.audible, .legible] {
+      if let group = asset.mediaSelectionGroup(forMediaCharacteristic: characteristic) {
+        parts.append(selection.selectedMediaOption(in: group)?.displayName ?? "-")
+      } else {
+        parts.append("-")
+      }
+    }
+    return parts.joined(separator: "|")
+  }
+
   // MARK: - AVAssetDownloadDelegate
 
   /// Gives us the local `.movpkg` location. Apple: persist the RELATIVE path and
@@ -327,7 +348,12 @@ public final class HLSAssetDownloadManager: NSObject, ObservableObject, AVAssetD
     }
     let expected = CMTimeGetSeconds(timeRangeExpectedToLoad.duration)
     guard expected > 0 else { return }
-    let progress = Float(min(1.0, loadedSeconds / expected))
+
+    // Record THIS selection's fraction, then average across all selections so the bar climbs smoothly
+    // 0→100 over the whole container instead of resetting each time a new track starts downloading.
+    ctx.selectionFractions[Self.selectionKey(for: mediaSelection)] = min(1.0, loadedSeconds / expected)
+    let denominator = Double(max(ctx.totalSelections, ctx.selectionFractions.count))
+    let progress = Float(min(1.0, ctx.selectionFractions.values.reduce(0, +) / denominator))
 
     let now = Date()
     // ETA from the progress rate (cheap, no disk access).
