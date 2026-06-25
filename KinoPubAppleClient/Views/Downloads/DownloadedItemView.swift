@@ -15,26 +15,29 @@ public struct DownloadedItemView: View {
   private var mediaItem: DownloadMeta
   private var progress: Float?
   private var fileURL: URL?
+  private var speed: Double?
+  private var remaining: TimeInterval?
   private var onDownloadStateChange: (Bool) -> Void
 
   public init(mediaItem: DownloadMeta,
               progress: Float?,
               fileURL: URL? = nil,
+              speed: Double? = nil,
+              remaining: TimeInterval? = nil,
               onDownloadStateChange: @escaping (Bool) -> Void) {
     self.mediaItem = mediaItem
     self.progress = progress
     self.fileURL = fileURL
+    self.speed = speed
+    self.remaining = remaining
     self.onDownloadStateChange = onDownloadStateChange
   }
-
-  /// Completed downloads have no live progress.
-  private var isDownloaded: Bool { progress == nil }
 
   public var body: some View {
     HStack(alignment: .center) {
       image
 
-      VStack(alignment: .leading, spacing: 4) {
+      VStack(alignment: .leading, spacing: 3) {
         title
         subtitle
         if let detail = fileDetail {
@@ -47,10 +50,18 @@ public struct DownloadedItemView: View {
 
       if let progress = progress, progress < 1.0 {
         Spacer()
-        Text("\(Int(progress * 100))%")
-          .font(.system(size: 13, weight: .semibold))
-          .monospacedDigit()
-          .foregroundStyle(Color.KinoPub.subtitle)
+        VStack(alignment: .trailing, spacing: 2) {
+          Text("\(Int(progress * 100))%")
+            .font(.system(size: 13, weight: .semibold))
+            .monospacedDigit()
+            .foregroundStyle(Color.KinoPub.text)
+          if let transfer = transferString {
+            Text(transfer)
+              .font(.system(size: 10, weight: .medium))
+              .monospacedDigit()
+              .foregroundStyle(Color.KinoPub.subtitle)
+          }
+        }
         ProgressButton(progress: progress) { state in
           onDownloadStateChange(state == .pause)
         }
@@ -69,9 +80,12 @@ public struct DownloadedItemView: View {
     .padding(.vertical, 8)
   }
 
-  /// "1080p · 1.4 GB" — quality (chosen at download) and on-disk size when available.
+  /// "S4E4 · 1080p · 1.4 GB" — episode (series), chosen quality, and on-disk size when known.
   private var fileDetail: String? {
     var parts: [String] = []
+    if let episode = mediaItem.episode, !episode.isEmpty {
+      parts.append(episode)
+    }
     if let quality = mediaItem.quality, !quality.isEmpty {
       parts.append(quality)
     }
@@ -80,6 +94,26 @@ public struct DownloadedItemView: View {
     }
     return parts.isEmpty ? nil : parts.joined(separator: " · ")
   }
+
+  /// "12.3 MB/s · 0:45 left" — live speed and ETA for an in-progress download.
+  private var transferString: String? {
+    var parts: [String] = []
+    if let speed, speed > 0 {
+      parts.append("\(ByteCountFormatter.string(fromByteCount: Int64(speed), countStyle: .file))/s")
+    }
+    if let remaining, remaining > 0, let eta = Self.etaFormatter.string(from: remaining) {
+      parts.append(String(format: "%@ %@", eta, "left".localized))
+    }
+    return parts.isEmpty ? nil : parts.joined(separator: " · ")
+  }
+
+  private static let etaFormatter: DateComponentsFormatter = {
+    let f = DateComponentsFormatter()
+    f.allowedUnits = [.hour, .minute, .second]
+    f.unitsStyle = .abbreviated
+    f.maximumUnitCount = 2
+    return f
+  }()
 
   private var fileSizeString: String? {
     guard let fileURL,
@@ -106,7 +140,6 @@ public struct DownloadedItemView: View {
       .lineLimit(1)
       .font(.system(size: 14.0, weight: .medium))
       .foregroundStyle(Color.KinoPub.text)
-      .padding(.bottom, 10)
   }
   
   var subtitle: some View {

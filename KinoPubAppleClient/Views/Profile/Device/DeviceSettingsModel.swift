@@ -47,8 +47,9 @@ class DeviceSettingsModel: ObservableObject {
     defer { isSaving = false }
     do {
       try await deviceService.updateSettings(deviceId: deviceId, settings: settings)
-      // Reload from the server so the UI reflects exactly what was persisted.
-      settings = try await deviceService.fetchSettings(deviceId: deviceId)
+      // Keep what the user chose (optimistic). We intentionally do NOT re-fetch here: the server
+      // can be briefly eventually-consistent, and re-reading stale values made the toggles appear
+      // to "reset" right after saving.
     } catch {
       Logger.app.debug("save device settings error: \(error)")
       errorHandler.setError(error)

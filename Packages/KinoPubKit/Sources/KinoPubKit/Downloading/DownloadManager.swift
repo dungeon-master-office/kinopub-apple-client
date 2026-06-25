@@ -151,6 +151,7 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       let shouldCheckpoint = Int(progress * 100) != Int(download.progress * 100)
       DispatchQueue.main.async {
         download.updateProgress(progress)
+        download.updateTransfer(bytesWritten: totalBytesWritten, totalBytes: totalBytesExpectedToWrite)
         if shouldCheckpoint {
           self.persist(download)
         }
