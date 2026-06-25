@@ -55,6 +55,8 @@ struct AppContext: AppContextProtocol {
   var fileSaver: FileSaving
   var downloadManager: DownloadManager<DownloadMeta>
   var downloadedFilesDatabase: DownloadedFilesDatabase<DownloadMeta>
+  var downloadNotificationManager: DownloadNotificationManager
+  var seasonDownloadManager: SeasonDownloadManager
   var actionsService: UserActionsService
   var localProgressStore: LocalWatchProgressStore
   var tmdbService: TMDBService
@@ -72,6 +74,20 @@ struct AppContext: AppContextProtocol {
     let downloadManager = DownloadManager<DownloadMeta>(fileSaver: fileSaver,
                                                         database: downloadedFilesDatabase,
                                                         controlDatabase: downloadsControlDatabase)
+    let downloadNotificationManager = DownloadNotificationManager()
+    let seasonDownloadManager = SeasonDownloadManager(downloadManager: downloadManager,
+                                                      notifications: downloadNotificationManager)
+    // Post a local notification when a download finishes/fails. Episodes that belong to a bulk
+    // season download are folded into a single "season downloaded" notification instead.
+    downloadManager.onDownloadFinished = { [weak seasonDownloadManager, weak downloadNotificationManager] url, meta in
+      let handledBySeason = seasonDownloadManager?.handleFinished(url: url) ?? false
+      if !handledBySeason {
+        downloadNotificationManager?.notifyFinished(title: meta.notificationTitle, identifier: "\(meta.id)")
+      }
+    }
+    downloadManager.onDownloadFailed = { [weak downloadNotificationManager] _, meta, _ in
+      downloadNotificationManager?.notifyFailed(title: meta.notificationTitle, identifier: "\(meta.id)")
+    }
     // Api Client
     let apiClient = makeApiClient(with: configuration.baseURL, accessTokenService: accessTokenService)
     
@@ -89,6 +105,8 @@ struct AppContext: AppContextProtocol {
                       fileSaver: fileSaver,
                       downloadManager: downloadManager,
                       downloadedFilesDatabase: downloadedFilesDatabase,
+                      downloadNotificationManager: downloadNotificationManager,
+                      seasonDownloadManager: seasonDownloadManager,
                       actionsService: UserActionsServiceImpl(apiClient: apiClient),
                       localProgressStore: LocalWatchProgressStore(),
                       tmdbService: TMDBServiceImpl(apiKey: configuration.tmdbAPIKey))
@@ -102,6 +120,7 @@ struct AppContext: AppContextProtocol {
                 CURLLoggingPlugin(),
                 ResponseLoggingPlugin(),
                 AccessTokenPlugin(accessTokenService: accessTokenService)
-              ])
+              ],
+              cache: ResponseCache())
   }
 }

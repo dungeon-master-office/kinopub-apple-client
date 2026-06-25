@@ -45,6 +45,8 @@ final class AuthorizationServiceImpl: AuthorizationService {
   
   func logout() {
     accessTokenService.clear()
+    // Drop cached API responses so the next account never sees the previous user's data.
+    apiClient.clearCache()
   }
 
 }

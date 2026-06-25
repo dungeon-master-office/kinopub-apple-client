@@ -16,10 +16,11 @@ final class VideoContentServiceImpl: VideoContentService {
     self.apiClient = apiClient
   }
 
-  func fetch(shortcut: MediaShortcut, contentType: MediaType, page: Int?) async throws -> PaginatedData<MediaItem> {
+  func fetch(shortcut: MediaShortcut, contentType: MediaType, page: Int?, forceRefresh: Bool) async throws -> PaginatedData<MediaItem> {
     let request = ShortcutItemsRequest(shortcut: shortcut, contentType: contentType, page: page)
     let response = try await apiClient.performRequest(with: request,
-                                                      decodingType: PaginatedData<MediaItem>.self)
+                                                      decodingType: PaginatedData<MediaItem>.self,
+                                                      forceRefresh: forceRefresh)
     return response
   }
 
@@ -30,7 +31,7 @@ final class VideoContentServiceImpl: VideoContentService {
     return response
   }
 
-  func filter(filter: MediaItemsFilter, page: Int?) async throws -> PaginatedData<MediaItem> {
+  func filter(filter: MediaItemsFilter, page: Int?, forceRefresh: Bool) async throws -> PaginatedData<MediaItem> {
     let request = FilterItemsRequest(contentType: filter.contentType,
                                      genres: filter.genres,
                                      countries: filter.countries,
@@ -47,7 +48,8 @@ final class VideoContentServiceImpl: VideoContentService {
                                      translation: filter.translation,
                                      page: page)
     let response = try await apiClient.performRequest(with: request,
-                                                      decodingType: PaginatedData<MediaItem>.self)
+                                                      decodingType: PaginatedData<MediaItem>.self,
+                                                      forceRefresh: forceRefresh)
     return response
   }
 
@@ -105,6 +107,13 @@ final class VideoContentServiceImpl: VideoContentService {
     let response = try await apiClient.performRequest(with: request,
                                                       decodingType: TVChannelsData.self)
     return response.channels
+  }
+
+  func fetchComments(for id: Int) async throws -> CommentsData {
+    let request = CommentsRequest(id: id)
+    let response = try await apiClient.performRequest(with: request,
+                                                      decodingType: CommentsData.self)
+    return response
   }
 
 }

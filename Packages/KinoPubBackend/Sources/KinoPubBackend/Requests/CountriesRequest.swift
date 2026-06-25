@@ -7,7 +7,10 @@
 
 import Foundation
 
-public struct CountriesRequest: Endpoint {
+public struct CountriesRequest: Endpoint, CacheableRequest {
+
+  // Countries are effectively static — persist for a day.
+  public var cachePolicy: CachePolicy { .disk(ttl: 86_400) }
 
   public init() {}
 

@@ -24,6 +24,7 @@ struct MediaItemView: View {
 
   @State private var plotExpanded: Bool = false
   @State private var selectedSeasonNumber: Int?
+  @State private var showComments: Bool = false
 
   init(model: @autoclosure @escaping () -> MediaItemModel) {
     _itemModel = StateObject(wrappedValue: model())
@@ -85,6 +86,7 @@ struct MediaItemView: View {
         castSection
         descriptionSection
         infoSection
+        commentsSection
       }
       .padding(.bottom, 32)
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -92,6 +94,9 @@ struct MediaItemView: View {
     .background(Color.KinoPub.background)
     // Let the hero cover bleed up under the (transparent) navigation bar.
     .ignoresSafeArea(edges: .top)
+    .sheet(isPresented: $showComments) {
+      CommentsView(mediaId: mediaItem.id)
+    }
     .toast(message: $itemModel.toastMessage)
     #if os(iOS)
     .toolbar(.hidden, for: .tabBar)
@@ -384,6 +389,7 @@ struct MediaItemView: View {
     if mediaItem.isSeries, let seasons = mediaItem.seasons, !seasons.isEmpty {
       ForEach(seasons, id: \.number) { season in
         Menu("\("Season".localized) \(season.number)") {
+          seasonDownloadMenu(for: season)
           ForEach(season.episodes, id: \.id) { episode in
             Menu("S\(season.number)E\(episode.number)") {
               qualityButtons(for: episodeDownloadable(episode, in: season))
@@ -393,6 +399,25 @@ struct MediaItemView: View {
       }
     } else {
       qualityButtons(for: movieDownloadable)
+    }
+  }
+
+  /// "Download whole season" entry: one tap per quality (plus a best-available option) that queues
+  /// every episode of the season at once.
+  @ViewBuilder
+  private func seasonDownloadMenu(for season: Season) -> some View {
+    let qualities = SeasonDownloadManager.availableQualities(in: season)
+    Menu {
+      Button("Best quality".localized) {
+        itemModel.downloadSeason(season, quality: nil)
+      }
+      ForEach(qualities, id: \.self) { quality in
+        Button(quality) {
+          itemModel.downloadSeason(season, quality: quality)
+        }
+      }
+    } label: {
+      Label("Download whole season".localized, systemImage: "square.and.arrow.down.on.square")
     }
   }
 
@@ -631,6 +656,38 @@ struct MediaItemView: View {
           }
         }
       }
+    }
+  }
+
+  // MARK: - Comments
+
+  @ViewBuilder
+  private var commentsSection: some View {
+    if !isSkeleton {
+      Button {
+        showComments = true
+      } label: {
+        HStack(spacing: 12) {
+          Image(systemName: "bubble.left.and.bubble.right.fill")
+            .font(.system(size: 18))
+            .foregroundStyle(Color.KinoPub.accent)
+          Text("Comments".localized)
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(Color.KinoPub.text)
+          Spacer()
+          Image(systemName: "chevron.right")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Color.KinoPub.subtitle)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+          RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(Color.white.opacity(0.06))
+        )
+        .padding(.horizontal, 20)
+      }
+      .buttonStyle(.plain)
     }
   }
 

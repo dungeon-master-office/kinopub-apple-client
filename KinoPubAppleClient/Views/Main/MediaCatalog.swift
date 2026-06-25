@@ -58,12 +58,13 @@ class MediaCatalog: ObservableObject {
   }
 
   func fetchItems() async {
-    await fetchItems(fillBurst: 0)
+    await fetchItems(fillBurst: 0, forceRefresh: false)
   }
 
   /// `fillBurst` bounds how many extra pages we auto-pull in one call to backfill the grid after a
-  /// client-side facet trims a page (see below).
-  private func fetchItems(fillBurst: Int) async {
+  /// client-side facet trims a page (see below). `forceRefresh` bypasses the response cache (used by
+  /// pull-to-refresh and filter/sort changes so the user always gets fresh data).
+  private func fetchItems(fillBurst: Int, forceRefresh: Bool) async {
     guard authState.userState == .authorized else {
       subscribeForAuth()
       return
@@ -80,7 +81,7 @@ class MediaCatalog: ObservableObject {
       // filter endpoint with the chosen sort, layered on top of any active facet filter.
       var f = activeFilter ?? MediaItemsFilter(contentType: contentType, genres: [], countries: [], year: nil, age: nil, sort: nil)
       f.sort = (sort == .updated) ? nil : sort.rawValue
-      let data = try await itemsService.filter(filter: f, page: page)
+      let data = try await itemsService.filter(filter: f, page: page, forceRefresh: forceRefresh)
       // Apply the facets the mobile API ignores (rating/HD/4K/AC3/period) on the results, so the
       // in-app filter matches the website (see MediaItemsFilter.clientSideMatches).
       let now = Date().timeIntervalSince1970
@@ -91,7 +92,7 @@ class MediaCatalog: ObservableObject {
       // grid isn't left empty and load-more still has an anchor item to trigger the next fetch.
       if f.hasClientSideFacets, fillBurst < 6, loadedItemCount < 20,
          let p = pagination, p.current < p.total {
-        await fetchItems(fillBurst: fillBurst + 1)
+        await fetchItems(fillBurst: fillBurst + 1, forceRefresh: forceRefresh)
       }
     } catch {
       Logger.app.debug("fetch items error: \(error)")
@@ -141,7 +142,7 @@ class MediaCatalog: ObservableObject {
     errorHandler.reset()
     Task {
       Logger.app.debug("refetch items")
-      await fetchItems()
+      await fetchItems(fillBurst: 0, forceRefresh: true)
     }
   }
 

@@ -28,6 +28,12 @@ class PlayerManager: ObservableObject {
   lazy var player: AVPlayer = {
     guard let fileURL else { return AVPlayer() }
     let item = AVPlayerItem(url: fileURL)
+    // Cap the adaptive HLS stream to the user's chosen quality. kino.pub serves one master
+    // playlist with every rendition, so this is the lever that limits quality — `.auto` leaves
+    // it untouched. Harmless for local/trailer playback (no effect on non-HLS items).
+    if watchMode == .media, let maxResolution = StreamQuality.current.maxResolution {
+      item.preferredMaximumResolution = maxResolution
+    }
     // Surface the title (and season/episode) in the native player UI (iOS/tvOS only).
     #if !os(macOS)
     item.externalMetadata = externalMetadata()

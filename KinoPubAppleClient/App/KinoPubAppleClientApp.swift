@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import FirebaseCore
 
 enum WindowSize {
   static let macos = CGSize(width: 1280, height: 720)
@@ -44,6 +43,10 @@ struct KinoPubAppleClientApp: App {
           if authState.userState == .authorized {
             await AppContext.shared.deviceService.registerDeviceName()
           }
+        }
+        // Ask once for permission to post download-complete notifications.
+        .task {
+          await AppContext.shared.downloadNotificationManager.requestPermission()
         }
 #if os(macOS)
         .frame(minWidth: WindowSize.macos.width, minHeight: WindowSize.macos.height)

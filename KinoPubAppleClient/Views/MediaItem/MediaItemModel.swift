@@ -195,6 +195,18 @@ class MediaItemModel: ObservableObject {
     _ = downloadManager.startDownload(url: url, withMetadata: DownloadMeta.make(from: item, quality: file.quality))
   }
 
+  /// Enqueues every episode of `season`. `quality` of nil downloads the best available per episode.
+  func downloadSeason(_ season: Season, quality: String?) {
+    let count = AppContext.shared.seasonDownloadManager.downloadSeason(
+      mediaId: mediaItem.id,
+      seriesTitle: mediaItem.localizedTitle,
+      season: season,
+      quality: quality)
+    toastMessage = count > 0
+      ? String(format: "%d episodes queued".localized, count)
+      : "Nothing to download".localized
+  }
+
   func toggleWatched() {
     let newState = !isMovieWatched
     movieWatchedOverride = newState

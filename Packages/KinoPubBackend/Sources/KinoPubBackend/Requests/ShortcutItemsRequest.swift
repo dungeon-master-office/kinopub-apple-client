@@ -45,3 +45,11 @@ public struct ShortcutItemsRequest: Endpoint {
 
   public var forceSendAsGetParams: Bool { false }
 }
+
+extension ShortcutItemsRequest: CacheableRequest {
+  // Cache only the first page briefly, so returning to a list is flicker-free. Pagination pages are
+  // transient scroll state and aren't cached. Pull-to-refresh bypasses via `forceRefresh`.
+  public var cachePolicy: CachePolicy {
+    (page == nil || page == 1) ? .memory(ttl: 120) : .noCache
+  }
+}

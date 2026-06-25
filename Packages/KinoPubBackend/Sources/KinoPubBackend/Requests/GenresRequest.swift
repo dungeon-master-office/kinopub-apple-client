@@ -7,7 +7,10 @@
 
 import Foundation
 
-public struct GenresRequest: Endpoint {
+public struct GenresRequest: Endpoint, CacheableRequest {
+
+  // Genres almost never change — persist for a day so filter/search screens open instantly.
+  public var cachePolicy: CachePolicy { .disk(ttl: 86_400) }
 
   private var type: MediaType?
 

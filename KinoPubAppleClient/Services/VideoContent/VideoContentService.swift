@@ -9,9 +9,9 @@ import Foundation
 import KinoPubBackend
 
 protocol VideoContentService {
-  func fetch(shortcut: MediaShortcut, contentType: MediaType, page: Int?) async throws -> PaginatedData<MediaItem>
+  func fetch(shortcut: MediaShortcut, contentType: MediaType, page: Int?, forceRefresh: Bool) async throws -> PaginatedData<MediaItem>
   func search(query: String?, contentType: MediaType?, field: String?, page: Int?) async throws -> PaginatedData<MediaItem>
-  func filter(filter: MediaItemsFilter, page: Int?) async throws -> PaginatedData<MediaItem>
+  func filter(filter: MediaItemsFilter, page: Int?, forceRefresh: Bool) async throws -> PaginatedData<MediaItem>
   func fetchGenres(type: MediaType?) async throws -> [MediaGenre]
   func fetchCountries() async throws -> [Country]
   func fetchDetails(for id: String) async throws -> SingleItemData<MediaItem>
@@ -20,15 +20,27 @@ protocol VideoContentService {
   func fetchHistory(page: Int?) async throws -> HistoryData
   func fetchWatchingSerials(subscribed: Int?, type: String?) async throws -> ArrayData<WatchingSerial>
   func fetchTVChannels() async throws -> [TVChannel]
+  func fetchComments(for id: Int) async throws -> CommentsData
 }
 
 protocol VideoContentServiceProvider {
   var contentService: VideoContentService { get set }
 }
 
+extension VideoContentService {
+  // Convenience overloads so call sites that don't care about cache freshness stay unchanged.
+  func fetch(shortcut: MediaShortcut, contentType: MediaType, page: Int?) async throws -> PaginatedData<MediaItem> {
+    try await fetch(shortcut: shortcut, contentType: contentType, page: page, forceRefresh: false)
+  }
+
+  func filter(filter: MediaItemsFilter, page: Int?) async throws -> PaginatedData<MediaItem> {
+    try await self.filter(filter: filter, page: page, forceRefresh: false)
+  }
+}
+
 struct VideoContentServiceMock: VideoContentService {
 
-  func fetch(shortcut: MediaShortcut, contentType: MediaType, page: Int?) async throws -> PaginatedData<MediaItem> {
+  func fetch(shortcut: MediaShortcut, contentType: MediaType, page: Int?, forceRefresh: Bool) async throws -> PaginatedData<MediaItem> {
     return PaginatedData.mock(data: [])
   }
 
@@ -36,7 +48,7 @@ struct VideoContentServiceMock: VideoContentService {
     return PaginatedData.mock(data: [])
   }
 
-  func filter(filter: MediaItemsFilter, page: Int?) async throws -> PaginatedData<MediaItem> {
+  func filter(filter: MediaItemsFilter, page: Int?, forceRefresh: Bool) async throws -> PaginatedData<MediaItem> {
     return PaginatedData.mock(data: [])
   }
 
@@ -70,6 +82,10 @@ struct VideoContentServiceMock: VideoContentService {
 
   func fetchTVChannels() async throws -> [TVChannel] {
     return []
+  }
+
+  func fetchComments(for id: Int) async throws -> CommentsData {
+    return CommentsData.mock()
   }
 
 }

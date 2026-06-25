@@ -107,3 +107,11 @@ public struct FilterItemsRequest: Endpoint {
 
   public var forceSendAsGetParams: Bool { false }
 }
+
+extension FilterItemsRequest: CacheableRequest {
+  // Cache only the first page briefly (catalogs + Home shelves) so revisiting a list is flicker-free.
+  // Later pages are transient; pull-to-refresh / filter changes bypass via `forceRefresh`.
+  public var cachePolicy: CachePolicy {
+    (page == nil || page == 1) ? .memory(ttl: 120) : .noCache
+  }
+}

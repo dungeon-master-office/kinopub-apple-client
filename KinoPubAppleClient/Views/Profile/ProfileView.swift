@@ -19,6 +19,8 @@ struct ProfileView: View {
   @AppStorage("selectedLanguage") private var selectedLanguage: String = (Locale.current.language.languageCode?.identifier ?? "en")
   /// User-supplied TMDB API key (overrides the bundled one); read live by TMDBServiceImpl.
   @AppStorage(TMDBServiceImpl.userDefaultsKey) private var tmdbAPIKey: String = ""
+  /// Caps streaming quality; read by PlayerManager when building the AVPlayerItem.
+  @AppStorage(StreamQuality.userDefaultsKey) private var streamQuality: StreamQuality = .auto
 
   @State private var showLogoutAlert: Bool = false
   @State private var cacheSize: String = ImageCache.shared.formattedDiskUsage()
@@ -45,6 +47,8 @@ struct ProfileView: View {
             }
               
             languageSection
+
+            videoQualitySection
 
             Section(header: Text("Storage")) {
               LabeledContent("Image Cache", value: cacheSize)
@@ -122,6 +126,18 @@ struct ProfileView: View {
         .buttonStyle(PlainButtonStyle())
 #endif
       }
+    }
+  }
+
+  private var videoQualitySection: some View {
+    Section(header: Text("Video Quality"),
+            footer: Text("Caps streaming quality. Auto lets the player adapt to your connection.".localized)) {
+      Picker("Maximum Quality".localized, selection: $streamQuality) {
+        ForEach(StreamQuality.allCases) { quality in
+          Text(quality.title).tag(quality)
+        }
+      }
+      .pickerStyle(MenuPickerStyle())
     }
   }
 
