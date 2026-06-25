@@ -203,8 +203,10 @@ extension MediaItem: PlayableItem {
   public var files: [FileInfo] {
     videos?.first?.files ?? []
   }
-  
+
   public var metadata: WatchingMetadata {
     WatchingMetadata(id: id, video: videos?.first?.number, season: nil)
   }
+
+  public var playerTitle: String { localizedTitle }
 }

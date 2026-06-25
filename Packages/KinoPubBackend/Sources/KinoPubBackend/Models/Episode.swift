@@ -23,7 +23,9 @@ public class Episode: Codable, Hashable, Identifiable {
   public let files: [FileInfo]
   public var seasonNumber: Int?
   public var mediaId: Int?
-  
+  /// Parent series title, set when navigating to the player so it can be shown there.
+  public var mediaTitle: String?
+
   public var fixedTitle: String {
     if title.isEmpty {
       return "Серия \(number)"
@@ -59,5 +61,18 @@ extension Episode: PlayableItem {
   public var trailer: Trailer? { nil }
   public var metadata: WatchingMetadata {
     WatchingMetadata(id: mediaId ?? id, video: number, season: seasonNumber)
+  }
+
+  public var playerTitle: String { mediaTitle ?? fixedTitle }
+
+  public var playerSubtitle: String? {
+    var parts: [String] = []
+    if let season = seasonNumber { parts.append("S\(season)") }
+    parts.append("E\(number)")
+    var subtitle = parts.joined(separator: " · ")
+    if mediaTitle != nil, !title.isEmpty {
+      subtitle += " · \(title)"
+    }
+    return subtitle
   }
 }

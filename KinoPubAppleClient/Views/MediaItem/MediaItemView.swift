@@ -114,7 +114,7 @@ struct MediaItemView: View {
   // MARK: - Hero
 
   private var hero: some View {
-    HeroBackdrop(imageURL: mediaItem.posters.wide ?? mediaItem.posters.big, height: 460, tallBlur: true) {
+    HeroBackdrop(imageURL: mediaItem.posters.wide ?? mediaItem.posters.big, height: 460, tallBlur: true, blurReduction: 50) {
       VStack(alignment: .leading, spacing: 10) {
         Text(mediaItem.localizedTitle)
           .font(.system(size: 34, weight: .bold))
@@ -433,6 +433,7 @@ struct MediaItemView: View {
           let episode = season.episodes.first else { return nil }
     episode.seasonNumber = season.number
     episode.mediaId = season.mediaId ?? mediaItem.id
+    episode.mediaTitle = mediaItem.localizedTitle
     return episode
   }
 
@@ -560,6 +561,7 @@ struct MediaItemView: View {
   private func filledEpisode(_ episode: Episode, in season: Season) -> Episode {
     episode.seasonNumber = season.number
     episode.mediaId = season.mediaId ?? mediaItem.id
+    episode.mediaTitle = mediaItem.localizedTitle
     return episode
   }
 
@@ -778,7 +780,12 @@ private struct MediaItemInfoSection: View {
             .foregroundStyle(Color.KinoPub.subtitle)
           ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-              ForEach(itemModel.directorNames, id: \.self) { name in
+              ForEach(Array(itemModel.directorNames.enumerated()), id: \.offset) { index, name in
+                if index > 0 {
+                  Text("•")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.KinoPub.subtitle)
+                }
                 facetLink(itemModel.directorRoute(name)) {
                   facetValueText(name, isLink: itemModel.directorRoute(name) != nil)
                 }

@@ -189,7 +189,10 @@ struct HomeView: View {
 
   @ViewBuilder
   private func shelfView(_ shelf: HomeModel.Shelf) -> some View {
-    MediaShelf(title: shelf.title) {
+    MediaShelf(title: shelf.title,
+               onHeaderTap: shelf.filter.map { filter in
+                 { navigationState.mainRoutes.append(.filteredCatalog(filter, shelf.title)) }
+               }) {
       ForEach(shelf.items) { item in
         NavigationLink(value: MainRoutes.details(item)) {
           PosterCard(imageURL: item.posters.medium,

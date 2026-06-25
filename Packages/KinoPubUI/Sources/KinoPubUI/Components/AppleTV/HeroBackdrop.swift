@@ -13,15 +13,18 @@ public struct HeroBackdrop<Overlay: View>: View {
   private let imageURL: String?
   private let height: CGFloat
   private let tallBlur: Bool
+  private let blurReduction: CGFloat
   private let overlay: Overlay
 
   public init(imageURL: String?,
               height: CGFloat = 460,
               tallBlur: Bool = false,
+              blurReduction: CGFloat = 0,
               @ViewBuilder overlay: () -> Overlay) {
     self.imageURL = imageURL
     self.height = height
     self.tallBlur = tallBlur
+    self.blurReduction = blurReduction
     self.overlay = overlay()
   }
 
@@ -42,12 +45,13 @@ public struct HeroBackdrop<Overlay: View>: View {
           Color.KinoPub.skeleton
         }
       }
-      .overlay {
+      .overlay(alignment: .bottom) {
         // Frosted blur over the lower portion so overlay text never mixes with busy artwork.
         // `tallBlur` covers ~bottom two-thirds (detail page); default covers ~bottom third
-        // (Home gallery) so it stays subtle.
+        // (Home gallery). `blurReduction` shortens the blurred area from the top by N points.
         Rectangle()
           .fill(.ultraThinMaterial)
+          .frame(height: max(height - blurReduction, 0))
           .mask(
             LinearGradient(colors: tallBlur ? [.clear, .black, .black] : [.clear, .clear, .black],
                            startPoint: .top,
