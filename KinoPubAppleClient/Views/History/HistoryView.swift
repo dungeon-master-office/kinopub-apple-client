@@ -122,8 +122,7 @@ struct HistoryView: View {
   }
 
   func gridLayout(width: CGFloat) -> [GridItem] {
-    let cellSize: CGFloat = width <= 390 ? 150 : 172
-    return [GridItem(.adaptive(minimum: cellSize), spacing: 16, alignment: .top)]
+    PosterGridLayout.columns(width: width, horizontalPadding: 20)
   }
 }
 

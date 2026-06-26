@@ -16,7 +16,6 @@ struct SearchView: View {
   @Environment(\.appContext) var appContext
   @StateObject private var model: SearchModel
 
-  private let resultsColumns = [GridItem(.adaptive(minimum: 130), spacing: 16)]
 
   init(model: @autoclosure @escaping () -> SearchModel) {
     _model = StateObject(wrappedValue: model())
@@ -24,16 +23,18 @@ struct SearchView: View {
 
   var body: some View {
     NavigationStack(path: $navigationState.searchRoutes) {
-      ScrollView {
-        if model.query.trimmingCharacters(in: .whitespaces).isEmpty {
-          discoveryContent
-        } else if model.allResults.isEmpty && !model.searching {
-          EmptyStateView(systemImage: "magnifyingglass",
-                         title: "Nothing found".localized,
-                         message: "Try a different title, actor or director.".localized)
-            .padding(.top, 80)
-        } else {
-          resultsContent
+      WidthReader { width in
+        ScrollView {
+          if model.query.trimmingCharacters(in: .whitespaces).isEmpty {
+            discoveryContent
+          } else if model.allResults.isEmpty && !model.searching {
+            EmptyStateView(systemImage: "magnifyingglass",
+                           title: "Nothing found".localized,
+                           message: "Try a different title, actor or director.".localized)
+              .padding(.top, 80)
+          } else {
+            resultsContent(width: width)
+          }
         }
       }
       .searchable(text: $model.query, placement: .automatic, prompt: "Shows & Movies")
@@ -116,14 +117,14 @@ struct SearchView: View {
 
   // MARK: - Results (non-empty query)
 
-  var resultsContent: some View {
+  func resultsContent(width: CGFloat) -> some View {
     VStack(alignment: .leading, spacing: 12) {
       scopeTabBar
       if let people = matchedPeopleForScope, !people.isEmpty {
         peopleStrip(people)
         Divider().background(Color.white.opacity(0.08))
       }
-      LazyVGrid(columns: resultsColumns, spacing: 16) {
+      LazyVGrid(columns: PosterGridLayout.columns(width: width), spacing: 16) {
         ForEach(model.results(for: model.scope), id: \.id) { item in
           if item.skeleton ?? false {
             PosterCard.placeholder()

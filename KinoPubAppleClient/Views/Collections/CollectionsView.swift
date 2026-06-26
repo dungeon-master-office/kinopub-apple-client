@@ -17,8 +17,6 @@ struct CollectionsView: View {
   @StateObject private var model: CollectionsModel
   @Environment(\.sectionEmbedded) private var sectionEmbedded
 
-  private let gridColumns = [GridItem(.adaptive(minimum: 200), spacing: 16, alignment: .top)]
-
   init(model: @autoclosure @escaping () -> CollectionsModel) {
     _model = StateObject(wrappedValue: model())
   }
@@ -43,16 +41,18 @@ struct CollectionsView: View {
 
   @ViewBuilder
   private var content: some View {
-    // Chips live inside the scroll view so the large title collapses on scroll.
-    ScrollView {
-      sortTabs
-        .padding(.bottom, 4)
-      if model.isLoading {
-        loading.frame(minHeight: 320)
-      } else if model.collections.isEmpty {
-        emptyState.frame(minHeight: 320)
-      } else {
-        grid
+    // Chips live inside the scroll view so the large title collapses; WidthReader feeds the grid.
+    WidthReader { width in
+      ScrollView {
+        sortTabs
+          .padding(.bottom, 4)
+        if model.isLoading {
+          loading.frame(minHeight: 320)
+        } else if model.collections.isEmpty {
+          emptyState.frame(minHeight: 320)
+        } else {
+          grid(width: width)
+        }
       }
     }
   }
@@ -71,8 +71,8 @@ struct CollectionsView: View {
                   ))
   }
 
-  private var grid: some View {
-    LazyVGrid(columns: gridColumns, spacing: 16) {
+  private func grid(width: CGFloat) -> some View {
+    LazyVGrid(columns: PosterGridLayout.columns(width: width), spacing: 16) {
       ForEach(model.collections) { collection in
         NavigationLink(value: Route.collection(collection)) {
           CollectionCard(collection: collection)

@@ -93,17 +93,15 @@ struct MediaItemView: View {
       .frame(maxWidth: .infinity, alignment: .leading)
     }
     .background(Color.KinoPub.background)
-    // Let the hero cover bleed up under the (transparent) navigation bar.
-    .ignoresSafeArea(edges: .top)
     .sheet(isPresented: $showComments) {
       CommentsView(mediaId: mediaItem.id)
     }
     .toast(message: $itemModel.toastMessage)
     #if os(iOS)
     .toolbar(.hidden, for: .tabBar)
-    .toolbarBackground(.hidden, for: .navigationBar)
-    .toolbarColorScheme(.dark, for: .navigationBar)
     #endif
+    // iOS 26: the hero backdrop bleeds under the glass bar. Pre-26: frosted bar + restored safe area.
+    .heroNavBar()
     .task {
       itemModel.fetchData()
       itemModel.loadBookmarkFolders()

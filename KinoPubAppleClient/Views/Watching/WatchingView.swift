@@ -36,16 +36,18 @@ struct WatchingView: View {
   }
 
   private var sectionContent: some View {
-    // One scroll view with the chips as the first scrolling element, so the large title collapses
-    // on scroll like every other screen.
-    ScrollView {
-      if model.tab == .newEpisodes {
-        episodesTypePicker
-          .padding(.bottom, 4)
+    // WidthReader gives the responsive grid the real width; the chips are the first scrolling
+    // element so the large title collapses on scroll.
+    WidthReader { width in
+      ScrollView {
+        if model.tab == .newEpisodes {
+          episodesTypePicker
+            .padding(.bottom, 4)
+        }
+        gridBody(width: width)
       }
-      gridBody
+      .refreshable { await model.refresh() }
     }
-    .refreshable { await model.refresh() }
     .kinoScreen((model.tab == .newEpisodes ? "New episodes" : "Watching").localized)
     .task {
       await model.fetchItems()
@@ -54,14 +56,14 @@ struct WatchingView: View {
   }
 
   @ViewBuilder
-  private var gridBody: some View {
+  private func gridBody(width: CGFloat) -> some View {
     if model.isLoading {
-      skeletonGrid
+      skeletonGrid(width: width)
     } else if model.serials.isEmpty {
       EmptyStateView(systemImage: "play.tv", title: "No series here yet".localized)
         .frame(minHeight: 320)
     } else {
-      serialsGrid
+      serialsGrid(width: width)
     }
   }
 
@@ -77,12 +79,8 @@ struct WatchingView: View {
                   ))
   }
 
-  private var gridColumns: [GridItem] {
-    [GridItem(.adaptive(minimum: 150), spacing: 16, alignment: .top)]
-  }
-
-  var serialsGrid: some View {
-    LazyVGrid(columns: gridColumns, spacing: 24) {
+  private func serialsGrid(width: CGFloat) -> some View {
+    LazyVGrid(columns: PosterGridLayout.columns(width: width, horizontalPadding: 20), spacing: 24) {
       ForEach(model.serials) { serial in
         NavigationLink(value: Route.detailsByID(serial.id)) {
           WatchingSerialView(serial: serial)
@@ -96,8 +94,8 @@ struct WatchingView: View {
     .padding(.top, 8)
   }
 
-  private var skeletonGrid: some View {
-    LazyVGrid(columns: gridColumns, spacing: 24) {
+  private func skeletonGrid(width: CGFloat) -> some View {
+    LazyVGrid(columns: PosterGridLayout.columns(width: width, horizontalPadding: 20), spacing: 24) {
       ForEach(0..<12, id: \.self) { _ in
         PosterCard.placeholder(width: 150)
       }

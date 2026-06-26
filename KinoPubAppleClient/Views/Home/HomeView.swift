@@ -41,14 +41,9 @@ struct HomeView: View {
         .padding(.bottom, 24)
       }
       .background(Color.KinoPub.background)
-      // Let the hero artwork bleed up under the (transparent) navigation bar.
-      .ignoresSafeArea(edges: .top)
       .navigationTitle("Home")
-      #if os(iOS)
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbarBackground(.hidden, for: .navigationBar)
-      .toolbarColorScheme(.dark, for: .navigationBar)
-      #endif
+      // iOS 26: hero bleeds under the transparent glass bar. Pre-26: blurred bar + restored safe area.
+      .heroNavBar()
       .task {
         await model.fetchData()
       }
@@ -141,6 +136,9 @@ struct HomeView: View {
                                title: entry.item.localizedTitle,
                                subtitle: entry.subtitle,
                                progress: entry.progress)
+          .overlay(alignment: .topTrailing) {
+            MediaCardStatusBadge(item: entry.item, showsWatched: false)
+          }
         }
 #if os(macOS)
         .buttonStyle(PlainButtonStyle())
@@ -161,6 +159,7 @@ struct HomeView: View {
                      title: item.localizedTitle,
                      imdbRating: item.imdbRating,
                      kinopoiskRating: item.kinopoiskRating)
+          .overlay(alignment: .topTrailing) { MediaCardStatusBadge(item: item) }
         }
 #if os(macOS)
         .buttonStyle(PlainButtonStyle())

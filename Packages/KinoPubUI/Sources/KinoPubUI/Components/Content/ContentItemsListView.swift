@@ -16,6 +16,9 @@ public struct ContentItemsListView: View {
   public var onLoadMoreContent: (MediaItem) -> Void
   public var onRefresh: @Sendable () async -> Void
   public var navigationLinkProvider: (MediaItem) -> any Hashable
+  /// Optional per-item overlay (e.g. watched/downloaded status badges) injected by the app, since
+  /// this component can't reach the app's state. Defaults to nothing.
+  public var statusOverlay: (MediaItem) -> AnyView
 
 #if os(iOS)
   @Environment(\.horizontalSizeClass) private var sizeClass
@@ -50,19 +53,21 @@ public struct ContentItemsListView: View {
   }
 
   var gridLayout: [GridItem] {
-    [GridItem(.adaptive(minimum: cellSize), spacing: 16, alignment: .top)]
+    PosterGridLayout.columns(width: width)
   }
 
   public init(width: CGFloat,
               items: Binding<[MediaItem]>,
               onLoadMoreContent: @escaping (MediaItem) -> Void,
               onRefresh: @escaping @Sendable () async -> Void,
-              navigationLinkProvider: @escaping (MediaItem) -> any Hashable) {
+              navigationLinkProvider: @escaping (MediaItem) -> any Hashable,
+              statusOverlay: @escaping (MediaItem) -> AnyView = { _ in AnyView(EmptyView()) }) {
     self._items = items
     self.width = width
     self.onRefresh = onRefresh
     self.onLoadMoreContent = onLoadMoreContent
     self.navigationLinkProvider = navigationLinkProvider
+    self.statusOverlay = statusOverlay
   }
 
   public var body: some View {
@@ -71,6 +76,7 @@ public struct ContentItemsListView: View {
         ForEach(items, id: \.id) { item in
           NavigationLink(value: navigationLinkProvider(item)) {
             ContentItemView(mediaItem: item)
+              .overlay(alignment: .topTrailing) { statusOverlay(item) }
               .onAppear {
                 onLoadMoreContent(item)
               }
