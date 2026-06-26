@@ -81,6 +81,40 @@ struct MediaItemsFilter: Equatable, Hashable {
     if wantAC3 { values.append("ac3") }
     return values.isEmpty ? nil : values
   }
+
+  // MARK: - Client-side facets
+  //
+  // The mobile /v1/items API only honors type/genre/country/year/sort (verified against the live
+  // API — the rating/HD/4K/AC3/period filters the web applies server-side are silently ignored).
+  // Since each item already carries imdb_rating/kinopoisk_rating/quality/ac3/created_at, we apply
+  // those facets on the fetched results instead, so the in-app filter matches the website.
+
+  /// Whether any facet must be applied client-side.
+  var hasClientSideFacets: Bool {
+    (imdbMin ?? 0) > 0 || (kinopoiskMin ?? 0) > 0 || wantHD || withoutHD || want4K || wantAC3 || period != nil
+  }
+
+  /// Applies the client-side-only facets to a fetched item (`now` is the current unix time).
+  func clientSideMatches(_ item: MediaItem, now: TimeInterval) -> Bool {
+    if let imdbMin, imdbMin > 0, (item.imdbRating ?? 0) < Double(imdbMin) { return false }
+    if let kinopoiskMin, kinopoiskMin > 0, (item.kinopoiskRating ?? 0) < Double(kinopoiskMin) { return false }
+    if wantAC3, (item.ac3 ?? 0) != 1 { return false }
+    if want4K, item.quality < 2160 { return false }
+    if wantHD, item.quality < 720 { return false }
+    if withoutHD, item.quality >= 720 { return false }
+    if let period, let window = Self.periodWindow(period), Double(item.createdAt) < now - window { return false }
+    return true
+  }
+
+  private static func periodWindow(_ period: String) -> TimeInterval? {
+    switch period {
+    case "day": return 86_400
+    case "week": return 7 * 86_400
+    case "month": return 30 * 86_400
+    case "year": return 365 * 86_400
+    default: return nil
+    }
+  }
 }
 
 @MainActor

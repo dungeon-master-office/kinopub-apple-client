@@ -23,6 +23,8 @@ class MediaCatalog: ObservableObject {
   @Published public var pagination: Pagination?
   @Published public var contentType: MediaType = .movie
   @Published public var shortcut: MediaShortcut = .hot
+  /// Top-level sort control (moved out of the filter modal). Layers on top of any active filter.
+  @Published public var sort: SortOption = .updated
   @Published public var query: String = ""
   @Published public var activeFilter: MediaItemsFilter?
 
@@ -35,9 +37,9 @@ class MediaCatalog: ObservableObject {
     activeFilter?.activeCount ?? 0
   }
 
-  /// Whether the sort/shortcut differs from the section default (drives the sort dot).
+  /// Whether the sort differs from the section default (drives the sort dot).
   var isSortNonDefault: Bool {
-    shortcut != .hot
+    sort != .updated
   }
 
   init(itemsService: VideoContentService,
@@ -56,6 +58,12 @@ class MediaCatalog: ObservableObject {
   }
 
   func fetchItems() async {
+    await fetchItems(fillBurst: 0)
+  }
+
+  /// `fillBurst` bounds how many extra pages we auto-pull in one call to backfill the grid after a
+  /// client-side facet trims a page (see below).
+  private func fetchItems(fillBurst: Int) async {
     guard authState.userState == .authorized else {
       subscribeForAuth()
       return
@@ -65,18 +73,34 @@ class MediaCatalog: ObservableObject {
       let page = pagination != nil ? pagination!.current + 1 : nil
       if !query.isEmpty {
         let data = try await itemsService.search(query: query, contentType: nil, field: nil, page: page)
-        handleData(data)
-      } else if let activeFilter = activeFilter {
-        let data = try await itemsService.filter(filter: activeFilter, page: page)
-        handleData(data)
-      } else {
-        let data = try await itemsService.fetch(shortcut: shortcut, contentType: contentType, page: page)
-        handleData(data)
+        handleData(items: data.items, pagination: data.pagination)
+        return
+      }
+      // Sort is a top-level control now (was inside the filter modal): always go through the
+      // filter endpoint with the chosen sort, layered on top of any active facet filter.
+      var f = activeFilter ?? MediaItemsFilter(contentType: contentType, genres: [], countries: [], year: nil, age: nil, sort: nil)
+      f.sort = (sort == .updated) ? nil : sort.rawValue
+      let data = try await itemsService.filter(filter: f, page: page)
+      // Apply the facets the mobile API ignores (rating/HD/4K/AC3/period) on the results, so the
+      // in-app filter matches the website (see MediaItemsFilter.clientSideMatches).
+      let now = Date().timeIntervalSince1970
+      let incoming = f.hasClientSideFacets ? data.items.filter { f.clientSideMatches($0, now: now) } : data.items
+      handleData(items: incoming, pagination: data.pagination)
+
+      // A page can shrink to a few matches once facets are applied; pull more pages (bounded) so the
+      // grid isn't left empty and load-more still has an anchor item to trigger the next fetch.
+      if f.hasClientSideFacets, fillBurst < 6, loadedItemCount < 20,
+         let p = pagination, p.current < p.total {
+        await fetchItems(fillBurst: fillBurst + 1)
       }
     } catch {
       Logger.app.debug("fetch items error: \(error)")
       errorHandler.setError(error)
     }
+  }
+
+  private var loadedItemCount: Int {
+    items.filter { !($0.skeleton ?? false) }.count
   }
 
   /// Initial appearance load. Once the catalog already holds a page, this returns immediately,
@@ -87,13 +111,13 @@ class MediaCatalog: ObservableObject {
     await fetchItems()
   }
 
-  private func handleData(_ data: PaginatedData<MediaItem>) {
+  private func handleData(items incoming: [MediaItem], pagination newPagination: Pagination?) {
     if items.first(where: { $0.skeleton ?? false }) != nil {
-      items = data.items
+      items = incoming
     } else {
-      items.append(contentsOf: data.items)
+      items.append(contentsOf: incoming)
     }
-    pagination = data.pagination
+    pagination = newPagination
   }
 
   func loadMoreContent(after item: MediaItem) {
@@ -143,11 +167,11 @@ class MediaCatalog: ObservableObject {
       self?.refresh()
     }.store(in: &bag)
 
-    $shortcut
+    $sort
       .dropFirst()
       .removeDuplicates()
       .sink { [weak self] _ in
-      self?.activeFilter = nil
+      // Sort combines with the active filter (unlike the old shortcut, which cleared it).
       self?.refresh()
     }.store(in: &bag)
 

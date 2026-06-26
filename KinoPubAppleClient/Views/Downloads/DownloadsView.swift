@@ -54,7 +54,10 @@ struct DownloadsView: View {
     // In-progress downloads are NOT navigable (file isn't ready) — so the pause/resume button
     // is tappable instead of the whole row opening the player.
     ForEach(catalog.activeDownloads, id: \.url) { download in
-      DownloadedItemView(mediaItem: download.metadata, progress: download.progress) { _ in
+      DownloadedItemView(mediaItem: download.metadata,
+                         progress: download.progress,
+                         speed: download.speed,
+                         remaining: download.remainingTime) { _ in
         catalog.toggle(download: download)
       }
     }
@@ -67,9 +70,7 @@ struct DownloadsView: View {
   var downloadedFilesList: some View {
     ForEach(catalog.downloadedItems, id: \.originalURL) { fileInfo in
       NavigationLink(value: Route.player(fileInfo.metadata)) {
-        DownloadedItemView(mediaItem: fileInfo.metadata, progress: nil) { paused in
-          
-        }
+        DownloadedItemView(mediaItem: fileInfo.metadata, progress: nil, fileURL: fileInfo.localFileURL) { _ in }
       }
     }
     .onDelete(perform: { indexSet in

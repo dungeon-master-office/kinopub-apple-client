@@ -29,6 +29,22 @@ public class Download<Meta: Codable & Equatable>: ObservableObject {
   /// Progress value
   @Published public private(set) var progress: Float = 0.0
 
+  /// Bytes received so far and the expected total (for size / ETA display).
+  @Published public private(set) var bytesWritten: Int64 = 0
+  public private(set) var totalBytes: Int64 = 0
+
+  /// Current transfer rate in bytes/sec (smoothed over ~0.5s samples).
+  @Published public private(set) var speed: Double = 0
+
+  private var lastSampleTime: Date?
+  private var lastSampleBytes: Int64 = 0
+
+  /// Estimated time remaining, or nil when it can't be computed yet.
+  public var remainingTime: TimeInterval? {
+    guard speed > 0, totalBytes > bytesWritten else { return nil }
+    return Double(totalBytes - bytesWritten) / speed
+  }
+
   /// Public metadata
   public let metadata: Meta
 
@@ -92,6 +108,24 @@ public class Download<Meta: Codable & Equatable>: ObservableObject {
 
   internal func updateProgress(_ progress: Float) {
     self.progress = progress
+  }
+
+  /// Updates byte counters and recomputes the transfer rate from ~0.5s samples.
+  internal func updateTransfer(bytesWritten: Int64, totalBytes: Int64) {
+    let now = Date()
+    if let last = lastSampleTime {
+      let dt = now.timeIntervalSince(last)
+      if dt >= 0.5 {
+        speed = max(0, Double(bytesWritten - lastSampleBytes) / dt)
+        lastSampleTime = now
+        lastSampleBytes = bytesWritten
+      }
+    } else {
+      lastSampleTime = now
+      lastSampleBytes = bytesWritten
+    }
+    self.bytesWritten = bytesWritten
+    self.totalBytes = totalBytes
   }
 
 }

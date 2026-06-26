@@ -17,6 +17,8 @@ struct ProfileView: View {
   @Environment(\.appContext) var appContext
   @StateObject private var model: ProfileModel
   @AppStorage("selectedLanguage") private var selectedLanguage: String = (Locale.current.language.languageCode?.identifier ?? "en")
+  /// User-supplied TMDB API key (overrides the bundled one); read live by TMDBServiceImpl.
+  @AppStorage(TMDBServiceImpl.userDefaultsKey) private var tmdbAPIKey: String = ""
 
   @State private var showLogoutAlert: Bool = false
   @State private var cacheSize: String = ImageCache.shared.formattedDiskUsage()
@@ -64,6 +66,8 @@ struct ProfileView: View {
               }
             }
 
+            tmdbSection
+
             Section {
               Button(action: {
                 showLogoutAlert = true
@@ -100,6 +104,27 @@ struct ProfileView: View {
       }
     }
   }
+  private var tmdbSection: some View {
+    Section(header: Text("TMDB"),
+            footer: Text("Used to show cast & crew photos. Get a free API key at themoviedb.org.".localized)) {
+      SecureField("TMDB API key".localized, text: $tmdbAPIKey)
+        .autocorrectionDisabled()
+#if os(iOS)
+        .textInputAutocapitalization(.never)
+#endif
+      if !tmdbAPIKey.isEmpty {
+        Button(role: .destructive) {
+          tmdbAPIKey = ""
+        } label: {
+          Text("Clear key".localized)
+        }
+#if os(macOS)
+        .buttonStyle(PlainButtonStyle())
+#endif
+      }
+    }
+  }
+
     private var languageSection: some View {
         Section(header: Text("Language")) {
             Picker("Select Language", selection: $selectedLanguage) {

@@ -150,7 +150,8 @@ class DownloadedFilesDatabaseTests: XCTestCase {
     XCTAssertEqual(retrieved?.count, 1)
     XCTAssertEqual(retrieved?.first, keep)
     XCTAssertTrue(fileSaver.didRemoveFileCalled)
-    XCTAssertEqual(fileSaver.removedFileURL, drop.originalURL)
+    // Removing a download deletes the actual on-disk file (its localFileURL), not the remote URL.
+    XCTAssertEqual(fileSaver.removedFileURL, drop.localFileURL)
   }
 
   func testReadData_WhenInvalidPlist_ReturnsNil() {

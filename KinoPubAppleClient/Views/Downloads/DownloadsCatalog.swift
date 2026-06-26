@@ -33,7 +33,18 @@ class DownloadsCatalog: ObservableObject {
   }
   
   func refresh() {
-    self.downloadedItems = downloadsDatabase.readData() ?? []
+    // Files now live in the app's Documents folder (visible in the Files app), so the user can delete
+    // them out-of-band. Drop any entries whose file is gone and clean the DB so the list stays honest.
+    let stored = downloadsDatabase.readData() ?? []
+    var present: [DownloadedFileInfo<DownloadMeta>] = []
+    for info in stored {
+      if FileManager.default.fileExists(atPath: info.localFileURL.path) {
+        present.append(info)
+      } else {
+        downloadsDatabase.remove(fileInfo: info)
+      }
+    }
+    self.downloadedItems = present
     self.activeDownloads = downloadManager.activeDownloads.map({ $0.value })
     cancellables.removeAll()
     self.activeDownloads.forEach({
@@ -49,16 +60,17 @@ class DownloadsCatalog: ObservableObject {
   
   func deleteDownloadedItem(at indexSet: IndexSet) {
     for index in indexSet {
-      let item = downloadedItems[index]
-      downloadsDatabase.remove(fileInfo: item)
+      downloadsDatabase.remove(fileInfo: downloadedItems[index])
     }
+    // Mutate the published array too, so `isEmpty` flips and the placeholder shows once all are gone.
+    downloadedItems.remove(atOffsets: indexSet)
   }
-  
+
   func deleteActiveDownload(at indexSet: IndexSet) {
     for index in indexSet {
-      let item = activeDownloads[index]
-      downloadManager.removeDownload(for: item.url)
+      downloadManager.removeDownload(for: activeDownloads[index].url)
     }
+    activeDownloads.remove(atOffsets: indexSet)
   }
   
   func toggle(download: Download<DownloadMeta>) {

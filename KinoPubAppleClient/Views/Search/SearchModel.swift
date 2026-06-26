@@ -11,6 +11,34 @@ import OSLog
 import KinoPubLogging
 import Combine
 
+/// Search result scope, mirroring the kino.pub web tabs: All / Titles / Actors / Directors.
+enum SearchScope: String, CaseIterable, Identifiable {
+  case all
+  case title
+  case cast
+  case director
+
+  var id: String { rawValue }
+
+  var title: String {
+    switch self {
+    case .all: return "All"
+    case .title: return "Titles"
+    case .cast: return "Actors"
+    case .director: return "Directors"
+    }
+  }
+
+  /// The `field` query param for the search request (nil = match by title).
+  var field: String? {
+    switch self {
+    case .all, .title: return nil
+    case .cast: return "cast"
+    case .director: return "director"
+    }
+  }
+}
+
 /// A recently opened search result, shown as a card in the "Recent" section.
 struct RecentSearchItem: Codable, Identifiable, Hashable {
   let id: Int
@@ -31,11 +59,48 @@ class SearchModel: ObservableObject {
   private var bag = Set<AnyCancellable>()
 
   @Published public var query: String = ""
+  /// Single-field result list used by the person-search screen (paginated). The main search bar
+  /// uses the per-scope buckets below instead.
   @Published public var results: [MediaItem] = []
   /// Pagination for the current results query; drives load-more.
   private var pagination: Pagination?
   /// The query that the current `pagination`/`results` belong to.
   private var pagedQuery: String = ""
+
+  // Main search bar: kino.pub-style scoped results (Titles / Actors / Directors) with counts.
+  @Published public var titleResults: [MediaItem] = []
+  @Published public var castResults: [MediaItem] = []
+  @Published public var directorResults: [MediaItem] = []
+  @Published public var scope: SearchScope = .all
+
+  /// People (from TMDB) the current query matched, shown above the films on the Actors/Directors tabs.
+  @Published public var matchedActors: [TMDBPerson] = []
+  @Published public var matchedDirectors: [TMDBPerson] = []
+  private let tmdbService: TMDBService = AppContext.shared.tmdbService
+
+  /// Deduplicated union across all three scopes (skeletons excluded), for the "All" tab.
+  public var allResults: [MediaItem] {
+    var seen = Set<Int>()
+    var out: [MediaItem] = []
+    for item in titleResults + castResults + directorResults
+    where !(item.skeleton ?? false) && seen.insert(item.id).inserted {
+      out.append(item)
+    }
+    return out
+  }
+
+  public func results(for scope: SearchScope) -> [MediaItem] {
+    switch scope {
+    case .all: return allResults
+    case .title: return titleResults
+    case .cast: return castResults
+    case .director: return directorResults
+    }
+  }
+
+  public func count(for scope: SearchScope) -> Int {
+    results(for: scope).filter { !($0.skeleton ?? false) }.count
+  }
   @Published public var genres: [MediaGenre] = []
   @Published public var genrePosters: [Int: String] = [:]
   @Published public var genreResults: [MediaItem] = []
@@ -81,17 +146,71 @@ class SearchModel: ObservableObject {
       }.store(in: &bag)
   }
 
-  /// Presets a person search (actor/director). The query runs immediately
-  /// against the given `field` ("cast" or "director").
+  /// Presets a person search (actor/director). The query runs immediately against the given
+  /// `field`. Used by the standalone person-search screen, which renders the single `results` list.
   func preset(query: String, field: String?) {
-    searchField = field
     presetQuery = query
     self.query = query
-    Task { await performSearch(query: query) }
+    Task { await performFieldSearch(query: query, field: field) }
   }
 
+  /// Main search bar: query Titles / Actors / Directors at once so the UI can show tabs with
+  /// per-scope counts (like the kino.pub web search).
   func performSearch(query: String) async {
     let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else {
+      titleResults = []
+      castResults = []
+      directorResults = []
+      pagedQuery = ""
+      searching = false
+      return
+    }
+
+    searching = true
+    pagedQuery = trimmed
+    titleResults = MediaItem.skeletonMock()
+    castResults = []
+    directorResults = []
+    matchedActors = []
+    matchedDirectors = []
+
+    async let titles = contentService.search(query: trimmed, contentType: nil, field: nil, page: nil)
+    async let cast = contentService.search(query: trimmed, contentType: nil, field: "cast", page: nil)
+    async let directors = contentService.search(query: trimmed, contentType: nil, field: "director", page: nil)
+    // Which actual people matched the query (for the circles above the Actors/Directors results).
+    async let actorPeople = tmdbService.people(matching: trimmed, role: .acting)
+    async let directorPeople = tmdbService.people(matching: trimmed, role: .directing)
+
+    let t = (try? await titles)?.items ?? []
+    let c = (try? await cast)?.items ?? []
+    let d = (try? await directors)?.items ?? []
+    let actors = await actorPeople
+    let directorsFound = await directorPeople
+
+    // Ignore stale responses if the query changed while the requests were in flight.
+    guard trimmed == pagedQuery else { return }
+    titleResults = t
+    castResults = c
+    directorResults = d
+    matchedActors = actors
+    matchedDirectors = directorsFound
+
+    // If the current tab has nothing but another does, jump to the richest one (e.g. a pure actor
+    // name has 0 titles but many "Actors" hits — show that tab, as the web does).
+    if results(for: scope).isEmpty {
+      if let best = [SearchScope.title, .cast, .director].max(by: { count(for: $0) < count(for: $1) }),
+         count(for: best) > 0 {
+        scope = best
+      }
+    }
+    searching = false
+  }
+
+  /// Single-field search (Titles only, or a person field) feeding the paginated `results` list.
+  func performFieldSearch(query: String, field: String?) async {
+    let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    searchField = field
     guard !trimmed.isEmpty else {
       results = []
       pagination = nil
@@ -106,13 +225,7 @@ class SearchModel: ObservableObject {
     pagedQuery = trimmed
 
     do {
-      var data = try await contentService.search(query: trimmed, contentType: nil, field: searchField, page: nil)
-      // General search: if nothing matched by title, fall back to a cast (people) search so
-      // typing an actor's or director's name finds their titles too.
-      if data.items.isEmpty, searchField == nil {
-        data = try await contentService.search(query: trimmed, contentType: nil, field: "cast", page: nil)
-      }
-      // Guard against a query change while the request(s) were in flight.
+      let data = try await contentService.search(query: trimmed, contentType: nil, field: field, page: nil)
       guard trimmed == pagedQuery else { return }
       results = data.items
       pagination = data.pagination

@@ -65,14 +65,22 @@ class PlayerManager: ObservableObject {
   private var watchMode: WatchMode
   private var downloadedFilesDatabase: DownloadedFilesDatabase<DownloadMeta>
   private var rateObservation: NSKeyValueObservation?
+  private var seekObservation: NSKeyValueObservation?
   private var actionsService: UserActionsService
   
   private var fileURL: URL? {
     switch watchMode {
     case .media:
-      let downloadedFiles = downloadedFilesDatabase.readData()
-      if let file = downloadedFiles?.filter({ $0.metadata.id == playItem.id }).first {
-        return file.localFileURL
+      let downloadedFiles = downloadedFilesDatabase.readData() ?? []
+      let sameItem = downloadedFiles.filter { $0.metadata.id == playItem.id }
+      // For a series there can be several downloads under the same (series) id, plus stale rows whose
+      // file was deleted. Pick the row whose source URL matches THIS item's files (the right episode),
+      // then any same-item row — but only when the file is actually present on disk. Otherwise fall
+      // through to streaming instead of handing AVPlayer a missing file (the "crossed-out play" icon).
+      let playURLs = Set(playItem.files.map { $0.url.http })
+      let chosen = sameItem.first(where: { playURLs.contains($0.originalURL.absoluteString) }) ?? sameItem.first
+      if let chosen, FileManager.default.fileExists(atPath: chosen.localFileURL.path) {
+        return chosen.localFileURL
       }
       let urlString = BestVideoQualityFinder.findBestURL(for: playItem.files)
       guard !urlString.isEmpty, let url = URL(string: urlString) else { return nil }
@@ -161,11 +169,21 @@ class PlayerManager: ObservableObject {
     guard let continueTime else {
       return
     }
-    
     let seekTime = CMTime(seconds: continueTime, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
-    player.seek(to: seekTime)
-    
     self.continueTime = nil
+
+    // Seek now if the item is ready; otherwise wait for it to become ready and seek once. Seeking
+    // a not-yet-ready item is silently dropped, which is why resume sometimes "played from start".
+    if player.currentItem?.status == .readyToPlay {
+      player.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
+    } else {
+      seekObservation = player.currentItem?.observe(\.status, options: [.new]) { [weak self] item, _ in
+        guard item.status == .readyToPlay else { return }
+        self?.player.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        self?.seekObservation?.invalidate()
+        self?.seekObservation = nil
+      }
+    }
   }
   
   func cancelContinueWatching() {

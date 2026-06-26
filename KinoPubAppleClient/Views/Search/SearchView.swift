@@ -16,9 +16,6 @@ struct SearchView: View {
   @Environment(\.appContext) var appContext
   @StateObject private var model: SearchModel
 
-  /// Selected results type filter; `nil` means "All".
-  @State private var selectedResultType: MediaType?
-
   private let browseColumns = [GridItem(.adaptive(minimum: 220), spacing: 16)]
   private let resultsColumns = [GridItem(.adaptive(minimum: 130), spacing: 16)]
 
@@ -31,7 +28,7 @@ struct SearchView: View {
       ScrollView {
         if model.query.trimmingCharacters(in: .whitespaces).isEmpty {
           discoveryContent
-        } else if model.results.isEmpty && !model.searching {
+        } else if model.allResults.isEmpty && !model.searching {
           EmptyStateView(systemImage: "magnifyingglass",
                          title: "Nothing found".localized,
                          message: "Try a different title, actor or director.".localized)
@@ -45,10 +42,6 @@ struct SearchView: View {
       .background(Color.KinoPub.background)
       .task {
         await model.loadGenres()
-      }
-      // A new query starts from the "All" type filter.
-      .onChange(of: model.query) { _ in
-        selectedResultType = nil
       }
       .routeDestinations()
       .handleError(state: $errorHandler.state)
@@ -155,9 +148,13 @@ struct SearchView: View {
 
   var resultsContent: some View {
     VStack(alignment: .leading, spacing: 12) {
-      typeFilterBar
+      scopeTabBar
+      if let people = matchedPeopleForScope, !people.isEmpty {
+        peopleStrip(people)
+        Divider().background(Color.white.opacity(0.08))
+      }
       LazyVGrid(columns: resultsColumns, spacing: 16) {
-        ForEach(filteredResults, id: \.id) { item in
+        ForEach(model.results(for: model.scope), id: \.id) { item in
           if item.skeleton ?? false {
             PosterCard.placeholder()
           } else {
@@ -170,13 +167,6 @@ struct SearchView: View {
             .simultaneousGesture(TapGesture().onEnded {
               model.recordRecent(item)
             })
-            .onAppear {
-              // Paginate against the full result set; the type pills only filter
-              // client-side, so trigger load-more when the last loaded item shows.
-              if item.id == model.results.last?.id {
-                model.loadMoreContent(after: item)
-              }
-            }
           }
         }
       }
@@ -184,56 +174,89 @@ struct SearchView: View {
     .padding(16)
   }
 
-  // MARK: - Results type filter
-
-  /// The results filtered by the selected type (or all when none selected).
-  private var filteredResults: [MediaItem] {
-    guard let selectedResultType else { return model.results }
-    return model.results.filter { MediaType(rawValue: $0.type) == selectedResultType }
-  }
-
-  /// Content types present in the currently loaded results, in canonical order.
-  private var availableResultTypes: [MediaType] {
-    let present = Set(model.results.compactMap { MediaType(rawValue: $0.type) })
-    return MediaType.allCases.filter { present.contains($0) }
-  }
-
-  private func resultCount(for type: MediaType?) -> Int {
-    guard let type else { return model.results.count }
-    return model.results.filter { MediaType(rawValue: $0.type) == type }.count
-  }
+  // MARK: - Scope tabs (All / Titles / Actors / Directors), like the kino.pub web search
 
   @ViewBuilder
-  private var typeFilterBar: some View {
-    // Only worth showing once results span more than one type.
-    let types = availableResultTypes
-    if types.count > 1 {
-      ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 8) {
-          typePill(title: "All".localized, count: resultCount(for: nil), type: nil)
-          ForEach(types) { type in
-            typePill(title: type.title.localized, count: resultCount(for: type), type: type)
-          }
+  private var scopeTabBar: some View {
+    ScrollView(.horizontal, showsIndicators: false) {
+      HStack(spacing: 8) {
+        ForEach(SearchScope.allCases) { scope in
+          scopeTab(scope)
         }
       }
     }
   }
 
-  private func typePill(title: String, count: Int, type: MediaType?) -> some View {
-    let isSelected = selectedResultType == type
+  private func scopeTab(_ scope: SearchScope) -> some View {
+    let isSelected = model.scope == scope
     return Button {
-      selectedResultType = type
+      model.scope = scope
     } label: {
-      Text("\(title) (\(count))")
-        .font(.system(size: 13, weight: .semibold))
-        .foregroundStyle(isSelected ? Color.white : Color.KinoPub.text)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(
-          Capsule().fill(isSelected ? Color.KinoPub.accent : Color.white.opacity(0.1))
-        )
+      HStack(spacing: 6) {
+        Text(scope.title.localized)
+          .font(.system(size: 13, weight: .semibold))
+          .foregroundStyle(isSelected ? Color.white : Color.KinoPub.text)
+        Text("\(model.count(for: scope))")
+          .font(.system(size: 11, weight: .bold))
+          .monospacedDigit()
+          .padding(.horizontal, 6)
+          .padding(.vertical, 1)
+          .background(Capsule().fill(isSelected ? Color.white.opacity(0.25) : Color.KinoPub.accent.opacity(0.22)))
+          .foregroundStyle(isSelected ? Color.white : Color.KinoPub.accent)
+      }
+      .padding(.horizontal, 12)
+      .padding(.vertical, 6)
+      .background(Capsule().fill(isSelected ? Color.KinoPub.accent : Color.white.opacity(0.1)))
     }
     .buttonStyle(.plain)
+  }
+
+  // MARK: - Matched people (circles above the Actors / Directors results)
+
+  /// The people matched for the current tab, or nil for tabs that don't show a people strip.
+  private var matchedPeopleForScope: [TMDBPerson]? {
+    switch model.scope {
+    case .cast: return model.matchedActors
+    case .director: return model.matchedDirectors
+    case .all, .title: return nil
+    }
+  }
+
+  private func peopleStrip(_ people: [TMDBPerson]) -> some View {
+    ScrollView(.horizontal, showsIndicators: false) {
+      HStack(alignment: .top, spacing: 14) {
+        ForEach(people) { person in
+          NavigationLink(value: Route.personSearch(person.name,
+                                                   model.scope.field ?? "cast",
+                                                   person.name)) {
+            VStack(spacing: 6) {
+              personAvatar(person.imageURL)
+              Text(person.name)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.KinoPub.text)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .frame(width: 72)
+            }
+          }
+          .buttonStyle(.plain)
+        }
+      }
+      .padding(.vertical, 2)
+    }
+  }
+
+  private func personAvatar(_ url: URL?) -> some View {
+    CachedAsyncImage(url: url) { image in
+      image.resizable().scaledToFill()
+    } placeholder: {
+      ZStack {
+        Color.KinoPub.skeleton
+        Image(systemName: "person.fill").foregroundStyle(Color.KinoPub.subtitle)
+      }
+    }
+    .frame(width: 64, height: 64)
+    .clipShape(Circle())
   }
 
 }

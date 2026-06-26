@@ -63,12 +63,20 @@ class MediaItemModel: ObservableObject {
       .filter { !$0.isEmpty }
   }
 
-  /// Resolve TMDB portraits for the visible cast & crew (best-effort, cached).
+  /// Resolve TMDB portraits for the visible cast & crew (best-effort, cached). Directors are looked
+  /// up with the directing role so a same-named actor isn't picked instead.
   func loadCastPhotos() async {
-    let names = Array(Set(castNames.prefix(12)).union(directorNames))
+    var requests: [(name: String, role: TMDBPersonRole)] = []
+    var seen = Set<String>()
+    for name in castNames.prefix(12) where seen.insert(name).inserted {
+      requests.append((name, .acting))
+    }
+    for name in directorNames where seen.insert(name).inserted {
+      requests.append((name, .directing))
+    }
     await withTaskGroup(of: (String, URL?).self) { group in
-      for name in names where personImages[name] == nil {
-        group.addTask { [tmdbService] in (name, await tmdbService.personImageURL(for: name)) }
+      for request in requests where personImages[request.name] == nil {
+        group.addTask { [tmdbService] in (request.name, await tmdbService.personImageURL(for: request.name, role: request.role)) }
       }
       for await (name, url) in group {
         if let url { personImages[name] = url }
@@ -183,7 +191,8 @@ class MediaItemModel: ObservableObject {
   }
   
   func startDownload(item: DownloadableMediaItem, file: FileInfo) {
-    _ = downloadManager.startDownload(url: URL(string: file.url.http)!, withMetadata: DownloadMeta.make(from: item))
+    guard let url = URL(string: file.url.http) else { return }
+    _ = downloadManager.startDownload(url: url, withMetadata: DownloadMeta.make(from: item, quality: file.quality))
   }
 
   func toggleWatched() {

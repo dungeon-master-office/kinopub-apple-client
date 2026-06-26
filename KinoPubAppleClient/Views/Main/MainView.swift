@@ -63,7 +63,7 @@ struct MainView: View {
       }
       .background(Color.KinoPub.background)
       .sheet(isPresented: $showShortCutPicker, content: {
-        ShortcutSelectionView(shortcut: $catalog.shortcut)
+        SortSelectionView(sort: $catalog.sort)
       })
       .sheet(isPresented: $showFilterPicker, content: {
         FilterView(model: FilterModel(contentType: catalog.contentType,
@@ -175,7 +175,7 @@ struct FilteredCatalogView: View {
       }
     }
     .sheet(isPresented: $showShortCutPicker) {
-      ShortcutSelectionView(shortcut: $catalog.shortcut)
+      SortSelectionView(sort: $catalog.sort)
     }
     .sheet(isPresented: $showFilterPicker) {
       FilterView(model: FilterModel(contentType: catalog.contentType,

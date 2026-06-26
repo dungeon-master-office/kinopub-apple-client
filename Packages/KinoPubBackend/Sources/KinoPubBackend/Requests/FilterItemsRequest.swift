@@ -84,60 +84,15 @@ public struct FilterItemsRequest: Endpoint {
       params["year"] = year
     }
 
-    if let age = age, !age.isEmpty {
-      params["age"] = age
-    }
-
     if let sort = sort, !sort.isEmpty {
       params["sort"] = sort
     }
 
-    // NOTE: the parameters below are best-effort mappings to the kino.pub web
-    // filter and may need adjustment. The official docs (kinoapi.com) document
-    // `conditions` (array) and `quality` (array) but do not specify the exact
-    // encoding for the subtitle / IMDb / Kinopoisk / HD / 4K / AC3 filters, so
-    // these are inferred from the web client. They must NOT affect the
-    // confidently-known genre/country/year/sort params above.
-    if let subtitles = subtitles, !subtitles.isEmpty {
-      params["subtitles"] = subtitles
-    }
-
-    if let imdb = imdb, !imdb.isEmpty {
-      // Best-effort: minimum IMDb rating.
-      params["imdb"] = imdb
-    }
-
-    if let kinopoisk = kinopoisk, !kinopoisk.isEmpty {
-      // Best-effort: minimum Kinopoisk rating.
-      params["kinopoisk"] = kinopoisk
-    }
-
-    if let quality = quality, !quality.isEmpty {
-      // Best-effort: kino.pub expects `quality` as an array. The simple query
-      // builder here can't emit `quality[]=`, so send a comma-joined list.
-      params["quality"] = quality.joined(separator: ",")
-    }
-
-    if let conditions = conditions, !conditions.isEmpty {
-      // Best-effort: HD/4K/AC3 "wants" map onto the `conditions` array; sent
-      // comma-joined for the same reason as `quality` above.
-      params["conditions"] = conditions.joined(separator: ",")
-    }
-
-    if let period = period, !period.isEmpty {
-      // Best-effort: web "Period" dropdown.
-      params["period"] = period
-    }
-
-    if let language = language, !language.isEmpty {
-      // Best-effort: web "Язык" (audio language) dropdown.
-      params["lang"] = language
-    }
-
-    if let translation = translation, !translation.isEmpty {
-      // Best-effort: web "Перевод" (translation type) dropdown.
-      params["translation"] = translation
-    }
+    // Only the params above are honored by the mobile /v1/items API (verified against the live API).
+    // The web's rating / subtitles / period / language / translation / age / HD / 4K / AC3 filters
+    // are rendered server-side on the website and silently ignored by /v1/items, so we no longer
+    // send them. The ones we can reproduce (rating, HD/4K, AC3, period) are applied client-side on
+    // the results — see `MediaItemsFilter.clientSideMatches`.
 
     if let page = page {
       params["page"] = "\(page)"

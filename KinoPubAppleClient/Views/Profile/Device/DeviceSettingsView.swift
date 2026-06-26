@@ -26,6 +26,19 @@ struct DeviceSettingsView: View {
         form
       }
     }
+    .overlay(alignment: .bottom) {
+      if model.didSave {
+        Label("Saved".localized, systemImage: "checkmark.circle.fill")
+          .font(.system(size: 14, weight: .semibold))
+          .foregroundStyle(.white)
+          .padding(.horizontal, 16)
+          .padding(.vertical, 10)
+          .background(Capsule().fill(Color.KinoPub.accent))
+          .padding(.bottom, 24)
+          .transition(.move(edge: .bottom).combined(with: .opacity))
+      }
+    }
+    .animation(.spring(response: 0.35, dampingFraction: 0.8), value: model.didSave)
     .navigationTitle("Device settings".localized)
     .toolbar {
       ToolbarItem(placement: .confirmationAction) {
@@ -49,28 +62,23 @@ struct DeviceSettingsView: View {
       }
 
       Section {
-        // Stream type. NOTE: these int mappings are best-effort and may need
-        // adjustment to match the kino.pub API once confirmed.
+        // Stream-type and server options come straight from the server (ids + labels).
         Picker("Stream type".localized, selection: $model.settings.streamingType) {
-          Text("HLS").tag(0)
-          Text("HLS2").tag(1)
-          Text("HLS4").tag(2)
-          Text("HTTP").tag(3)
+          ForEach(model.settings.streamingTypeOptions) { option in
+            Text(option.label).tag(option.id)
+          }
         }
 
-        // Server names aren't exposed by the API, so expose the raw index.
-        Stepper(value: $model.settings.serverLocation, in: 0...20) {
-          LabeledContent("Server location".localized,
-                         value: "\(model.settings.serverLocation)")
+        Picker("Server location".localized, selection: $model.settings.serverLocation) {
+          ForEach(model.settings.serverLocationOptions) { option in
+            Text(option.label).tag(option.id)
+          }
         }
       }
 
       Section {
         Toggle("4K".localized, isOn: $model.settings.support4k)
         Toggle("HEVC".localized, isOn: $model.settings.supportHevc)
-        Toggle("HDR".localized, isOn: $model.settings.supportHdr)
-        Toggle("Mixed playlist".localized, isOn: $model.settings.mixedPlaylist)
-        Toggle("Use SSL".localized, isOn: $model.settings.useSsl)
       } footer: {
         Text("Changes take effect within a minute".localized)
       }

@@ -70,12 +70,24 @@ struct SportView: View {
   @ViewBuilder
   private var loadingPlaceholder: some View {
     if isWide {
-      HStack(spacing: 0) {
-        skeletonList
-          .frame(width: 320)
-        Divider()
-        lockedPlayerPlaceholder
-          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+      // Mirror wideLayout's own breakpoint so the placeholder matches the real layout at every width
+      // (side-by-side when roomy, player-on-top when narrow — e.g. iPad split view / Slide Over).
+      GeometryReader { geo in
+        if geo.size.width >= 700 {
+          HStack(spacing: 0) {
+            skeletonList
+              .frame(width: 320)
+            Divider()
+            lockedPlayerPlaceholder
+              .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+          }
+        } else {
+          VStack(spacing: 0) {
+            lockedPlayerPlaceholder
+            Divider()
+            skeletonList
+          }
+        }
       }
     } else {
       ScrollView {
