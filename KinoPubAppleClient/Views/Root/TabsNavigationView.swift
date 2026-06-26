@@ -29,6 +29,7 @@ struct TabsNavigationView: View {
     TabView {
       searchTab
       mainTab
+      sportTab
       bookmarksTab
       watchingTab
       historyTab
@@ -72,6 +73,17 @@ struct TabsNavigationView: View {
     .toolbarBackground(Color.KinoPub.background, for: placement)
   }
   
+  var sportTab: some View {
+    SportView(model: SportModel(itemsService: appContext.contentService,
+                                authState: authState,
+                                errorHandler: errorHandler))
+    .tag(NavigationTabs.sport)
+    .tabItem {
+      Label("Sport", systemImage: "sportscourt")
+    }
+    .toolbarBackground(Color.KinoPub.background, for: placement)
+  }
+
   var bookmarksTab: some View {
     BookmarksView(catalog: BookmarksCatalog(itemsService: appContext.contentService,
                                             authState: authState,

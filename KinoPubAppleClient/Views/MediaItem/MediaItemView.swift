@@ -15,6 +15,7 @@ import SkeletonUI
 struct MediaItemView: View {
 
   @EnvironmentObject var errorHandler: ErrorHandler
+  @Environment(\.appContext) private var appContext
   @StateObject private var itemModel: MediaItemModel
 
   @State private var plotExpanded: Bool = false
@@ -47,6 +48,8 @@ struct MediaItemView: View {
       .frame(maxWidth: .infinity, alignment: .leading)
     }
     .background(Color.KinoPub.background)
+    // Let the hero cover bleed up under the (transparent) navigation bar.
+    .ignoresSafeArea(edges: .top)
     // Picker to select episode or entire media to download.
     .confirmationDialog("", isPresented: $showDownloadableItemPicker, titleVisibility: .hidden) {
       ForEach(mediaItem.downloadableItems) { item in
@@ -67,10 +70,16 @@ struct MediaItemView: View {
     }
     #if os(iOS)
     .toolbar(.hidden, for: .tabBar)
+    .toolbarBackground(.hidden, for: .navigationBar)
+    .toolbarColorScheme(.dark, for: .navigationBar)
     #endif
     .task {
       itemModel.fetchData()
       itemModel.loadBookmarkFolders()
+    }
+    // Cache artwork/title locally so a started title can resume in Continue Watching.
+    .onChange(of: itemModel.itemLoaded) { loaded in
+      if loaded { appContext.localProgressStore.cacheItem(itemModel.mediaItem) }
     }
     .handleError(state: $errorHandler.state)
   }
@@ -221,7 +230,7 @@ struct MediaItemView: View {
 
   @ViewBuilder
   private var playButton: some View {
-    let title = mediaItem.isSeries ? "Watch" : "Play"
+    let title = (mediaItem.isSeries ? "Watch" : "Play").localized
     if mediaItem.isSeries, let firstEpisode = firstPlayableEpisode {
       NavigationLink(value: itemModel.linkProvider.player(for: firstEpisode)) {
         playLabel(title)
@@ -304,7 +313,7 @@ struct MediaItemView: View {
               ForEach(season.episodes, id: \.id) { episode in
                 NavigationLink(value: itemModel.linkProvider.player(for: filledEpisode(episode, in: season))) {
                   EpisodeCard(imageURL: episode.thumbnail,
-                              overline: "Episode \(episode.number)",
+                              overline: "\("Episode".localized) \(episode.number)",
                               title: episode.fixedTitle,
                               footnote: "\(max(episode.duration / 60, 1)) мин",
                               progress: episodeProgress(episode))
@@ -313,6 +322,23 @@ struct MediaItemView: View {
                 .buttonStyle(.plain)
                 #endif
                 .id(episode.id)
+                .contextMenu {
+                  Button {
+                    itemModel.toggleEpisodeWatched(episodeNumber: episode.number, season: season.number)
+                  } label: {
+                    Label(episode.watched > 0 ? "Mark as Unwatched".localized : "Mark as Watched".localized,
+                          systemImage: episode.watched > 0 ? "checkmark.circle" : "circle")
+                  }
+                  Button {
+                    selectedDownloadableItem = DownloadableMediaItem(name: "S\(season.number)E\(episode.number)",
+                                                                     files: episode.files,
+                                                                     mediaItem: mediaItem,
+                                                                     watchingMetadata: WatchingMetadata(id: episode.id, video: episode.number, season: season.number))
+                    showDownloadPicker = true
+                  } label: {
+                    Label("Download".localized, systemImage: "arrow.down.circle")
+                  }
+                }
               }
             }
             .padding(.horizontal, 20)
@@ -415,7 +441,7 @@ struct MediaItemView: View {
   @ViewBuilder
   private var trailersSection: some View {
     if mediaItem.trailer?.url != nil {
-      MediaShelf(title: "Trailers", showsChevron: false) {
+      MediaShelf(title: "Trailers".localized, showsChevron: false) {
         NavigationLink(value: itemModel.linkProvider.trailerPlayer(for: mediaItem)) {
           EpisodeCard(imageURL: mediaItem.posters.big, title: "Trailer")
         }
@@ -431,7 +457,7 @@ struct MediaItemView: View {
   @ViewBuilder
   private var relatedSection: some View {
     if !itemModel.relatedItems.isEmpty {
-      MediaShelf(title: "Related", showsChevron: false) {
+      MediaShelf(title: "Related".localized, showsChevron: false) {
         ForEach(itemModel.relatedItems) { item in
           NavigationLink(value: itemModel.linkProvider.link(for: item)) {
             PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
@@ -454,12 +480,12 @@ struct MediaItemView: View {
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .filter { !$0.isEmpty }
     if !actors.isEmpty || !directors.isEmpty {
-      MediaShelf(title: "Cast & Crew", showsChevron: false) {
+      MediaShelf(title: "Cast & Crew".localized, showsChevron: false) {
         ForEach(directors, id: \.self) { name in
-          CastAvatarView(name: name, role: "Director")
+          CastAvatarView(name: name, role: "Director".localized)
         }
         ForEach(actors, id: \.self) { name in
-          CastAvatarView(name: name, role: "Actor")
+          CastAvatarView(name: name, role: "Actor".localized)
         }
       }
     }
@@ -532,15 +558,15 @@ private struct MediaItemInfoSection: View {
 
   private var information: some View {
     VStack(alignment: .leading, spacing: 12) {
-      sectionTitle("Information")
+      sectionTitle("Information".localized)
 
       if mediaItem.year > 0 {
-        infoRow(label: "Premiere", value: "\(mediaItem.year)")
+        infoRow(label: "Premiere".localized, value: "\(mediaItem.year)")
       }
 
       let countries = mediaItem.countries.map { $0.title }.joined(separator: ", ")
       if !countries.isEmpty {
-        infoRow(label: "Country", value: countries)
+        infoRow(label: "Country".localized, value: countries)
       }
 
       if !mediaItem.director.isEmpty {
@@ -568,7 +594,7 @@ private struct MediaItemInfoSection: View {
     let voice = mediaItem.voice?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     if !voice.isEmpty {
       VStack(alignment: .leading, spacing: 12) {
-        sectionTitle("Languages")
+        sectionTitle("Languages".localized)
         infoRow(label: "Audio", value: voice)
       }
     }

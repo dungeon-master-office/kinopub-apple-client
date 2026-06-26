@@ -108,7 +108,7 @@ struct SearchView: View {
 
   private func recentCard(_ recent: RecentSearchItem) -> some View {
     HStack(spacing: 12) {
-      AsyncImage(url: URL(string: recent.poster)) { image in
+      CachedAsyncImage(url: URL(string: recent.poster)) { image in
         image.resizable().aspectRatio(contentMode: .fill)
       } placeholder: {
         Color.KinoPub.skeleton

@@ -49,7 +49,7 @@ public struct ContinueWatchingCard: View {
   }
 
   private var artwork: some View {
-    AsyncImage(url: URL(string: imageURL ?? "")) { image in
+    CachedAsyncImage(url: URL(string: imageURL ?? "")) { image in
       image
         .resizable()
         .renderingMode(.original)

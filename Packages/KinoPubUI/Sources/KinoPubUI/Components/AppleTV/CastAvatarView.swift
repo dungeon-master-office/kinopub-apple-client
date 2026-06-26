@@ -46,7 +46,7 @@ public struct CastAvatarView: View {
   @ViewBuilder
   private var avatar: some View {
     if let imageURL, !imageURL.isEmpty {
-      AsyncImage(url: URL(string: imageURL)) { image in
+      CachedAsyncImage(url: URL(string: imageURL)) { image in
         image.resizable().aspectRatio(contentMode: .fill)
       } placeholder: {
         placeholder

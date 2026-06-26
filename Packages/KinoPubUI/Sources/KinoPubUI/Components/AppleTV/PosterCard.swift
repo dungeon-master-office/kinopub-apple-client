@@ -53,7 +53,7 @@ public struct PosterCard: View {
   }
 
   private var poster: some View {
-    AsyncImage(url: URL(string: imageURL ?? "")) { image in
+    CachedAsyncImage(url: URL(string: imageURL ?? "")) { image in
       image
         .resizable()
         .renderingMode(.original)

@@ -78,7 +78,7 @@ public struct EpisodeCard: View {
   }
 
   private var thumbnail: some View {
-    AsyncImage(url: URL(string: imageURL ?? "")) { image in
+    CachedAsyncImage(url: URL(string: imageURL ?? "")) { image in
       image
         .resizable()
         .renderingMode(.original)

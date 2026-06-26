@@ -11,6 +11,7 @@ import KinoPubBackend
 enum NavigationTabs {
   case search
   case main
+  case sport
   case bookmarks
   case watching
   case history
@@ -24,6 +25,7 @@ enum SidebarItem: Hashable, Identifiable {
   case search
   case new
   case category(MediaType)
+  case sport
   case watching
   case bookmarks
   case history
@@ -35,6 +37,7 @@ enum SidebarItem: Hashable, Identifiable {
     case .search: return "search"
     case .new: return "new"
     case .category(let type): return "category-\(type.rawValue)"
+    case .sport: return "sport"
     case .watching: return "watching"
     case .bookmarks: return "bookmarks"
     case .history: return "history"
@@ -45,7 +48,7 @@ enum SidebarItem: Hashable, Identifiable {
 
   // Library categories shown in the sidebar, ordered like the website.
   static let libraryCategories: [MediaType] = [
-    .movie, .serial, .threeD, .concert, .documovie, .docuserial, .tvshow
+    .movie, .serial, .concert, .documovie, .docuserial, .tvshow
   ]
 
   var title: String {
@@ -53,6 +56,7 @@ enum SidebarItem: Hashable, Identifiable {
     case .search: return "Search"
     case .new: return "Home"
     case .category(let type): return type.title
+    case .sport: return "Sport"
     case .watching: return "Watching"
     case .bookmarks: return "Bookmarks"
     case .history: return "History"
@@ -66,6 +70,7 @@ enum SidebarItem: Hashable, Identifiable {
     case .search: return "magnifyingglass"
     case .new: return "house"
     case .category(let type): return type.systemImage
+    case .sport: return "sportscourt"
     case .watching: return "play.tv"
     case .bookmarks: return "bookmark"
     case .history: return "clock.arrow.circlepath"

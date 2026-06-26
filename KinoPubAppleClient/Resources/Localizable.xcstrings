@@ -1,1360 +1,2064 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "."
+  "sourceLanguage": "en",
+  "strings": {
+    "": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "."
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "."
-          }
-        }
-      }
-    },
-    "%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "."
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "."
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
           }
         }
       }
     },
-    "AlwaysOnTop" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Always on top"
+    "%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visada viršuje"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать поверх остальных окон"
-          }
-        }
-      }
-    },
-    "App version" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Version"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Programos versija"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Версия приложения"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
           }
         }
       }
     },
-    "Apply" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apply"
+    "AlwaysOnTop": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always on top"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Taikyti"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visada viršuje"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Применить"
-          }
-        }
-      }
-    },
-    "Are you sure?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are you sure?"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ar Jūs tikras?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вы уверены?"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывать поверх остальных окон"
           }
         }
       }
     },
-    "Auth_Activate" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activate"
+    "App version": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Version"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aktyvuoti"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programos versija"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Активировать"
-          }
-        }
-      }
-    },
-    "Auth_CodeActivationText" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You must activate this device first. Go to the website and enter the code in the \"Device Activation\" section of your profile and press \"Add\". Then return to the app. The code is automatically copied to the clipboard."
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pirmiausia turite aktyvuoti šį įrenginį. Eikite į svetainę ir savo profilyje skiltyje „Įrenginio aktyvacija“ įveskite kodą ir paspauskite „Pridėti“. Tada grįžkite į programą. Kodas automatiškai nukopijuojamas į iškarpinę."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Для начала нужно активировать это устройство. Перейдите на сайт и в своём профиле в графе «Активация устройства» введите код и нажмите «Добавить». После этого возвращайтесь в приложение.  Код автоматически копируется в буфер обмена."
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версия приложения"
           }
         }
       }
     },
-    "Auth_CodeActivationTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Device Activation"
+    "Apply": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apply"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Įrenginio aktyvacija"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taikyti"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Активация устройства"
-          }
-        }
-      }
-    },
-    "Auth_DeviceCode" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Device Code"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Įrenginio kodas"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Код устройства"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Применить"
           }
         }
       }
     },
-    "Bookmarks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bookmarks"
+    "Are you sure?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure?"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Žymės"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ar Jūs tikras?"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закладки"
-          }
-        }
-      }
-    },
-    "Cancel" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atšaukti"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы уверены?"
           }
         }
       }
     },
-    "Choose item" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose Item"
+    "Auth_Activate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activate"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pasirinkite"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktyvuoti"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Выберите"
-          }
-        }
-      }
-    },
-    "Clear" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Išvalyti"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активировать"
           }
         }
       }
     },
-    "Concert" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Concert"
+    "Auth_CodeActivationText": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You must activate this device first. Go to the website and enter the code in the \"Device Activation\" section of your profile and press \"Add\". Then return to the app. The code is automatically copied to the clipboard."
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Koncertai"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pirmiausia turite aktyvuoti šį įrenginį. Eikite į svetainę ir savo profilyje skiltyje „Įrenginio aktyvacija“ įveskite kodą ir paspauskite „Pridėti“. Tada grįžkite į programą. Kodas automatiškai nukopijuojamas į iškarpinę."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Концерт"
-          }
-        }
-      }
-    },
-    "Continue Watching" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue Watching"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tęsti žiūrėjimą"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Продолжить просмотр с"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для начала нужно активировать это устройство. Перейдите на сайт и в своём профиле в графе «Активация устройства» введите код и нажмите «Добавить». После этого возвращайтесь в приложение.  Код автоматически копируется в буфер обмена."
           }
         }
       }
     },
-    "days" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "days"
+    "Auth_CodeActivationTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device Activation"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "dienos"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Įrenginio aktyvacija"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "дней"
-          }
-        }
-      }
-    },
-    "Documental" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Documental"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dokumentiniai filmai"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Документальные фильмы"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активация устройства"
           }
         }
       }
     },
-    "Documental Series" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Documental Series"
+    "Auth_DeviceCode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device Code"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dokumentiniai serialai"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Įrenginio kodas"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Документальные сериалы"
-          }
-        }
-      }
-    },
-    "Downloads" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Downloads"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atsisiuntimai"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Загрузки"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код устройства"
           }
         }
       }
     },
-    "Filter" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filter"
+    "Bookmarks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bookmarks"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtrai"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žymės"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фильтр"
-          }
-        }
-      }
-    },
-    "Fresh" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fresh"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nauja"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новые"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закладки"
           }
         }
       }
     },
-    "Hot" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hot"
+    "Cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HOT"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atšaukti"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Горячие"
-          }
-        }
-      }
-    },
-    "IMDB Rating" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IMDB Rating"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IMDB Įvertinimas"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Рейтинг IMDB"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отмена"
           }
         }
       }
     },
-    "Language" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Language"
+    "Choose item": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Item"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Language"
+        "lt": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pasirinkite"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Язык"
-          }
-        }
-      }
-    },
-    "Logout" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Logout"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atsijungti"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выйти"
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Выберите"
           }
         }
       }
     },
-    "Main" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Main"
+    "Clear": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pagrindinis"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Išvalyti"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Главная"
-          }
-        }
-      }
-    },
-    "MediaItem_Cast" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cast"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aktoriai"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Актеры"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить"
           }
         }
       }
     },
-    "MediaItem_Country" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Country"
+    "Concert": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concert"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Šalis"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koncertai"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Страна"
-          }
-        }
-      }
-    },
-    "MediaItem_Data" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Data"
-          }
-        },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duomenys"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Данные"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Концерт"
           }
         }
       }
     },
-    "MediaItem_Description" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Description"
+    "Continue Watching": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue Watching"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aprašymas"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tęsti žiūrėjimą"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Описание"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продолжить просмотр с"
           }
         }
       }
     },
-    "MediaItem_Director" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Director"
+    "days": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "days"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Režisierius"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dienos"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Режиссер"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "дней"
           }
         }
       }
     },
-    "MediaItem_Duration" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duration"
+    "Documental": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documental"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trukmė"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokumentiniai filmai"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Продолжительность"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Документальные фильмы"
           }
         }
       }
     },
-    "MediaItem_Genre" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Genre"
+    "Documental Series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documental Series"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Žanras"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokumentiniai serialai"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Жанр"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Документальные сериалы"
           }
         }
       }
     },
-    "MediaItem_Title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Title"
+    "Downloads": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pavadinimas"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atsisiuntimai"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Название"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузки"
           }
         }
       }
     },
-    "MediaItem_Voice" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voice"
+    "Filter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Įgarsinimas"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtrai"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Озвучка"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фильтр"
           }
         }
       }
     },
-    "MediaItem_Year" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Year"
+    "Fresh": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fresh"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Metai"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nauja"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Год"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые"
           }
         }
       }
     },
-    "Movie" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Movies"
+    "Hot": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hot"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filmai"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HOT"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фильмы"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Горячие"
           }
         }
       }
     },
-    "Movies" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Movies"
+    "IMDB Rating": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IMDB Rating"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filmai"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IMDB Įvertinimas"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фильмы"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рейтинг IMDB"
           }
         }
       }
     },
-    "No" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No"
+    "Language": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ne"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нет"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Язык"
           }
         }
       }
     },
-    "No resuts" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No results"
+    "Logout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logout"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nėra rezultatų"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atsijungti"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нет результатов"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выйти"
           }
         }
       }
     },
-    "OK" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
+    "Main": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagrindinis"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Главная"
           }
         }
       }
     },
-    "Popular" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Popular"
+    "MediaItem_Cast": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cast"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Populiarūs"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktoriai"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Популярные"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Актеры"
           }
         }
       }
     },
-    "Profile" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profile"
+    "MediaItem_Country": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Country"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profilis"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Šalis"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Профиль"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Страна"
           }
         }
       }
     },
-    "Registration Date" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Registration Date"
+    "MediaItem_Data": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Registracijos data"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duomenys"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дата регистрации"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Данные"
           }
         }
       }
     },
-    "Release Year" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Release Year"
+    "MediaItem_Description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Išleidimo metai"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprašymas"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Год выхода"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Описание"
           }
         }
       }
     },
-    "Restarting the app" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Closing the app"
+    "MediaItem_Director": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Director"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Perkraunama programa"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Režisierius"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрытие программы"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Режиссер"
           }
         }
       }
     },
-    "Seasons" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seasons"
+    "MediaItem_Duration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sezonai"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trukmė"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сезоны"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продолжительность"
           }
         }
       }
     },
-    "Select Language" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select Language"
+    "MediaItem_Genre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Genre"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pasirinkite kalbą"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žanras"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выберите язык"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жанр"
           }
         }
       }
     },
-    "Serial" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serial"
+    "MediaItem_Title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serialai"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pavadinimas"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сериалы"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Название"
           }
         }
       }
     },
-    "Series" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Series"
+    "MediaItem_Voice": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serijos"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Įgarsinimas"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сериалы"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Озвучка"
           }
         }
       }
     },
-    "The app will restart to apply the language change." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The app will close to apply the language change."
+    "MediaItem_Year": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Year"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Programa išsijungs, kad būtų išsaugoti kalbos pasikeitimai."
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metai"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Программа выйдет, чтобы сохранить изменения языка."
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Год"
           }
         }
       }
     },
-    "Trailer" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trailer"
+    "Movie": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trileris"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filmai"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Трейлер"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фильмы"
           }
         }
       }
     },
-    "TV Show" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TV Show"
+    "Movies": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TV laidos"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filmai"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ТВ Шоу"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фильмы"
           }
         }
       }
     },
-    "Type" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Type"
+    "No": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tipai"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Тип"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет"
           }
         }
       }
     },
-    "User Name" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "User Name"
+    "No resuts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No results"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vardas"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nėra rezultatų"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя пользователя"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет результатов"
           }
         }
       }
     },
-    "User Subscription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "User Subscription"
+    "OK": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prenumerata"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подписка"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         }
       }
     },
-    "Watch" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Watch"
+    "Popular": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popular"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Žiūrėti"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Populiarūs"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Смотреть"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Популярные"
           }
         }
       }
     },
-    "Yes" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yes"
+    "Profile": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Taip"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profilis"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Да"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Профиль"
           }
         }
       }
     },
-    "You don't have any downloads yet" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You don't have any downloads yet"
+    "Registration Date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registration Date"
           }
         },
-        "lt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Neturite dar atsisiuntimų"
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registracijos data"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "У вас пока нет загрузок"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дата регистрации"
+          }
+        }
+      }
+    },
+    "Release Year": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release Year"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Išleidimo metai"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Год выхода"
+          }
+        }
+      }
+    },
+    "Restarting the app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closing the app"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perkraunama programa"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрытие программы"
+          }
+        }
+      }
+    },
+    "Seasons": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seasons"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sezonai"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сезоны"
+          }
+        }
+      }
+    },
+    "Select Language": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Language"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasirinkite kalbą"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите язык"
+          }
+        }
+      }
+    },
+    "Serial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serial"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serialai"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сериалы"
+          }
+        }
+      }
+    },
+    "Series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Series"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serijos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сериалы"
+          }
+        }
+      }
+    },
+    "The app will restart to apply the language change.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app will close to apply the language change."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programa išsijungs, kad būtų išsaugoti kalbos pasikeitimai."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Программа выйдет, чтобы сохранить изменения языка."
+          }
+        }
+      }
+    },
+    "Trailer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trailer"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trileris"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Трейлер"
+          }
+        }
+      }
+    },
+    "TV Show": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV Show"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV laidos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ТВ Шоу"
+          }
+        }
+      }
+    },
+    "Type": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tipai"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тип"
+          }
+        }
+      }
+    },
+    "User Name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Name"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vardas"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя пользователя"
+          }
+        }
+      }
+    },
+    "User Subscription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Subscription"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prenumerata"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подписка"
+          }
+        }
+      }
+    },
+    "Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiūrėti"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Смотреть"
+          }
+        }
+      }
+    },
+    "Yes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taip"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Да"
+          }
+        }
+      }
+    },
+    "You don't have any downloads yet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don't have any downloads yet"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neturite dar atsisiuntimų"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас пока нет загрузок"
+          }
+        }
+      }
+    },
+    "Home": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Главная"
+          }
+        }
+      }
+    },
+    "Search": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поиск"
+          }
+        }
+      }
+    },
+    "Watching": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watching"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Я смотрю"
+          }
+        }
+      }
+    },
+    "History": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "История"
+          }
+        }
+      }
+    },
+    "Library": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Library"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Библиотека"
+          }
+        }
+      }
+    },
+    "Other": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остальное"
+          }
+        }
+      }
+    },
+    "3D": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D"
+          }
+        }
+      }
+    },
+    "Recent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Недавние"
+          }
+        }
+      }
+    },
+    "Browse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обзор"
+          }
+        }
+      }
+    },
+    "Shows & Movies": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows & Movies"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сериалы и фильмы"
+          }
+        }
+      }
+    },
+    "Sort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сортировка"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готово"
+          }
+        }
+      }
+    },
+    "From": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "От"
+          }
+        }
+      }
+    },
+    "To": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "До"
+          }
+        }
+      }
+    },
+    "Details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подробнее"
+          }
+        }
+      }
+    },
+    "Play": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Смотреть"
+          }
+        }
+      }
+    },
+    "Trailers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trailers"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Трейлеры"
+          }
+        }
+      }
+    },
+    "Related": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Related"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Похожее"
+          }
+        }
+      }
+    },
+    "Cast & Crew": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cast & Crew"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Актёры и съёмочная группа"
+          }
+        }
+      }
+    },
+    "Description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Описание"
+          }
+        }
+      }
+    },
+    "Information": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Information"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Информация"
+          }
+        }
+      }
+    },
+    "Languages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Languages"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Языки"
+          }
+        }
+      }
+    },
+    "Premiere": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Premiere"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Премьера"
+          }
+        }
+      }
+    },
+    "Country": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Country"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Страна"
+          }
+        }
+      }
+    },
+    "Actor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actor"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Актёр"
+          }
+        }
+      }
+    },
+    "Director": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Director"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Режиссёр"
+          }
+        }
+      }
+    },
+    "Episode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Episode"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Серия"
+          }
+        }
+      }
+    },
+    "Add to Watchlist": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Watchlist"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить в список"
+          }
+        }
+      }
+    },
+    "Mark Watched": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark Watched"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отметить просмотренным"
+          }
+        }
+      }
+    },
+    "Add to Bookmark": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Bookmark"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить в закладки"
+          }
+        }
+      }
+    },
+    "Download": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скачать"
+          }
+        }
+      }
+    },
+    "Mark as Unwatched": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as Unwatched"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отметить непросмотренной"
+          }
+        }
+      }
+    },
+    "Mark as Watched": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as Watched"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отметить просмотренной"
+          }
+        }
+      }
+    },
+    "New Episodes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Episodes"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые эпизоды"
+          }
+        }
+      }
+    },
+    "My Series": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Series"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мои сериалы"
+          }
+        }
+      }
+    },
+    "No series here yet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No series here yet"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Здесь пока нет сериалов"
+          }
+        }
+      }
+    },
+    "Storage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранилище"
+          }
+        }
+      }
+    },
+    "Image Cache": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image Cache"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кэш изображений"
+          }
+        }
+      }
+    },
+    "Clear Image Cache": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Image Cache"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить кэш изображений"
+          }
+        }
+      }
+    },
+    "Resume": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продолжить"
+          }
+        }
+      }
+    },
+    "Start from Beginning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start from Beginning"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сначала"
+          }
+        }
+      }
+    },
+    "Sport": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sport"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спорт"
+          }
+        }
+      }
+    },
+    "LIVE": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LIVE"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ЭФИР"
+          }
+        }
+      }
+    },
+    "No live broadcasts right now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No live broadcasts right now"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сейчас нет прямых трансляций"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

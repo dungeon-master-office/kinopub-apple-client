@@ -12,8 +12,11 @@ import KinoPubLogging
 import Combine
 
 enum WatchingFilter: Int, CaseIterable, Identifiable {
-  case newEpisodes = 0
+  // Declaration order drives `allCases` (and thus the segmented control order):
+  // "My Series" first, "New Episodes" second. Raw values stay fixed so they keep
+  // mapping to the `subscribed` API parameter (watchlist = 1, newEpisodes = 0).
   case watchlist = 1
+  case newEpisodes = 0
 
   var id: Int { rawValue }
 
@@ -40,7 +43,7 @@ class WatchingModel: ObservableObject {
 
   @Published public var serials: [WatchingSerial] = []
   @Published public var isLoading: Bool = true
-  @Published public var filter: WatchingFilter = .newEpisodes
+  @Published public var filter: WatchingFilter = .watchlist
 
   init(itemsService: VideoContentService, authState: AuthState, errorHandler: ErrorHandler) {
     self.contentService = itemsService

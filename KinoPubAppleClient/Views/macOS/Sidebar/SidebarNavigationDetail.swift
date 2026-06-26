@@ -26,6 +26,8 @@ struct SidebarNavigationDetail: View {
     case .category(let type):
       mainCatalog(contentType: type, shortcut: .hot)
         .id("library-\(type.rawValue)")
+    case .sport:
+      sport
     case .watching:
       watching
     case .bookmarks:
@@ -57,6 +59,12 @@ struct SidebarNavigationDetail: View {
                                    errorHandler: errorHandler,
                                    contentType: contentType,
                                    shortcut: shortcut))
+  }
+
+  var sport: some View {
+    SportView(model: SportModel(itemsService: appContext.contentService,
+                                authState: authState,
+                                errorHandler: errorHandler))
   }
 
   var watching: some View {

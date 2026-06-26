@@ -30,7 +30,7 @@ public struct HeroBackdrop<Overlay: View>: View {
       .frame(maxWidth: .infinity)
       .frame(height: height)
       .overlay {
-        AsyncImage(url: URL(string: imageURL ?? "")) { image in
+        CachedAsyncImage(url: URL(string: imageURL ?? "")) { image in
           image
             .resizable()
             .renderingMode(.original)

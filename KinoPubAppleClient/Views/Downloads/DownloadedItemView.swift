@@ -49,7 +49,7 @@ public struct DownloadedItemView: View {
   }
   
   var image: some View {
-    AsyncImage(url: URL(string: mediaItem.imageUrl)) { image in
+    CachedAsyncImage(url: URL(string: mediaItem.imageUrl)) { image in
       image.resizable()
         .renderingMode(.original)
         .posterStyle(size: .small, orientation: .vertical)

@@ -7,10 +7,11 @@
 import SwiftUI
 import KinoPubBackend
 import KinoPubKit
+import KinoPubUI
 import SkeletonUI
 
 struct ProfileView: View {
-  
+
   @EnvironmentObject var navigationState: NavigationState
   @EnvironmentObject var errorHandler: ErrorHandler
   @Environment(\.appContext) var appContext
@@ -18,6 +19,7 @@ struct ProfileView: View {
   @AppStorage("selectedLanguage") private var selectedLanguage: String = (Locale.current.language.languageCode?.identifier ?? "en")
 
   @State private var showLogoutAlert: Bool = false
+  @State private var cacheSize: String = ImageCache.shared.formattedDiskUsage()
     
   init(model: @autoclosure @escaping () -> ProfileModel) {
     _model = StateObject(wrappedValue: model())
@@ -40,7 +42,20 @@ struct ProfileView: View {
             }
               
             languageSection
-              
+
+            Section(header: Text("Storage")) {
+              LabeledContent("Image Cache", value: cacheSize)
+              Button(role: .destructive) {
+                ImageCache.shared.clear()
+                cacheSize = ImageCache.shared.formattedDiskUsage()
+              } label: {
+                Text("Clear Image Cache")
+              }
+#if os(macOS)
+              .buttonStyle(PlainButtonStyle())
+#endif
+            }
+
             Section {
               Button(action: {
                 showLogoutAlert = true

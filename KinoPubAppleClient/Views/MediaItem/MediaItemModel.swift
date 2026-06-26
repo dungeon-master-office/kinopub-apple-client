@@ -103,6 +103,17 @@ class MediaItemModel: ObservableObject {
     }
   }
 
+  func toggleEpisodeWatched(episodeNumber: Int, season: Int) {
+    Task {
+      do {
+        try await actionsService.toggleWatching(id: mediaItemId, video: episodeNumber, season: season)
+        fetchData()
+      } catch {
+        errorHandler.setError(error)
+      }
+    }
+  }
+
   func toggleWatchlist() {
     Task {
       do {

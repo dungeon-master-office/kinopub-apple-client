@@ -64,7 +64,7 @@ struct MediaItemHeaderView: View {
   }
   
   var image: some View {
-    AsyncImage(url: URL(string: mediaItem.posters.big)) { image in
+    CachedAsyncImage(url: URL(string: mediaItem.posters.big)) { image in
       image.resizable()
         .centerCropped()
     } placeholder: {

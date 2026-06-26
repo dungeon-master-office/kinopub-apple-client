@@ -27,7 +27,10 @@ struct WatchingView: View {
         filterPicker
         content
       }
-      .navigationTitle("Watching")
+      .navigationTitle("Watching".localized)
+      #if !os(macOS)
+      .navigationBarTitleDisplayMode(.large)
+      #endif
       .background(Color.KinoPub.background)
       .task {
         await model.fetchItems()
@@ -64,12 +67,16 @@ struct WatchingView: View {
     Picker("", selection: Binding(get: { model.filter },
                                   set: { model.select(filter: $0) })) {
       ForEach(WatchingFilter.allCases) { filter in
-        Text(filter.title).tag(filter)
+        Text(filter.title.localized).tag(filter)
       }
     }
     .pickerStyle(.segmented)
+    .labelsHidden()
+    .frame(maxWidth: 520)
+    .frame(maxWidth: .infinity, alignment: .center)
     .padding(.horizontal, 16)
     .padding(.top, 8)
+    .padding(.bottom, 12)
   }
 
   @ViewBuilder
@@ -138,7 +145,7 @@ struct WatchingSerialView: View {
   }
 
   var image: some View {
-    AsyncImage(url: URL(string: serial.posters.medium)) { image in
+    CachedAsyncImage(url: URL(string: serial.posters.medium)) { image in
       image
         .resizable()
         .renderingMode(.original)

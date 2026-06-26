@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import FirebaseCore
+import KinoPubUI
 
 #if os(iOS)
 class AppDelegate: NSObject, UIApplicationDelegate {
@@ -19,6 +20,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
     FirebaseApp.configure()
     UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+    ImageCache.shared.purgeExpired()
     return true
   }
   
@@ -43,6 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   
   func applicationDidFinishLaunching(_ notification: Notification) {
     FirebaseApp.configure()
+    ImageCache.shared.purgeExpired()
   }
 }
 #endif

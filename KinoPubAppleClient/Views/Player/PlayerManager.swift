@@ -78,6 +78,17 @@ class PlayerManager: ObservableObject {
   // MARK: - Watch marks
   
   func saveWatchMark(time: TimeInterval) {
+    // Persist a local resume point so "Continue Watching" reflects what the user actually
+    // started, independent of the backend (skips live/trailers via the non-finite duration).
+    if watchMode == .media {
+      let duration = player.currentItem?.duration.seconds ?? 0
+      AppContext.shared.localProgressStore.recordProgress(mediaId: playItem.metadata.id,
+                                                          position: time,
+                                                          duration: duration,
+                                                          season: playItem.metadata.season,
+                                                          episode: playItem.metadata.video)
+    }
+
     Task.detached(priority: .utility) { [weak self] in
       guard let self else { return }
       do {

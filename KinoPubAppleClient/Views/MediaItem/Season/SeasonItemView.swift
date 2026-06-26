@@ -44,7 +44,7 @@ public struct SeasonItemView: View {
   }
 
   var image: some View {
-    AsyncImage(url: URL(string: episode.thumbnail)) { image in
+    CachedAsyncImage(url: URL(string: episode.thumbnail)) { image in
       image.resizable()
         .renderingMode(.original)
         .posterStyle(size: .regular, orientation: .horizontal)

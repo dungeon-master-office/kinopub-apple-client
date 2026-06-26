@@ -21,6 +21,15 @@ class HomeModel: ObservableObject {
     let ranked: Bool
   }
 
+  /// A "Continue Watching" entry enriched with resume progress and, for series,
+  /// the last episode the user was watching.
+  struct ContinueItem: Identifiable {
+    let id: Int
+    let item: MediaItem
+    let progress: Double?
+    let subtitle: String?
+  }
+
   private var authState: AuthState
   private var errorHandler: ErrorHandler
   private var itemsService: VideoContentService
@@ -28,7 +37,7 @@ class HomeModel: ObservableObject {
 
   @Published public var shelves: [Shelf] = HomeModel.skeletonShelves()
   @Published public var featured: [MediaItem] = []
-  @Published public var continueWatching: [MediaItem] = []
+  @Published public var continueWatching: [ContinueItem] = []
 
   init(itemsService: VideoContentService, authState: AuthState, errorHandler: ErrorHandler) {
     self.itemsService = itemsService
@@ -82,7 +91,76 @@ class HomeModel: ObservableObject {
     }
 
     // Best-effort: a history failure should never surface an error on Home.
-    continueWatching = Array(((try? await history)?.history.map { $0.item } ?? []).prefix(15))
+    let recent = (try? await history)?.history.map { $0.item } ?? []
+    // Deduplicate by id (a series shows up once), keep the most recent order.
+    var seen = Set<Int>()
+    let unique = recent.filter { seen.insert($0.id).inserted }
+    let candidates = Array(unique.prefix(10))
+
+    // Enrich each entry with its watch progress + last-watched episode (details carry the
+    // per-episode watching positions that the history list does not).
+    let service = itemsService
+    let enriched: [ContinueItem] = await withTaskGroup(of: (Int, ContinueItem).self) { group in
+      for (index, item) in candidates.enumerated() {
+        group.addTask {
+          let full = (try? await service.fetchDetails(for: "\(item.id)").item) ?? item
+          return (index, HomeModel.continueItem(from: full))
+        }
+      }
+      var slots = [ContinueItem?](repeating: nil, count: candidates.count)
+      for await (index, value) in group { slots[index] = value }
+      return slots.compactMap { $0 }
+    }
+
+    // Surface locally-started titles (> 10s) that the backend doesn't list yet, newest first.
+    let backendIds = Set(enriched.map { $0.id })
+    let localOnly = AppContext.shared.localProgressStore.allEntries()
+      .filter { !backendIds.contains($0.id) }
+      .map { entry -> ContinueItem in
+        let subtitle: String?
+        if let season = entry.season, let episode = entry.episode {
+          subtitle = "S\(season) · E\(episode)"
+        } else {
+          subtitle = entry.item.duration.totalFormatted
+        }
+        return ContinueItem(id: entry.id, item: entry.item, progress: entry.progress, subtitle: subtitle)
+      }
+
+    continueWatching = localOnly + enriched
+  }
+
+  /// Builds a Continue Watching entry from a fully-loaded media item.
+  nonisolated private static func continueItem(from item: MediaItem) -> ContinueItem {
+    if item.isSeries, let seasons = item.seasons,
+       let target = lastWatchingEpisode(in: seasons) {
+      let progress = target.episode.duration > 0
+        ? min(max(Double(target.episode.watching.time) / Double(target.episode.duration), 0), 1)
+        : nil
+      let subtitle = "S\(target.season.number) · E\(target.episode.number)"
+      return ContinueItem(id: item.id, item: item, progress: progress, subtitle: subtitle)
+    }
+    if let video = item.videos?.first, video.duration > 0, video.watching.time > 0 {
+      let progress = min(max(Double(video.watching.time) / Double(video.duration), 0), 1)
+      return ContinueItem(id: item.id, item: item, progress: progress, subtitle: item.duration.totalFormatted)
+    }
+    return ContinueItem(id: item.id, item: item, progress: nil, subtitle: item.duration.totalFormatted)
+  }
+
+  /// The most recent in-progress episode across all seasons.
+  nonisolated private static func lastWatchingEpisode(in seasons: [Season]) -> (season: Season, episode: Episode)? {
+    var best: (season: Season, episode: Episode)?
+    for season in seasons {
+      for episode in season.episodes where episode.watching.time > 0 {
+        if let current = best {
+          if (season.number, episode.number) > (current.season.number, current.episode.number) {
+            best = (season, episode)
+          }
+        } else {
+          best = (season, episode)
+        }
+      }
+    }
+    return best
   }
 
   private static func skeletonShelves() -> [Shelf] {

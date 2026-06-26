@@ -84,4 +84,11 @@ final class VideoContentServiceImpl: VideoContentService {
     return response
   }
 
+  func fetchTVChannels() async throws -> [TVChannel] {
+    let request = TVChannelsRequest()
+    let response = try await apiClient.performRequest(with: request,
+                                                      decodingType: TVChannelsData.self)
+    return response.channels
+  }
+
 }

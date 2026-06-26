@@ -47,7 +47,7 @@ public struct BrowseCategoryCard: View {
   @ViewBuilder
   private var background: some View {
     if let imageURL, !imageURL.isEmpty {
-      AsyncImage(url: URL(string: imageURL)) { image in
+      CachedAsyncImage(url: URL(string: imageURL)) { image in
         image.resizable().aspectRatio(contentMode: .fill)
       } placeholder: {
         LinearGradient(colors: gradientColors, startPoint: .topLeading, endPoint: .bottomTrailing)

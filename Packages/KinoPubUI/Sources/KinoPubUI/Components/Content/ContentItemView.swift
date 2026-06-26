@@ -39,7 +39,7 @@ public struct ContentItemView: View {
       .aspectRatio(2.0 / 3.0, contentMode: .fit)
       .frame(maxWidth: .infinity)
       .overlay {
-        AsyncImage(url: URL(string: mediaItem.posters.medium)) { image in
+        CachedAsyncImage(url: URL(string: mediaItem.posters.medium)) { image in
           image
             .resizable()
             .renderingMode(.original)

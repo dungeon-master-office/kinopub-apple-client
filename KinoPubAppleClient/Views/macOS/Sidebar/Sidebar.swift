@@ -32,6 +32,7 @@ struct Sidebar: View {
         ForEach(SidebarItem.libraryCategories, id: \.self) { type in
           row(.category(type))
         }
+        row(.sport)
       }
 
       Section("Other".localized) {
@@ -39,14 +40,21 @@ struct Sidebar: View {
         row(.bookmarks)
         row(.history)
         row(.downloads)
+        Button {
+          showProfile = true
+        } label: {
+          Label("Profile".localized, systemImage: "person.crop.circle")
+        }
+#if os(macOS)
+        .buttonStyle(.borderless)
+#else
+        .buttonStyle(.plain)
+#endif
       }
     }
     .listStyle(.sidebar)
     .scrollContentBackground(.hidden)
     .background(Color.KinoPub.background)
-    .safeAreaInset(edge: .bottom) {
-      profileFooter
-    }
     .navigationTitle("kinopub")
 #if os(macOS)
     .navigationSplitViewColumnWidth(min: 220, ideal: 240)
@@ -60,28 +68,6 @@ struct Sidebar: View {
   func row(_ item: SidebarItem) -> some View {
     Label(item.title.localized, systemImage: item.systemImage)
       .tag(item)
-  }
-
-  private var profileFooter: some View {
-    Button {
-      showProfile = true
-    } label: {
-      HStack(spacing: 12) {
-        Image(systemName: "person.crop.circle.fill")
-          .resizable()
-          .scaledToFit()
-          .frame(width: 32, height: 32)
-          .clipShape(Circle())
-          .foregroundStyle(Color.KinoPub.accent)
-        Text("Profile".localized)
-        Spacer()
-      }
-      .contentShape(Rectangle())
-    }
-    .buttonStyle(.plain)
-    .padding(.horizontal, 12)
-    .padding(.vertical, 10)
-    .background(.ultraThinMaterial)
   }
 
   private var profileSheet: some View {
@@ -109,11 +95,25 @@ private struct ProfileSheetContent: View {
     // dismiss control to that bar instead of nesting another stack.
     ProfileView(model: model)
       .toolbar {
+#if os(macOS)
         ToolbarItem(placement: .cancellationAction) {
-          Button("Done".localized) {
+          Button {
             dismiss()
+          } label: {
+            Image(systemName: "xmark")
+              .fontWeight(.bold)
           }
         }
+#else
+        ToolbarItem(placement: .topBarTrailing) {
+          Button {
+            dismiss()
+          } label: {
+            Image(systemName: "xmark")
+              .fontWeight(.bold)
+          }
+        }
+#endif
       }
   }
 }
