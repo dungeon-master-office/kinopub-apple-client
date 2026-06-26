@@ -127,10 +127,10 @@ struct SearchView: View {
       LazyVGrid(columns: PosterGridLayout.columns(width: width), spacing: 16) {
         ForEach(model.results(for: model.scope), id: \.id) { item in
           if item.skeleton ?? false {
-            PosterCard.placeholder()
+            PosterCard.placeholder(width: nil)
           } else {
             NavigationLink(value: Route.details(item)) {
-              PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
+              PosterCard(imageURL: item.posters.medium, title: item.localizedTitle, width: nil)
                 .overlay(alignment: .topTrailing) { MediaCardStatusBadge(item: item) }
             }
 #if os(macOS)

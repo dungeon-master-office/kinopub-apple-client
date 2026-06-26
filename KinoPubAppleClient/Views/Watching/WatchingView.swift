@@ -97,7 +97,7 @@ struct WatchingView: View {
   private func skeletonGrid(width: CGFloat) -> some View {
     LazyVGrid(columns: PosterGridLayout.columns(width: width, horizontalPadding: 20), spacing: 24) {
       ForEach(0..<12, id: \.self) { _ in
-        PosterCard.placeholder(width: 150)
+        PosterCard.placeholder(width: nil)
       }
     }
     .padding(.horizontal, 20)

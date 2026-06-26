@@ -15,7 +15,9 @@ public struct PosterCard: View {
   private let rank: Int?
   private let imdbRating: Double?
   private let kinopoiskRating: Double?
-  private let width: CGFloat
+  /// Fixed tile width for horizontal carousels. `nil` makes the card FILL its container (a responsive
+  /// grid column) at a 2:3 aspect ratio instead of a fixed size.
+  private let width: CGFloat?
   private let cornerRadius: CGFloat
 
   public init(imageURL: String?,
@@ -24,7 +26,7 @@ public struct PosterCard: View {
               rank: Int? = nil,
               imdbRating: Double? = nil,
               kinopoiskRating: Double? = nil,
-              width: CGFloat = 140,
+              width: CGFloat? = 140,
               cornerRadius: CGFloat = 10) {
     self.imageURL = imageURL
     self.title = title
@@ -36,23 +38,25 @@ public struct PosterCard: View {
     self.cornerRadius = cornerRadius
   }
 
-  private var height: CGFloat { width * 1.5 }
-
   private var hasRatings: Bool {
     (imdbRating ?? 0) > 0 || (kinopoiskRating ?? 0) > 0
   }
 
   public var body: some View {
-    VStack(alignment: .leading, spacing: 6) {
+    let stack = VStack(alignment: .leading, spacing: 6) {
       poster
       if title != nil || subtitle != nil {
         caption
       }
     }
-    .frame(width: width)
+    if let width {
+      stack.frame(width: width)
+    } else {
+      stack.frame(maxWidth: .infinity, alignment: .leading)
+    }
   }
 
-  private var poster: some View {
+  private var image: some View {
     CachedAsyncImage(url: URL(string: imageURL ?? "")) { image in
       image
         .resizable()
@@ -61,26 +65,42 @@ public struct PosterCard: View {
     } placeholder: {
       Color.KinoPub.skeleton
     }
-    .frame(width: width, height: height)
-    .clipped()
-    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-    .overlay(alignment: .bottom) {
-      if hasRatings {
-        ContentItemRatingView(imdbScore: imdbRating, kinopoiskScore: kinopoiskRating)
-          .fixedSize()
-          .scaleEffect(0.7, anchor: .bottom)
-          .padding(.bottom, 6)
+  }
+
+  private var poster: some View {
+    // Fixed width → exact frame; flexible → a 2:3 box that fills the column (responsive grids).
+    posterBox
+      .clipped()
+      .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+      .overlay(alignment: .bottom) {
+        if hasRatings {
+          ContentItemRatingView(imdbScore: imdbRating, kinopoiskScore: kinopoiskRating)
+            .fixedSize()
+            .scaleEffect(0.7, anchor: .bottom)
+            .padding(.bottom, 6)
+        }
       }
-    }
-    .overlay(alignment: .topLeading) {
-      if let rank {
-        Text("\(rank)")
-          .font(.system(size: 40, weight: .heavy, design: .rounded))
-          .foregroundStyle(.white)
-          .shadow(color: .black.opacity(0.6), radius: 4, x: 0, y: 1)
-          .padding(.leading, 8)
-          .padding(.top, 4)
+      .overlay(alignment: .topLeading) {
+        if let rank {
+          Text("\(rank)")
+            .font(.system(size: 40, weight: .heavy, design: .rounded))
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.6), radius: 4, x: 0, y: 1)
+            .padding(.leading, 8)
+            .padding(.top, 4)
+        }
       }
+  }
+
+  @ViewBuilder
+  private var posterBox: some View {
+    if let width {
+      image.frame(width: width, height: width * 1.5)
+    } else {
+      Color.KinoPub.skeleton
+        .aspectRatio(2.0 / 3.0, contentMode: .fit)
+        .frame(maxWidth: .infinity)
+        .overlay { image }
     }
   }
 
@@ -101,8 +121,9 @@ public struct PosterCard: View {
     }
   }
 
-  /// Unified loading placeholder used across all poster grids.
-  public static func placeholder(width: CGFloat = 140) -> some View {
+  /// Unified loading placeholder used across all poster grids. Pass `width: nil` for a responsive
+  /// (column-filling) placeholder that matches a flexible grid's real cells.
+  public static func placeholder(width: CGFloat? = 140) -> some View {
     PosterCard(imageURL: nil, title: "Placeholder", width: width)
       .redacted(reason: .placeholder)
       .opacity(0.45)

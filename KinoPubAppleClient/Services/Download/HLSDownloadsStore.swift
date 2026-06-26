@@ -127,6 +127,48 @@ public final class HLSDownloadsStore {
     return alive
   }
 
+  // MARK: - Orphan cleanup
+
+  /// Reclaims orphaned `.movpkg` bundles. `AVAssetDownloadURLSession` writes downloads into
+  /// `Library/com.apple.UserManagedAssets*` (NOT Documents — so they're invisible in the Files app),
+  /// and a failed / cancelled / 429-retried download leaves its partial bundle behind: each retry
+  /// starts a fresh bundle and abandons the previous one, so disk usage balloons well past what the
+  /// user actually downloaded. This deletes every `.movpkg` there that isn't a saved download or one
+  /// of `keepRelativePaths` (in-flight / interrupted partials we still track). Returns bytes freed.
+  @discardableResult
+  public func sweepOrphans(keepRelativePaths: Set<String> = []) -> Int64 {
+    let referenced = Set(readData().map { $0.relativePath }).union(keepRelativePaths)
+    // Safety net: also keep anything whose bundle filename matches a tracked download, in case the
+    // stored relative path and the on-disk path don't compare identically.
+    let referencedNames = Set(referenced.map { ($0 as NSString).lastPathComponent })
+    let home = NSHomeDirectory()
+    let fm = FileManager.default
+    let libraryURL = URL(fileURLWithPath: home).appendingPathComponent("Library")
+    guard let containers = try? fm.contentsOfDirectory(at: libraryURL, includingPropertiesForKeys: nil) else {
+      return 0
+    }
+    var freed: Int64 = 0
+    for container in containers where container.lastPathComponent.hasPrefix("com.apple.UserManagedAssets") {
+      guard let bundles = try? fm.contentsOfDirectory(at: container, includingPropertiesForKeys: nil) else { continue }
+      for bundle in bundles where bundle.pathExtension == "movpkg" {
+        let relative = bundle.path.hasPrefix(home + "/") ? String(bundle.path.dropFirst(home.count + 1)) : bundle.path
+        if referenced.contains(relative) { continue }
+        if referencedNames.contains(bundle.lastPathComponent) { continue }
+        let size = Self.directorySize(at: bundle)
+        if (try? fm.removeItem(at: bundle)) != nil {
+          freed += size
+          Logger.kit.info("[HLS] swept orphan \(bundle.lastPathComponent) (freed \(size) bytes)")
+        }
+      }
+    }
+    return freed
+  }
+
+  /// Total on-disk size (bytes) of all saved HLS downloads.
+  public func totalDownloadedBytes() -> Int64 {
+    readData().filter { $0.fileExists }.reduce(0) { $0 + Self.directorySize(at: $1.localFileURL) }
+  }
+
   // MARK: - Helpers
 
   static func sameItem(_ lhs: DownloadMeta, _ rhs: DownloadMeta) -> Bool {

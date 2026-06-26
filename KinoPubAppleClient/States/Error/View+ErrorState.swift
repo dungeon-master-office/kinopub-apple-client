@@ -21,7 +21,7 @@ extension View {
     // rest of the screen stays interactive. Tap the toast — or wait 5s — to dismiss it.
     self.overlay(alignment: .bottom) {
       if state.showError.wrappedValue {
-        ToastContentView(text: state.error.wrappedValue ?? "")
+        ToastContentView(message: .error(state.error.wrappedValue ?? ""))
           .padding()
           .transition(.move(edge: .bottom).combined(with: .opacity))
           .onTapGesture { state.showError.wrappedValue = false }

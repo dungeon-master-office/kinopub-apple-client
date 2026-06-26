@@ -130,8 +130,6 @@ struct GenreResultsView: View {
   private let genreId: Int
   private let title: String
 
-  private let columns = [GridItem(.adaptive(minimum: 130), spacing: 16)]
-
   init(model: @autoclosure @escaping () -> SearchModel, genreId: Int, title: String) {
     _model = StateObject(wrappedValue: model())
     self.genreId = genreId
@@ -139,22 +137,24 @@ struct GenreResultsView: View {
   }
 
   var body: some View {
-    ScrollView {
-      LazyVGrid(columns: columns, spacing: 16) {
-        ForEach(model.genreResults, id: \.id) { item in
-          if item.skeleton ?? false {
-            PosterCard.placeholder()
-          } else {
-            NavigationLink(value: Route.details(item)) {
-              PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
-            }
+    WidthReader { width in
+      ScrollView {
+        LazyVGrid(columns: PosterGridLayout.columns(width: width), spacing: 16) {
+          ForEach(model.genreResults, id: \.id) { item in
+            if item.skeleton ?? false {
+              PosterCard.placeholder(width: nil)
+            } else {
+              NavigationLink(value: Route.details(item)) {
+                PosterCard(imageURL: item.posters.medium, title: item.localizedTitle, width: nil)
+              }
 #if os(macOS)
-            .buttonStyle(.plain)
+              .buttonStyle(.plain)
 #endif
+            }
           }
         }
+        .padding(16)
       }
-      .padding(16)
     }
     .background(Color.KinoPub.background)
     .navigationTitle(title)

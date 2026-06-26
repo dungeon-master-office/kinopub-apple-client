@@ -49,6 +49,10 @@ struct SidebarView: View {
         navigationState.sidebarSelection = .downloads
       }
     }
+    // Tapping a download notification selects the Downloads section.
+    .onReceive(NotificationCenter.default.publisher(for: .openDownloads)) { _ in
+      navigationState.sidebarSelection = .downloads
+    }
     .sheet(isPresented: $authState.shouldShowAuthentication, content: {
       authSheet
     })

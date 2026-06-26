@@ -10,13 +10,21 @@ import SwiftUI
 import KinoPubBackend
 import KinoPubUI
 
+public enum DownloadRowState {
+  /// In-progress shows %/pause; finished shows a "downloaded" checkmark.
+  case auto
+  /// Interrupted (force-quit) shows a "re-download" affordance instead of a (false) checkmark.
+  case interrupted
+}
+
 public struct DownloadedItemView: View {
-  
+
   private var mediaItem: DownloadMeta
   private var progress: Float?
   private var fileURL: URL?
   private var speed: Double?
   private var remaining: TimeInterval?
+  private var state: DownloadRowState
   private var onDownloadStateChange: (Bool) -> Void
 
   public init(mediaItem: DownloadMeta,
@@ -24,12 +32,14 @@ public struct DownloadedItemView: View {
               fileURL: URL? = nil,
               speed: Double? = nil,
               remaining: TimeInterval? = nil,
+              state: DownloadRowState = .auto,
               onDownloadStateChange: @escaping (Bool) -> Void) {
     self.mediaItem = mediaItem
     self.progress = progress
     self.fileURL = fileURL
     self.speed = speed
     self.remaining = remaining
+    self.state = state
     self.onDownloadStateChange = onDownloadStateChange
   }
 
@@ -70,11 +80,25 @@ public struct DownloadedItemView: View {
         .padding(.trailing, 16)
       } else {
         Spacer()
-        // Clear "downloaded" indicator for finished files.
-        Image(systemName: "checkmark.circle.fill")
-          .font(.system(size: 20))
-          .foregroundStyle(Color.KinoPub.accent)
+        switch state {
+        case .interrupted:
+          // Force-quit download: offer a re-download instead of a (misleading) checkmark.
+          VStack(spacing: 2) {
+            Image(systemName: "arrow.clockwise.circle.fill")
+              .font(.system(size: 22))
+              .foregroundStyle(.white, Color.KinoPub.accent)
+            Text("Re-download".localized)
+              .font(.system(size: 10, weight: .medium))
+              .foregroundStyle(Color.KinoPub.subtitle)
+          }
           .padding(.trailing, 16)
+        case .auto:
+          // Clear "downloaded" indicator for finished files.
+          Image(systemName: "checkmark.circle.fill")
+            .font(.system(size: 20))
+            .foregroundStyle(Color.KinoPub.accent)
+            .padding(.trailing, 16)
+        }
       }
     }
     .padding(.vertical, 8)
@@ -116,10 +140,31 @@ public struct DownloadedItemView: View {
   }()
 
   private var fileSizeString: String? {
-    guard let fileURL,
-          let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-          let bytes = attrs[.size] as? Int64, bytes > 0 else { return nil }
+    guard let fileURL else { return nil }
+    let bytes = Self.byteSize(of: fileURL)
+    guard bytes > 0 else { return nil }
     return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+  }
+
+  /// On-disk size of the download. An mp4 is a single file; an HLS download is a `.movpkg` *bundle*
+  /// (a directory), so `attributesOfItem` returns only the tiny directory entry — we must sum the
+  /// contents to report the real size.
+  private static func byteSize(of url: URL) -> Int64 {
+    let fm = FileManager.default
+    var isDirectory: ObjCBool = false
+    guard fm.fileExists(atPath: url.path, isDirectory: &isDirectory) else { return 0 }
+    guard isDirectory.boolValue else {
+      let attrs = try? fm.attributesOfItem(atPath: url.path)
+      return (attrs?[.size] as? Int64) ?? 0
+    }
+    let keys: [URLResourceKey] = [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .fileSizeKey]
+    guard let enumerator = fm.enumerator(at: url, includingPropertiesForKeys: keys) else { return 0 }
+    var total: Int64 = 0
+    for case let child as URL in enumerator {
+      let values = try? child.resourceValues(forKeys: Set(keys))
+      total += Int64(values?.totalFileAllocatedSize ?? values?.fileAllocatedSize ?? values?.fileSize ?? 0)
+    }
+    return total
   }
   
   var image: some View {

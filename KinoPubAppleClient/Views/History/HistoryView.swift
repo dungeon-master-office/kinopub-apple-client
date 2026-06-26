@@ -108,13 +108,15 @@ struct HistoryView: View {
   func sectionHeader(_ title: String) -> some View {
     HStack {
       Text(title)
-        .font(.system(size: 17, weight: .semibold))
+        .font(.system(size: 15, weight: .semibold))
         .foregroundStyle(Color.KinoPub.text)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .glassCapsule()
       Spacer()
     }
     .padding(.horizontal, 20)
-    .padding(.vertical, 8)
-    .background(Color.KinoPub.background)
+    .padding(.vertical, 6)
   }
 
   var emptyState: some View {

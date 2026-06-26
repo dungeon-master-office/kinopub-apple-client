@@ -47,7 +47,7 @@ struct CollectionsView: View {
         sortTabs
           .padding(.bottom, 4)
         if model.isLoading {
-          loading.frame(minHeight: 320)
+          placeholderGrid(width: width)
         } else if model.collections.isEmpty {
           emptyState.frame(minHeight: 320)
         } else {
@@ -88,16 +88,21 @@ struct CollectionsView: View {
     .padding(16)
   }
 
-  // MARK: - States
-
-  private var loading: some View {
-    VStack {
-      Spacer()
-      ProgressView().tint(Color.KinoPub.accent)
-      Spacer()
+  /// Responsive skeleton grid shown while collections load (matches the real grid's columns).
+  private func placeholderGrid(width: CGFloat) -> some View {
+    LazyVGrid(columns: PosterGridLayout.columns(width: width), spacing: 16) {
+      ForEach(0..<9, id: \.self) { _ in
+        Color.KinoPub.skeleton
+          .aspectRatio(3.0 / 4.0, contentMode: .fit)
+          .frame(maxWidth: .infinity)
+          .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+          .opacity(0.5)
+      }
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .padding(16)
   }
+
+  // MARK: - States
 
   private var emptyState: some View {
     EmptyStateView(systemImage: "rectangle.stack", title: "No collections yet".localized)
@@ -127,8 +132,9 @@ struct CollectionCard: View {
         }
       }
       .overlay(alignment: .bottom) {
-        LinearGradient(colors: [.clear, .black.opacity(0.15), .black.opacity(0.85)],
-                       startPoint: .center, endPoint: .bottom)
+        // Stronger scrim so the title stays legible over busy poster art.
+        LinearGradient(colors: [.clear, .black.opacity(0.5), .black.opacity(0.97)],
+                       startPoint: .top, endPoint: .bottom)
       }
       .overlay(alignment: .bottomLeading) {
         Text(collection.title)

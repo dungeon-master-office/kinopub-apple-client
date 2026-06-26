@@ -72,19 +72,27 @@ class PlayerManager: ObservableObject {
   private var downloadedFilesDatabase: DownloadedFilesDatabase<DownloadMeta>
   private var rateObservation: NSKeyValueObservation?
   private var seekObservation: NSKeyValueObservation?
+  private var audioObservation: NSKeyValueObservation?
   private var actionsService: UserActionsService
   
   private var fileURL: URL? {
     switch watchMode {
     case .media:
+      // A download is saved under the SERIES content id (DownloadMeta.id == mediaItem.id), but the
+      // identity differs by entry point: an Episode's `id` is the episode id while its `metadata.id`
+      // is the series id; a DownloadMeta is the reverse. Match on either so an already-downloaded
+      // movie/episode opened from the detail page plays the local file instead of streaming.
+      let contentIds: Set<Int> = [playItem.id, playItem.metadata.id]
       // Prefer a downloaded offline HLS asset (.movpkg) — full quality + all audio tracks + subtitles.
-      if let hls = AppContext.shared.hlsDownloadsStore.asset(forId: playItem.id,
-                                                             video: playItem.metadata.video,
-                                                             season: playItem.metadata.season) {
-        return hls.localFileURL
+      for contentId in contentIds {
+        if let hls = AppContext.shared.hlsDownloadsStore.asset(forId: contentId,
+                                                               video: playItem.metadata.video,
+                                                               season: playItem.metadata.season) {
+          return hls.localFileURL
+        }
       }
       let downloadedFiles = downloadedFilesDatabase.readData() ?? []
-      let sameItem = downloadedFiles.filter { $0.metadata.id == playItem.id }
+      let sameItem = downloadedFiles.filter { contentIds.contains($0.metadata.id) }
       // For a series there can be several downloads under the same (series) id, plus stale rows whose
       // file was deleted. Pick the row whose source URL matches THIS item's files (the right episode),
       // then any same-item row — but only when the file is actually present on disk. Otherwise fall
@@ -112,15 +120,70 @@ class PlayerManager: ObservableObject {
     self.watchMode = watchMode
     self.actionsService = actionsService
     self.downloadedFilesDatabase = downloadedFilesDatabase
+    // Seed the resume point synchronously from the local store so the native "Continue" prompt can
+    // appear the moment the player presents (no race with the async server fetch, which only
+    // refines it). Covers the "open from Continue Watching" case that previously started at 0.
+    if watchMode == .media,
+       let local = AppContext.shared.localProgressStore.entry(forId: playItem.metadata.id,
+                                                              season: playItem.metadata.season,
+                                                              episode: playItem.metadata.video),
+       local.position > 0 {
+      continueTime = local.position
+    }
     rateObservation = player.observe(\.rate, options: [.new]) { [weak self] player, _ in
       DispatchQueue.main.async {
         self?.isPlaying = player.rate > 0
       }
     }
-    
+
+    // Re-apply the remembered audio track (озвучка) once the item is ready, so the user's last dub
+    // choice carries across episodes and launches without any custom UI.
+    if watchMode == .media {
+      audioObservation = player.currentItem?.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
+        guard item.status == .readyToPlay else { return }
+        self?.applyPreferredAudio()
+        self?.audioObservation?.invalidate()
+        self?.audioObservation = nil
+      }
+    }
+
     playerTimeObserver = PlayerTimeObserver(player: player, period: 10.0, timeUpdateHandler: { [weak self] time in
       self?.saveWatchMark(time: time)
+      self?.captureCurrentAudio()
     })
+  }
+
+  // MARK: - Audio track preference (озвучка)
+
+  /// Apply the audio option the user last selected for this item/series, matching the AVPlayer's own
+  /// media-selection options (by display name, then language, then position) so it round-trips reliably.
+  private func applyPreferredAudio() {
+    guard watchMode == .media,
+          let item = player.currentItem,
+          let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .audible),
+          let preference = AppContext.shared.libraryState.audioPreference(itemId: playItem.metadata.id)
+    else { return }
+    let options = group.options
+    let match = options.first(where: { $0.displayName == preference.displayName })
+      ?? options.first(where: { $0.extendedLanguageTag != nil && $0.extendedLanguageTag == preference.languageTag })
+      ?? (options.indices.contains(preference.index) ? options[preference.index] : nil)
+    if let match {
+      item.select(match, in: group)
+    }
+  }
+
+  /// Remember the audio option currently selected in the player, so the next episode/launch resumes it.
+  private func captureCurrentAudio() {
+    guard watchMode == .media,
+          let item = player.currentItem,
+          let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .audible),
+          let selected = item.currentMediaSelection.selectedMediaOption(in: group),
+          let index = group.options.firstIndex(of: selected)
+    else { return }
+    let preference = MediaLibraryStore.AudioPreference(displayName: selected.displayName,
+                                                       languageTag: selected.extendedLanguageTag,
+                                                       index: index)
+    AppContext.shared.libraryState.setAudioPreference(itemId: playItem.metadata.id, preference)
   }
   
   // MARK: - Watch marks
@@ -165,14 +228,13 @@ class PlayerManager: ObservableObject {
 
     // Fall back to the local resume point: a movie/episode watched in-app records its position
     // locally on every tick, so it resumes even when the server mark lags or the fetch fails.
-    let localContinueTime = AppContext.shared.localProgressStore.allEntries().first {
-      $0.id == playItem.metadata.id
-        && $0.season == playItem.metadata.season
-        && $0.episode == playItem.metadata.video
-    }?.position ?? 0
+    let localContinueTime = AppContext.shared.localProgressStore
+      .entry(forId: playItem.metadata.id, season: playItem.metadata.season, episode: playItem.metadata.video)?
+      .position ?? 0
 
     let best = max(remoteContinueTime, localContinueTime)
-    continueTime = best > 0 ? best : nil
+    // Keep any value we already seeded synchronously if the refined fetch somehow comes back empty.
+    if best > 0 { continueTime = best }
   }
   
   // MARK: - Continue watching

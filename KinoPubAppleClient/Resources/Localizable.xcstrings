@@ -23,22 +23,22 @@
         }
       }
     },
-    "%@ (%lld)": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@ (%2$lld)"
-          }
-        }
-      }
-    },
     "%@ %lld": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "new",
             "value": "%1$@ %2$lld"
+          }
+        }
+      }
+    },
+    "%@ (%lld)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ (%2$lld)"
           }
         }
       }
@@ -92,7 +92,6 @@
       }
     },
     "%lld%%": {},
-    "•": {},
     "+%lld": {},
     "3D": {
       "extractionState": "stale",
@@ -107,6 +106,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "3D"
+          }
+        }
+      }
+    },
+    "Active": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активные"
           }
         }
       }
@@ -767,6 +782,22 @@
         }
       }
     },
+    "Clear image cache": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear image cache"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить кэш изображений"
+          }
+        }
+      }
+    },
     "Clear key": {
       "localizations": {
         "en": {
@@ -893,6 +924,22 @@
         }
       }
     },
+    "Couldn't start download": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't start download"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось начать загрузку"
+          }
+        }
+      }
+    },
     "Country": {
       "localizations": {
         "en": {
@@ -955,29 +1002,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "День"
-          }
-        }
-      }
-    },
-    "days": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "days"
-          }
-        },
-        "lt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "dienos"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "дней"
           }
         }
       }
@@ -1270,6 +1294,38 @@
         }
       }
     },
+    "Downloaded": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaded"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скачано"
+          }
+        }
+      }
+    },
+    "Downloading…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скачивается…"
+          }
+        }
+      }
+    },
     "Downloads": {
       "localizations": {
         "en": {
@@ -1368,22 +1424,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Серия"
-          }
-        }
-      }
-    },
-    "episodes": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "episodes"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "эпизодов"
           }
         }
       }
@@ -1609,6 +1649,54 @@
         }
       }
     },
+    "Go to Movie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to Movie"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть фильм"
+          }
+        }
+      }
+    },
+    "Go to Series": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to Series"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть сериал"
+          }
+        }
+      }
+    },
+    "HLS downloads are stored in the app's private storage (not visible in the Files app) and keep every audio track, so they're larger than the source file.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HLS downloads are stored in the app's private storage (not visible in the Files app) and keep every audio track, so they're larger than the source file."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HLS-загрузки хранятся в приватном хранилище приложения (не видны в Файлах) и содержат все аудиодорожки, поэтому занимают больше, чем исходный файл."
+          }
+        }
+      }
+    },
     "History": {
       "localizations": {
         "en": {
@@ -1664,22 +1752,6 @@
         }
       }
     },
-    "Image Cache": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Image Cache"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Кэш изображений"
-          }
-        }
-      }
-    },
     "IMDB Rating": {
       "localizations": {
         "en": {
@@ -1702,6 +1774,38 @@
         }
       }
     },
+    "Image Cache": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image Cache"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кэш изображений"
+          }
+        }
+      }
+    },
+    "Image cache": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image cache"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кэш изображений"
+          }
+        }
+      }
+    },
     "Information": {
       "localizations": {
         "en": {
@@ -1714,6 +1818,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Информация"
+          }
+        }
+      }
+    },
+    "Interrupted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrupted"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прервано"
           }
         }
       }
@@ -1766,6 +1886,7 @@
         }
       }
     },
+    "KinoPub": {},
     "Kinopoisk Rating": {
       "localizations": {
         "en": {
@@ -1782,7 +1903,23 @@
         }
       }
     },
-    "KinoPub": {},
+    "LIVE": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LIVE"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ЭФИР"
+          }
+        }
+      }
+    },
     "Language": {
       "localizations": {
         "en": {
@@ -1821,22 +1958,6 @@
         }
       }
     },
-    "left": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "left"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "осталось"
-          }
-        }
-      }
-    },
     "Library": {
       "localizations": {
         "en": {
@@ -1849,23 +1970,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Библиотека"
-          }
-        }
-      }
-    },
-    "LIVE": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LIVE"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ЭФИР"
           }
         }
       }
@@ -1915,6 +2019,23 @@
         }
       }
     },
+    "Mark Watched": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark Watched"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отметить просмотренным"
+          }
+        }
+      }
+    },
     "Mark as Unwatched": {
       "localizations": {
         "en": {
@@ -1943,23 +2064,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отметить просмотренной"
-          }
-        }
-      }
-    },
-    "Mark Watched": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mark Watched"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Отметить просмотренным"
           }
         }
       }
@@ -2210,22 +2314,6 @@
         }
       }
     },
-    "min": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "min"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "мин"
-          }
-        }
-      }
-    },
     "Mixed playlist": {
       "extractionState": "stale",
       "localizations": {
@@ -2255,6 +2343,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Месяц"
+          }
+        }
+      }
+    },
+    "More": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ещё"
           }
         }
       }
@@ -2321,12 +2425,13 @@
         }
       }
     },
-    "My series": {
+    "My Series": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "My series"
+            "value": "My Series"
           }
         },
         "ru": {
@@ -2337,13 +2442,12 @@
         }
       }
     },
-    "My Series": {
-      "extractionState": "stale",
+    "My series": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "My Series"
+            "value": "My series"
           }
         },
         "ru": {
@@ -2402,22 +2506,6 @@
         }
       }
     },
-    "New episodes": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New episodes"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые серии"
-          }
-        }
-      }
-    },
     "New Episodes": {
       "extractionState": "stale",
       "localizations": {
@@ -2431,6 +2519,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Новые эпизоды"
+          }
+        }
+      }
+    },
+    "New episodes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New episodes"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые серии"
           }
         }
       }
@@ -2711,6 +2815,22 @@
         }
       }
     },
+    "Playback failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playback failed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось воспроизвести"
+          }
+        }
+      }
+    },
     "Polish": {
       "localizations": {
         "en": {
@@ -2836,6 +2956,22 @@
         }
       }
     },
+    "Re-download": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-download"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скачать заново"
+          }
+        }
+      }
+    },
     "Recent": {
       "localizations": {
         "en": {
@@ -2908,6 +3044,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Год выхода"
+          }
+        }
+      }
+    },
+    "Remove leftover download files": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove leftover download files"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить остаточные файлы загрузок"
           }
         }
       }
@@ -3133,22 +3285,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сезон загружен"
-          }
-        }
-      }
-    },
-    "seasons": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "seasons"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "сезонов"
           }
         }
       }
@@ -3388,6 +3524,22 @@
         }
       }
     },
+    "Storage used": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage used"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Занято на диске"
+          }
+        }
+      }
+    },
     "Stream type": {
       "localizations": {
         "en": {
@@ -3417,6 +3569,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Субтитры"
+          }
+        }
+      }
+    },
+    "TMDB": {},
+    "TMDB API key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TMDB API key"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ключ API TMDB"
+          }
+        }
+      }
+    },
+    "TV Show": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV Show"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV laidos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ТВ Шоу"
           }
         }
       }
@@ -3539,23 +3731,6 @@
         }
       }
     },
-    "TMDB": {},
-    "TMDB API key": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TMDB API key"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ключ API TMDB"
-          }
-        }
-      }
-    },
     "To": {
       "localizations": {
         "en": {
@@ -3584,22 +3759,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сегодня"
-          }
-        }
-      }
-    },
-    "total": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "total"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "всего"
           }
         }
       }
@@ -3688,29 +3847,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Попробуйте другое название, актёра или режиссёра."
-          }
-        }
-      }
-    },
-    "TV Show": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TV Show"
-          }
-        },
-        "lt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TV laidos"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ТВ Шоу"
           }
         }
       }
@@ -4141,20 +4277,188 @@
         }
       }
     },
-    "ЕЩЕ": {},
-    "Свернуть": {},
-    "More": {
+    "days": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "More"
+            "value": "days"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dienos"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ещё"
+            "value": "дней"
+          }
+        }
+      }
+    },
+    "episodes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "episodes"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "эпизодов"
+          }
+        }
+      }
+    },
+    "left": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "left"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "осталось"
+          }
+        }
+      }
+    },
+    "min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "min"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "мин"
+          }
+        }
+      }
+    },
+    "seasons": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "seasons"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "сезонов"
+          }
+        }
+      }
+    },
+    "total": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "total"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "всего"
+          }
+        }
+      }
+    },
+    "ЕЩЕ": {},
+    "Свернуть": {},
+    "•": {},
+    "Already downloading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already downloading"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уже загружается"
+          }
+        }
+      }
+    },
+    "Already downloaded": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already downloaded"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уже загружено"
+          }
+        }
+      }
+    },
+    "Couldn't start downloading “%@” (the server didn't return a valid HLS stream).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't start downloading “%@” (the server didn't return a valid HLS stream)."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось начать загрузку «%@» (сервер не вернул корректный HLS-поток)."
+          }
+        }
+      }
+    },
+    "“%@” failed to download: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” failed to download: %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить «%@»: %@"
+          }
+        }
+      }
+    },
+    "“%@” failed to download (no file was produced).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” failed to download (no file was produced)."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить «%@» (файл не был создан)."
           }
         }
       }

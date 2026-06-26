@@ -207,8 +207,6 @@ struct PersonSearchView: View {
   private let title: String
   private let linkProvider: NavigationLinkProvider
 
-  private let resultsColumns = [GridItem(.adaptive(minimum: 130), spacing: 16)]
-
   init(model: @autoclosure @escaping () -> SearchModel,
        query: String,
        field: String,
@@ -222,22 +220,24 @@ struct PersonSearchView: View {
   }
 
   var body: some View {
-    ScrollView {
-      LazyVGrid(columns: resultsColumns, spacing: 16) {
-        ForEach(model.results, id: \.id) { item in
-          if item.skeleton ?? false {
-            PosterCard.placeholder()
-          } else {
-            NavigationLink(value: linkProvider.link(for: item)) {
-              PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
-            }
+    WidthReader { width in
+      ScrollView {
+        LazyVGrid(columns: PosterGridLayout.columns(width: width), spacing: 16) {
+          ForEach(model.results, id: \.id) { item in
+            if item.skeleton ?? false {
+              PosterCard.placeholder(width: nil)
+            } else {
+              NavigationLink(value: linkProvider.link(for: item)) {
+                PosterCard(imageURL: item.posters.medium, title: item.localizedTitle, width: nil)
+              }
 #if os(macOS)
-            .buttonStyle(.plain)
+              .buttonStyle(.plain)
 #endif
+            }
           }
         }
+        .padding(16)
       }
-      .padding(16)
     }
     .kinoScreen(title)
     .task {
