@@ -99,18 +99,18 @@ struct WatchingView: View {
 
   var serialsGrid: some View {
     ScrollView {
-      LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 25, alignment: .top)], content: {
+      LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 16, alignment: .top)], spacing: 24) {
         ForEach(model.serials) { serial in
           NavigationLink(value: WatchingRoutes.details(serial.id)) {
             WatchingSerialView(serial: serial)
-              .padding(.vertical, 20)
           }
           #if os(macOS)
           .buttonStyle(PlainButtonStyle())
           #endif
         }
-      })
-      .padding(.horizontal, 16)
+      }
+      .padding(.horizontal, 20)
+      .padding(.top, 8)
     }
     .refreshable {
       await model.refresh()
@@ -145,17 +145,21 @@ struct WatchingSerialView: View {
   }
 
   var image: some View {
-    CachedAsyncImage(url: URL(string: serial.posters.medium)) { image in
-      image
-        .resizable()
-        .renderingMode(.original)
-        .aspectRatio(contentMode: .fill)
-    } placeholder: {
-      Color.KinoPub.skeleton
-    }
-    .frame(width: 140, height: 210)
-    .clipped()
-    .cornerRadius(8)
+    // Match the common grid card (ContentItemView): 2:3 poster filling the column width.
+    Color.KinoPub.skeleton
+      .aspectRatio(2.0 / 3.0, contentMode: .fit)
+      .frame(maxWidth: .infinity)
+      .overlay {
+        CachedAsyncImage(url: URL(string: serial.posters.medium)) { image in
+          image
+            .resizable()
+            .renderingMode(.original)
+            .aspectRatio(contentMode: .fill)
+        } placeholder: {
+          Color.KinoPub.skeleton
+        }
+      }
+      .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
   }
 
   func newBadge(count: Int) -> some View {

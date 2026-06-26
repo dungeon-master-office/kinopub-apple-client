@@ -33,14 +33,18 @@ public struct DownloadedItemView: View {
         subtitle
       }.padding(.all, 5)
       
-      if let progress = progress {
+      if let progress = progress, progress < 1.0 {
         Spacer()
-        if progress != 1.0 {
-          ProgressButton(progress: progress) { state in
-            onDownloadStateChange(state == .pause)
-          }
-          .padding(.trailing, 16)
+        Text("\(Int(progress * 100))%")
+          .font(.system(size: 13, weight: .semibold))
+          .monospacedDigit()
+          .foregroundStyle(Color.KinoPub.subtitle)
+        ProgressButton(progress: progress) { state in
+          onDownloadStateChange(state == .pause)
         }
+        .buttonStyle(.borderless)
+        .padding(.leading, 8)
+        .padding(.trailing, 16)
       } else {
         Spacer()
       }

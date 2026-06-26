@@ -19,7 +19,34 @@ class HomeModel: ObservableObject {
     let title: String
     let items: [MediaItem]
     let ranked: Bool
+    /// The catalog filter this shelf represents, so its header can open the full list.
+    var filter: MediaItemsFilter? = nil
   }
+
+  /// Definition of a Home shelf (matches the kino.pub web sections).
+  private struct ShelfSpec {
+    let title: String
+    let type: MediaType
+    let sort: String
+    let period: String?
+
+    var filter: MediaItemsFilter {
+      var f = MediaItemsFilter(contentType: type, genres: [], countries: [], year: nil, age: nil, sort: sort)
+      f.period = period
+      return f
+    }
+  }
+
+  private static let shelfSpecs: [ShelfSpec] = [
+    ShelfSpec(title: "Популярные фильмы", type: .movie, sort: "views-", period: "month"),
+    ShelfSpec(title: "Новые фильмы", type: .movie, sort: "created-", period: nil),
+    ShelfSpec(title: "Популярные сериалы", type: .serial, sort: "watchers-", period: nil),
+    ShelfSpec(title: "Новые сериалы", type: .serial, sort: "created-", period: nil),
+    ShelfSpec(title: "Новые концерты", type: .concert, sort: "created-", period: nil),
+    ShelfSpec(title: "Новые докуфильмы", type: .documovie, sort: "created-", period: nil),
+    ShelfSpec(title: "Новые докусериалы", type: .docuserial, sort: "created-", period: nil),
+    ShelfSpec(title: "Новые ТВ шоу", type: .tvshow, sort: "created-", period: nil)
+  ]
 
   /// A "Continue Watching" entry enriched with resume progress and, for series,
   /// the last episode the user was watching.
@@ -57,40 +84,37 @@ class HomeModel: ObservableObject {
     // shelves, but isolate failures so a history error can't take down the whole Home screen.
     async let history = itemsService.fetchHistory(page: nil)
 
-    do {
-      async let popularMovies = itemsService.fetch(shortcut: .popular, contentType: .movie, page: nil)
-      async let hotSeries = itemsService.fetch(shortcut: .hot, contentType: .serial, page: nil)
-      async let freshMovies = itemsService.fetch(shortcut: .fresh, contentType: .movie, page: nil)
-      async let freshSeries = itemsService.fetch(shortcut: .fresh, contentType: .serial, page: nil)
-      async let popularSeries = itemsService.fetch(shortcut: .popular, contentType: .serial, page: nil)
-      async let hotMovies = itemsService.fetch(shortcut: .hot, contentType: .movie, page: nil)
-
-      let loaded: [Shelf] = [
-        Shelf(title: "Популярные фильмы", items: try await popularMovies.items, ranked: true),
-        Shelf(title: "Горячие сериалы", items: try await hotSeries.items, ranked: true),
-        Shelf(title: "Новинки кино", items: try await freshMovies.items, ranked: false),
-        Shelf(title: "Свежие сериалы", items: try await freshSeries.items, ranked: false),
-        Shelf(title: "Популярные сериалы", items: try await popularSeries.items, ranked: false),
-        Shelf(title: "Горячее кино", items: try await hotMovies.items, ranked: false)
-      ]
-
-      shelves = loaded
-
-      // Build the hero gallery from the lead item of each shelf (deduplicated), so the
-      // top of Home is a swipeable carousel of varied features rather than a single title.
-      var seen = Set<Int>()
-      var featuredItems: [MediaItem] = []
-      for shelf in loaded {
-        if let first = shelf.items.first, !seen.contains(first.id) {
-          seen.insert(first.id)
-          featuredItems.append(first)
+    // Build the shelves from the kino.pub web sections (each with its own order/period),
+    // fetched in parallel. A failed shelf is simply dropped rather than failing the screen.
+    let specs = HomeModel.shelfSpecs
+    let shelfService = itemsService
+    let loaded: [Shelf] = await withTaskGroup(of: (Int, Shelf?).self) { group in
+      for (index, spec) in specs.enumerated() {
+        group.addTask {
+          let items = (try? await shelfService.filter(filter: spec.filter, page: nil))?.items ?? []
+          let shelf = items.isEmpty ? nil
+            : Shelf(title: spec.title, items: items, ranked: false, filter: spec.filter)
+          return (index, shelf)
         }
       }
-      featured = featuredItems
-    } catch {
-      Logger.app.debug("fetch home error: \(error)")
-      errorHandler.setError(error)
+      var slots = [Shelf?](repeating: nil, count: specs.count)
+      for await (index, shelf) in group { slots[index] = shelf }
+      return slots.compactMap { $0 }
     }
+
+    shelves = loaded
+
+    // Build the hero gallery from the lead item of each shelf (deduplicated), so the
+    // top of Home is a swipeable carousel of varied features rather than a single title.
+    var heroSeen = Set<Int>()
+    var featuredItems: [MediaItem] = []
+    for shelf in loaded {
+      if let first = shelf.items.first, !heroSeen.contains(first.id) {
+        heroSeen.insert(first.id)
+        featuredItems.append(first)
+      }
+    }
+    featured = featuredItems
 
     // Best-effort: a history failure should never surface an error on Home.
     let recent = (try? await history)?.history.map { $0.item } ?? []
@@ -132,38 +156,22 @@ class HomeModel: ObservableObject {
     continueWatchingLoading = false
   }
 
-  /// Builds a Continue Watching entry from a fully-loaded media item.
+  /// Builds a Continue Watching entry from a fully-loaded media item. Series use the same
+  /// `MediaItem.continueEpisode()` logic as the detail page so the two stay in sync (DRY).
   nonisolated private static func continueItem(from item: MediaItem) -> ContinueItem {
-    if item.isSeries, let seasons = item.seasons,
-       let target = lastWatchingEpisode(in: seasons) {
-      let progress = target.episode.duration > 0
-        ? min(max(Double(target.episode.watching.time) / Double(target.episode.duration), 0), 1)
+    if item.isSeries, let target = item.continueEpisode() ?? item.orderedEpisodes.last {
+      let episode = target.episode
+      let progress: Double? = (episode.duration > 0 && episode.watching.time > 0)
+        ? min(max(Double(episode.watching.time) / Double(episode.duration), 0), 1)
         : nil
-      let subtitle = "S\(target.season.number) · E\(target.episode.number)"
-      return ContinueItem(id: item.id, item: item, progress: progress, subtitle: subtitle)
+      return ContinueItem(id: item.id, item: item, progress: progress,
+                          subtitle: "S\(target.season.number) · E\(episode.number)")
     }
     if let video = item.videos?.first, video.duration > 0, video.watching.time > 0 {
       let progress = min(max(Double(video.watching.time) / Double(video.duration), 0), 1)
       return ContinueItem(id: item.id, item: item, progress: progress, subtitle: item.duration.totalFormatted)
     }
     return ContinueItem(id: item.id, item: item, progress: nil, subtitle: item.duration.totalFormatted)
-  }
-
-  /// The most recent in-progress episode across all seasons.
-  nonisolated private static func lastWatchingEpisode(in seasons: [Season]) -> (season: Season, episode: Episode)? {
-    var best: (season: Season, episode: Episode)?
-    for season in seasons {
-      for episode in season.episodes where episode.watching.time > 0 {
-        if let current = best {
-          if (season.number, episode.number) > (current.season.number, current.episode.number) {
-            best = (season, episode)
-          }
-        } else {
-          best = (season, episode)
-        }
-      }
-    }
-    return best
   }
 
   private static func skeletonShelves() -> [Shelf] {

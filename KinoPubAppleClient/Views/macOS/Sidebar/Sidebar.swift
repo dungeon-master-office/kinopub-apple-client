@@ -41,6 +41,10 @@ struct Sidebar: View {
         row(.bookmarks)
         row(.history)
         row(.downloads)
+      }
+
+      // Profile sits in its own section so it reads as separate from the library/other rows.
+      Section {
         Button {
           showProfile = true
         } label: {

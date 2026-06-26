@@ -41,6 +41,11 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
   lazy public var session: URLSession = {
     let identifier = "com.kinopub.backgroundDownloadSession"
     let config = URLSessionConfiguration.background(withIdentifier: identifier)
+    // Without this the system treats background transfers as discretionary and may defer them
+    // indefinitely (downloads appear stuck / never start, especially in the simulator).
+    config.isDiscretionary = false
+    config.sessionSendsLaunchEvents = true
+    config.allowsCellularAccess = true
     return URLSession(configuration: config, delegate: self, delegateQueue: nil)
   }()
 

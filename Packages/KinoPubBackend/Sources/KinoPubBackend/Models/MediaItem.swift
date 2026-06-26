@@ -95,6 +95,29 @@ public extension MediaItem {
   var isSeries: Bool {
     !(seasons?.isEmpty ?? false)
   }
+
+  /// Ordered (season, episode) pairs across all seasons.
+  var orderedEpisodes: [(season: Season, episode: Episode)] {
+    (seasons ?? [])
+      .sorted { $0.number < $1.number }
+      .flatMap { season in season.episodes.sorted { $0.number < $1.number }.map { (season, $0) } }
+  }
+
+  /// Shared "Continue" target for a series, used by both Home and the detail page so the
+  /// behaviour is identical: the in-progress episode, or the episode after the last finished
+  /// one. Returns nil for movies or when there's nothing to continue / everything is watched.
+  func continueEpisode() -> (season: Season, episode: Episode)? {
+    let ordered = orderedEpisodes
+    guard let index = ordered.lastIndex(where: { $0.episode.watching.time > 0 || $0.episode.watched > 0 }) else {
+      return nil
+    }
+    let entry = ordered[index]
+    if entry.episode.watched > 0 || entry.episode.isWatchedToEnd {
+      let next = index + 1
+      return next < ordered.count ? ordered[next] : nil
+    }
+    return entry
+  }
 }
 
 // MARK: - All series files list
@@ -203,8 +226,10 @@ extension MediaItem: PlayableItem {
   public var files: [FileInfo] {
     videos?.first?.files ?? []
   }
-  
+
   public var metadata: WatchingMetadata {
     WatchingMetadata(id: id, video: videos?.first?.number, season: nil)
   }
+
+  public var playerTitle: String { localizedTitle }
 }

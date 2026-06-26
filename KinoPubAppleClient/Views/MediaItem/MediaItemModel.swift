@@ -27,6 +27,21 @@ class MediaItemModel: ObservableObject {
   @Published public var relatedItems: [MediaItem] = []
   /// Resolved cast/crew portrait URLs (by name) from TMDB.
   @Published public var personImages: [String: URL] = [:]
+  /// Optimistic watched overrides so the UI flips instantly on toggle (keyed by episode id;
+  /// cleared once a fresh fetch makes the server authoritative again).
+  @Published public var watchedOverrides: [Int: Bool] = [:]
+  /// Optimistic watched override for a movie (whole item).
+  @Published public var movieWatchedOverride: Bool?
+
+  /// Effective watched state for an episode (override first, then server data).
+  public func isEpisodeWatched(_ episode: Episode) -> Bool {
+    watchedOverrides[episode.id] ?? (episode.watched > 0)
+  }
+
+  /// Effective watched state for a movie (override first, then server data).
+  public var isMovieWatched: Bool {
+    movieWatchedOverride ?? ((mediaItem.videos?.first?.watched ?? 0) > 0)
+  }
 
   private let tmdbService: TMDBService = AppContext.shared.tmdbService
 
@@ -128,6 +143,9 @@ class MediaItemModel: ObservableObject {
         let mediaId = mediaItem.id
         mediaItem.seasons = mediaItem.seasons?.map({ $0.mediaId = mediaId; return $0 })
         itemLoaded = true
+        // Fresh server data is now authoritative; drop optimistic watched overrides.
+        watchedOverrides = [:]
+        movieWatchedOverride = nil
         fetchRelated()
       } catch {
         errorHandler.setError(error)
@@ -167,22 +185,28 @@ class MediaItemModel: ObservableObject {
   }
 
   func toggleWatched() {
+    let newState = !isMovieWatched
+    movieWatchedOverride = newState
     Task {
       do {
         try await actionsService.toggleWatching(id: mediaItemId, video: nil, season: nil)
         fetchData()
       } catch {
+        movieWatchedOverride = !newState
         errorHandler.setError(error)
       }
     }
   }
 
-  func toggleEpisodeWatched(episodeNumber: Int, season: Int) {
+  func toggleEpisodeWatched(episode: Episode, season: Int) {
+    let newState = !isEpisodeWatched(episode)
+    watchedOverrides[episode.id] = newState
     Task {
       do {
-        try await actionsService.toggleWatching(id: mediaItemId, video: episodeNumber, season: season)
+        try await actionsService.toggleWatching(id: mediaItemId, video: episode.number, season: season)
         fetchData()
       } catch {
+        watchedOverrides[episode.id] = !newState
         errorHandler.setError(error)
       }
     }

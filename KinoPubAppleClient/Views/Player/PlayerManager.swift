@@ -26,12 +26,36 @@ class PlayerManager: ObservableObject {
   @Published var continueTime: TimeInterval?
   
   lazy var player: AVPlayer = {
-    if let fileURL {
-      return AVPlayer(url: fileURL)
-    } else {
-      return AVPlayer()
-    }
+    guard let fileURL else { return AVPlayer() }
+    let item = AVPlayerItem(url: fileURL)
+    // Surface the title (and season/episode) in the native player UI (iOS/tvOS only).
+    #if !os(macOS)
+    item.externalMetadata = externalMetadata()
+    #endif
+    return AVPlayer(playerItem: item)
   }()
+
+  #if !os(macOS)
+  private func externalMetadata() -> [AVMetadataItem] {
+    var items: [AVMetadataItem] = []
+    let title = playItem.playerTitle
+    if !title.isEmpty {
+      let titleItem = AVMutableMetadataItem()
+      titleItem.identifier = .commonIdentifierTitle
+      titleItem.value = title as NSString
+      titleItem.extendedLanguageTag = "und"
+      items.append(titleItem)
+    }
+    if let subtitle = playItem.playerSubtitle, !subtitle.isEmpty {
+      let subtitleItem = AVMutableMetadataItem()
+      subtitleItem.identifier = .iTunesMetadataTrackSubTitle
+      subtitleItem.value = subtitle as NSString
+      subtitleItem.extendedLanguageTag = "und"
+      items.append(subtitleItem)
+    }
+    return items
+  }
+  #endif
   private var playerTimeObserver: PlayerTimeObserver?
   private var playItem: any PlayableItem
   private var watchMode: WatchMode

@@ -61,4 +61,6 @@ extension TVChannel: PlayableItem {
   public var trailer: Trailer? { nil }
 
   public var metadata: WatchingMetadata { WatchingMetadata(id: id) }
+
+  public var playerTitle: String { title }
 }

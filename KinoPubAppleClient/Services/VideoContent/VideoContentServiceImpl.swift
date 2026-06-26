@@ -37,16 +37,31 @@ final class VideoContentServiceImpl: VideoContentService {
                                      year: filter.year,
                                      age: filter.age,
                                      sort: filter.sort,
+                                     subtitles: filter.subtitles,
+                                     imdb: filter.imdbParam,
+                                     kinopoisk: filter.kinopoiskParam,
+                                     quality: filter.qualityParams,
+                                     conditions: filter.conditionParams,
+                                     period: filter.period,
+                                     language: filter.language,
+                                     translation: filter.translation,
                                      page: page)
     let response = try await apiClient.performRequest(with: request,
                                                       decodingType: PaginatedData<MediaItem>.self)
     return response
   }
 
-  func fetchGenres() async throws -> [MediaGenre] {
-    let request = GenresRequest()
+  func fetchGenres(type: MediaType?) async throws -> [MediaGenre] {
+    let request = GenresRequest(type: type)
     let response = try await apiClient.performRequest(with: request,
                                                       decodingType: ArrayData<MediaGenre>.self)
+    return response.items
+  }
+
+  func fetchCountries() async throws -> [Country] {
+    let request = CountriesRequest()
+    let response = try await apiClient.performRequest(with: request,
+                                                      decodingType: ArrayData<Country>.self)
     return response.items
   }
 

@@ -9,7 +9,11 @@ import Foundation
 
 public struct GenresRequest: Endpoint {
 
-  public init() {}
+  private var type: MediaType?
+
+  public init(type: MediaType? = nil) {
+    self.type = type
+  }
 
   public var path: String {
     "/v1/genres"
@@ -20,7 +24,10 @@ public struct GenresRequest: Endpoint {
   }
 
   public var parameters: [String: Any]? {
-    nil
+    guard let type = type else { return nil }
+    // Web shows different genres per section; if the API ignores `type` it
+    // harmlessly returns all genres.
+    return ["type": type.rawValue]
   }
 
   public var headers: [String: String]? {

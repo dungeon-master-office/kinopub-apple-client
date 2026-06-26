@@ -46,29 +46,31 @@ struct MainView: View {
           Button {
             showShortCutPicker = true
           } label: {
-            Image(systemName: "arrow.up.arrow.down")
+            SortDotIcon(active: catalog.isSortNonDefault)
           }
         }
-        
+
         ToolbarItem(placement: toolbarItemPlacement) {
           Button {
             showFilterPicker = true
           } label: {
-            Image(systemName: "line.3.horizontal.decrease.circle")
+            FilterBadgeIcon(count: catalog.activeFilterCount)
           }
         }
       }
       .background(Color.KinoPub.background)
       .sheet(isPresented: $showShortCutPicker, content: {
-        ShortcutSelectionView(shortcut: $catalog.shortcut,
-                              mediaType: $catalog.contentType)
+        ShortcutSelectionView(shortcut: $catalog.shortcut)
       })
       .sheet(isPresented: $showFilterPicker, content: {
-        FilterView(model: FilterModel(), onApply: { filter in
-          catalog.apply(filter: filter)
-        }, onClear: {
-          catalog.clearFilter()
-        })
+        FilterView(model: FilterModel(contentType: catalog.contentType,
+                                      filterDataService: appContext.contentService,
+                                      initialFilter: catalog.activeFilter),
+                   onApply: { filter in
+                     catalog.apply(filter: filter)
+                   }, onClear: {
+                     catalog.clearFilter()
+                   })
       })
       .navigationDestination(for: MainRoutes.self) { route in
         switch route {
@@ -157,6 +159,7 @@ struct MainView_Previews: PreviewProvider {
 /// via the supplied `linkProvider`.
 struct FilteredCatalogView: View {
   @EnvironmentObject var errorHandler: ErrorHandler
+  @Environment(\.appContext) var appContext
   @StateObject private var catalog: MediaCatalog
   private let title: String
   private let linkProvider: NavigationLinkProvider
@@ -197,24 +200,26 @@ struct FilteredCatalogView: View {
     .toolbar {
       ToolbarItem(placement: toolbarItemPlacement) {
         Button { showShortCutPicker = true } label: {
-          Image(systemName: "arrow.up.arrow.down")
+          SortDotIcon(active: catalog.isSortNonDefault)
         }
       }
       ToolbarItem(placement: toolbarItemPlacement) {
         Button { showFilterPicker = true } label: {
-          Image(systemName: "line.3.horizontal.decrease.circle")
+          FilterBadgeIcon(count: catalog.activeFilterCount)
         }
       }
     }
     .sheet(isPresented: $showShortCutPicker) {
-      ShortcutSelectionView(shortcut: $catalog.shortcut, mediaType: $catalog.contentType)
+      ShortcutSelectionView(shortcut: $catalog.shortcut)
     }
     .sheet(isPresented: $showFilterPicker) {
-      FilterView(model: FilterModel(), onApply: { filter in
-        catalog.apply(filter: filter)
-      }, onClear: {
-        catalog.clearFilter()
-      })
+      FilterView(model: FilterModel(contentType: catalog.contentType,
+                                    filterDataService: appContext.contentService),
+                 onApply: { filter in
+                   catalog.apply(filter: filter)
+                 }, onClear: {
+                   catalog.clearFilter()
+                 })
     }
     .task {
       await catalog.fetchItems()
@@ -274,5 +279,67 @@ struct PersonSearchView: View {
       model.preset(query: query, field: field)
     }
     .handleError(state: $errorHandler.state)
+  }
+}
+
+// MARK: - Toolbar indicators
+
+/// Filter icon with a count badge when filters are active. iOS 26+ uses the system `.badge`
+/// (not clipped by the toolbar group); older OSes fall back to a corner overlay. No padding
+/// is applied to the icon itself, so the toolbar icons keep their native alignment.
+private struct FilterBadgeIcon: View {
+  let count: Int
+  var body: some View {
+    if #available(iOS 26.0, macOS 26.0, *) {
+      Image(systemName: "line.3.horizontal.decrease.circle")
+        .foregroundStyle(count > 0 ? Color.KinoPub.accent : Color.KinoPub.text)
+        .modifier(SystemCountBadge(count: count))
+    } else {
+      ZStack(alignment: .topTrailing) {
+        Image(systemName: "line.3.horizontal.decrease.circle")
+          .foregroundStyle(count > 0 ? Color.KinoPub.accent : Color.KinoPub.text)
+        if count > 0 {
+          Text("\(count)")
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, count >= 10 ? 3 : 0)
+            .frame(minWidth: 14, minHeight: 14)
+            .background(Capsule(style: .continuous).fill(Color.KinoPub.accent))
+            .offset(x: 6, y: -6)
+        }
+      }
+    }
+  }
+}
+
+/// Sort icon with a small dot when the sort differs from the default (corner overlay; no padding).
+private struct SortDotIcon: View {
+  let active: Bool
+  var body: some View {
+    ZStack(alignment: .topTrailing) {
+      Image(systemName: "arrow.up.arrow.down")
+      if active {
+        Circle()
+          .fill(Color.KinoPub.accent)
+          .frame(width: 7, height: 7)
+          .offset(x: 5, y: -4)
+      }
+    }
+  }
+}
+
+/// iOS 26+ system badge on a toolbar label (stable `.id` so Liquid Glass rebuilds it on change).
+@available(iOS 26.0, macOS 26.0, *)
+private struct SystemCountBadge: ViewModifier {
+  let count: Int
+  func body(content: Content) -> some View {
+    Group {
+      if count > 0 {
+        content.badge(Text(verbatim: "\(count)"))
+      } else {
+        content
+      }
+    }
+    .id("kinopub-filter-badge-\(count)")
   }
 }

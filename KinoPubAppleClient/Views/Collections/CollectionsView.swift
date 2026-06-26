@@ -63,13 +63,48 @@ struct CollectionsView: View {
 
   @ViewBuilder
   private var content: some View {
-    if model.isLoading {
-      loading
-    } else if model.collections.isEmpty {
-      emptyState
-    } else {
-      grid
+    VStack(spacing: 0) {
+      sortTabs
+      if model.isLoading {
+        loading
+      } else if model.collections.isEmpty {
+        emptyState
+      } else {
+        grid
+      }
     }
+  }
+
+  // MARK: - Sort tabs
+
+  private var sortTabs: some View {
+    ScrollView(.horizontal, showsIndicators: false) {
+      HStack(spacing: 8) {
+        ForEach(CollectionsSort.allCases) { sort in
+          sortPill(title: sort.title, isSelected: model.selectedSort == sort) {
+            model.selectedSort = sort
+          }
+        }
+      }
+      .padding(.horizontal, 16)
+      .padding(.vertical, 10)
+    }
+  }
+
+  private func sortPill(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Text(title)
+        .font(.system(size: 14, weight: .semibold))
+        .foregroundStyle(isSelected ? Color.white : Color.KinoPub.text)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background {
+          Capsule(style: .continuous)
+            .fill(isSelected ? Color.KinoPub.accent : Color.KinoPub.selectionBackground)
+        }
+    }
+    .buttonStyle(.plain)
+    .animation(.easeInOut(duration: 0.15), value: isSelected)
   }
 
   private var grid: some View {
@@ -78,6 +113,9 @@ struct CollectionsView: View {
         ForEach(model.collections) { collection in
           NavigationLink(value: CollectionsRoutes.collection(collection)) {
             CollectionCard(collection: collection)
+              .onAppear {
+                model.loadMoreContent(after: collection)
+              }
           }
 #if os(macOS)
           .buttonStyle(.plain)

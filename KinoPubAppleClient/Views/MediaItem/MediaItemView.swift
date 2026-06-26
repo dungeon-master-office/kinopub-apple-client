@@ -114,7 +114,7 @@ struct MediaItemView: View {
   // MARK: - Hero
 
   private var hero: some View {
-    HeroBackdrop(imageURL: mediaItem.posters.wide ?? mediaItem.posters.big, height: 460, tallBlur: true) {
+    HeroBackdrop(imageURL: mediaItem.posters.wide ?? mediaItem.posters.big, height: 460, tallBlur: true, blurReduction: 50) {
       VStack(alignment: .leading, spacing: 10) {
         Text(mediaItem.localizedTitle)
           .font(.system(size: 34, weight: .bold))
@@ -199,8 +199,13 @@ struct MediaItemView: View {
   private var heroActions: some View {
     HStack(spacing: 12) {
       playButton
-      watchlistButton
-      watchedButton
+      // Watchlist ("Буду смотреть") is a serials-only feature on kino.pub; for movies use Bookmarks.
+      if mediaItem.isSeries {
+        watchlistButton
+      } else {
+        // Whole-item "watched" applies to movies; series are marked per-episode (long-press).
+        watchedButton
+      }
       bookmarkMenu
       downloadButton
       if mediaItem.trailer?.url != nil {
@@ -224,7 +229,9 @@ struct MediaItemView: View {
   }
 
   private var watchedButton: some View {
-    circleIconButton("eye", accessibility: "Mark Watched") {
+    let watched = itemModel.isMovieWatched
+    return circleIconButton(watched ? "eye.fill" : "eye",
+                            accessibility: watched ? "Mark as Unwatched" : "Mark as Watched") {
       itemModel.toggleWatched()
     }
   }
@@ -264,17 +271,17 @@ struct MediaItemView: View {
 
   @ViewBuilder
   private var playButton: some View {
-    let title = (mediaItem.isSeries ? "Watch" : "Play").localized
-    if mediaItem.isSeries, let firstEpisode = firstPlayableEpisode {
-      NavigationLink(value: itemModel.linkProvider.player(for: firstEpisode)) {
-        playLabel(title)
+    let title = (hasResume ? "Continue" : (mediaItem.isSeries ? "Watch" : "Play")).localized
+    if mediaItem.isSeries, let episode = seriesPlayEpisode {
+      NavigationLink(value: itemModel.linkProvider.player(for: episode)) {
+        playLabel(title, subtitle: resumeSubtitle)
       }
       #if os(macOS)
       .buttonStyle(.plain)
       #endif
     } else {
       NavigationLink(value: itemModel.linkProvider.player(for: mediaItem)) {
-        playLabel(title)
+        playLabel(title, subtitle: resumeSubtitle)
       }
       #if os(macOS)
       .buttonStyle(.plain)
@@ -282,15 +289,65 @@ struct MediaItemView: View {
     }
   }
 
-  private func playLabel(_ title: String) -> some View {
-    HStack(spacing: 8) {
+  // MARK: - Continue ("Netflix-style") resume logic — shared with Home via MediaItem.continueEpisode()
+
+  /// The series episode to continue (shared logic with the Home shelf).
+  private var continueTarget: (season: Season, episode: Episode)? {
+    mediaItem.continueEpisode()
+  }
+
+  /// Whether the play button should read "Continue" rather than "Play"/"Watch".
+  private var hasResume: Bool {
+    if mediaItem.isSeries { return continueTarget != nil }
+    return (mediaItem.videos?.first?.watching.time ?? 0) > 0
+  }
+
+  /// Episode to start for a series: the continue target if any, else the first episode.
+  private var seriesPlayEpisode: Episode? {
+    if let target = continueTarget {
+      return filledEpisode(target.episode, in: target.season)
+    }
+    return firstPlayableEpisode
+  }
+
+  private func playLabel(_ title: String, subtitle: String? = nil) -> some View {
+    HStack(spacing: 10) {
       Image(systemName: "play.fill")
-      Text(title).font(.system(size: 16, weight: .semibold))
+      VStack(alignment: .leading, spacing: 1) {
+        Text(title).font(.system(size: 16, weight: .semibold))
+        if let subtitle {
+          Text(subtitle)
+            .font(.system(size: 11, weight: .medium))
+            .opacity(0.85)
+        }
+      }
     }
     .foregroundStyle(.white)
     .padding(.horizontal, 22)
-    .padding(.vertical, 12)
+    .padding(.vertical, subtitle == nil ? 12 : 8)
     .background(Capsule().fill(Color.KinoPub.accent))
+  }
+
+  /// Resume detail shown under "Continue": "S{n} · E{n} · {time}" for series, just time for movies.
+  private var resumeSubtitle: String? {
+    guard hasResume else { return nil }
+    if mediaItem.isSeries, let target = continueTarget {
+      let base = "S\(target.season.number) · E\(target.episode.number)"
+      let time = target.episode.watching.time
+      return time > 0 ? "\(base) · \(Self.resumeTime(time))" : base
+    }
+    if let time = mediaItem.videos?.first?.watching.time, time > 0 {
+      return Self.resumeTime(time)
+    }
+    return nil
+  }
+
+  private static func resumeTime(_ seconds: Int) -> String {
+    let formatter = DateComponentsFormatter()
+    formatter.allowedUnits = seconds >= 3600 ? [.hour, .minute, .second] : [.minute, .second]
+    formatter.unitsStyle = .positional
+    formatter.zeroFormattingBehavior = .pad
+    return formatter.string(from: TimeInterval(seconds)) ?? ""
   }
 
   private func circleIcon(_ systemName: String) -> some View {
@@ -360,6 +417,7 @@ struct MediaItemView: View {
           let episode = season.episodes.first else { return nil }
     episode.seasonNumber = season.number
     episode.mediaId = season.mediaId ?? mediaItem.id
+    episode.mediaTitle = mediaItem.localizedTitle
     return episode
   }
 
@@ -381,6 +439,14 @@ struct MediaItemView: View {
                               title: episode.fixedTitle,
                               footnote: "\(max(episode.duration / 60, 1)) мин",
                               progress: episodeProgress(episode))
+                  .overlay(alignment: .topTrailing) {
+                    if itemModel.isEpisodeWatched(episode) {
+                      Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.white, Color.KinoPub.accent)
+                        .padding(8)
+                    }
+                  }
                 }
                 #if os(macOS)
                 .buttonStyle(.plain)
@@ -388,10 +454,11 @@ struct MediaItemView: View {
                 .id(episode.id)
                 .contextMenu {
                   Button {
-                    itemModel.toggleEpisodeWatched(episodeNumber: episode.number, season: season.number)
+                    itemModel.toggleEpisodeWatched(episode: episode, season: season.number)
                   } label: {
-                    Label(episode.watched > 0 ? "Mark as Unwatched".localized : "Mark as Watched".localized,
-                          systemImage: episode.watched > 0 ? "checkmark.circle" : "circle")
+                    let watched = itemModel.isEpisodeWatched(episode)
+                    Label(watched ? "Mark as Unwatched".localized : "Mark as Watched".localized,
+                          systemImage: watched ? "checkmark.circle" : "circle")
                   }
                   Menu {
                     qualityButtons(for: episodeDownloadable(episode, in: season))
@@ -487,12 +554,15 @@ struct MediaItemView: View {
   private func filledEpisode(_ episode: Episode, in season: Season) -> Episode {
     episode.seasonNumber = season.number
     episode.mediaId = season.mediaId ?? mediaItem.id
+    episode.mediaTitle = mediaItem.localizedTitle
     return episode
   }
 
   private func episodeProgress(_ episode: Episode) -> Double? {
-    if episode.watched > 0 { return 1.0 }
-    if episode.watching.time > 0 { return 0.5 }
+    if itemModel.isEpisodeWatched(episode) { return 1.0 }
+    if episode.duration > 0, episode.watching.time > 0 {
+      return min(max(Double(episode.watching.time) / Double(episode.duration), 0.02), 1.0)
+    }
     return nil
   }
 
@@ -705,7 +775,12 @@ private struct MediaItemInfoSection: View {
             .foregroundStyle(Color.KinoPub.subtitle)
           ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-              ForEach(itemModel.directorNames, id: \.self) { name in
+              ForEach(Array(itemModel.directorNames.enumerated()), id: \.offset) { index, name in
+                if index > 0 {
+                  Text("•")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.KinoPub.subtitle)
+                }
                 facetLink(itemModel.directorRoute(name)) {
                   facetValueText(name, isLink: itemModel.directorRoute(name) != nil)
                 }
