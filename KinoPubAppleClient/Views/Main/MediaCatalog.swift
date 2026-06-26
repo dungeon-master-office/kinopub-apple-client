@@ -34,12 +34,14 @@ class MediaCatalog: ObservableObject {
        authState: AuthState,
        errorHandler: ErrorHandler,
        contentType: MediaType = .movie,
-       shortcut: MediaShortcut = .hot) {
+       shortcut: MediaShortcut = .hot,
+       filter: MediaItemsFilter? = nil) {
     self.itemsService = itemsService
     self.authState = authState
     self.errorHandler = errorHandler
-    self.contentType = contentType
+    self.contentType = filter?.contentType ?? contentType
     self.shortcut = shortcut
+    self.activeFilter = filter
     subscribe()
   }
 
@@ -52,7 +54,7 @@ class MediaCatalog: ObservableObject {
     do {
       let page = pagination != nil ? pagination!.current + 1 : nil
       if !query.isEmpty {
-        let data = try await itemsService.search( query: query, page: page)
+        let data = try await itemsService.search(query: query, contentType: nil, field: nil, page: page)
         handleData(data)
       } else if let activeFilter = activeFilter {
         let data = try await itemsService.filter(filter: activeFilter, page: page)

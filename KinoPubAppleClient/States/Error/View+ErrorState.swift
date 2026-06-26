@@ -17,17 +17,21 @@ extension View {
   /// - Parameter state: A binding to the error state.
   /// - Returns: A modified view with error handling.
   func handleError(state: Binding<ErrorHandler.State>) -> some View {
-    self.popup(isPresented: state.showError) {
-      ToastContentView(text: state.error.wrappedValue ?? "")
-        .padding()
-    } customize: {
-      $0
-        .type(.floater())
-        .position(.bottom)
-        .animation(.spring())
-        .closeOnTapOutside(true)
-        .autohideIn(5.0)
+    // A bottom overlay (not a full-screen popup): only the toast itself captures taps, so the
+    // rest of the screen stays interactive. Tap the toast — or wait 5s — to dismiss it.
+    self.overlay(alignment: .bottom) {
+      if state.showError.wrappedValue {
+        ToastContentView(text: state.error.wrappedValue ?? "")
+          .padding()
+          .transition(.move(edge: .bottom).combined(with: .opacity))
+          .onTapGesture { state.showError.wrappedValue = false }
+          .task(id: state.error.wrappedValue) {
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            state.showError.wrappedValue = false
+          }
+      }
     }
+    .animation(.spring(), value: state.showError.wrappedValue)
   }
   
 }

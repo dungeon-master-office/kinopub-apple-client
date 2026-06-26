@@ -39,6 +39,14 @@ class SearchModel: ObservableObject {
   @Published public var searching: Bool = false
   @Published public var browseLoading: Bool = false
 
+  /// Optional search field ("cast" for actor, "director"); when set, results
+  /// are searched against that field instead of the default title match.
+  private var searchField: String?
+
+  /// The query value that was last applied as a person-search preset. Used to
+  /// distinguish a programmatic preset from a manual edit of the search bar.
+  private var presetQuery: String?
+
   init(itemsService: VideoContentService, authState: AuthState, errorHandler: ErrorHandler) {
     self.contentService = itemsService
     self.authState = authState
@@ -55,8 +63,25 @@ class SearchModel: ObservableObject {
       .removeDuplicates()
       .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
       .sink { [weak self] value in
-        Task { await self?.performSearch(query: value) }
+        guard let self else { return }
+        // A manual edit of the search bar resets any preset person-search field
+        // (so typing a regular title query searches by title again). A value
+        // matching the active preset is the programmatic change and is left alone.
+        if value != self.presetQuery {
+          self.searchField = nil
+          self.presetQuery = nil
+        }
+        Task { await self.performSearch(query: value) }
       }.store(in: &bag)
+  }
+
+  /// Presets a person search (actor/director). The query runs immediately
+  /// against the given `field` ("cast" or "director").
+  func preset(query: String, field: String?) {
+    searchField = field
+    presetQuery = query
+    self.query = query
+    Task { await performSearch(query: query) }
   }
 
   func performSearch(query: String) async {
@@ -71,7 +96,7 @@ class SearchModel: ObservableObject {
     results = MediaItem.skeletonMock()
 
     do {
-      let data = try await contentService.search(query: trimmed, page: nil)
+      let data = try await contentService.search(query: trimmed, contentType: nil, field: searchField, page: nil)
       results = data.items
     } catch {
       Logger.app.debug("search error: \(error)")
@@ -127,8 +152,9 @@ class SearchModel: ObservableObject {
     do {
       genres = try await contentService.fetchGenres()
     } catch {
+      // Browse genres are supplementary (cards fall back to a gradient), so a failure here
+      // must not throw a backend-error banner over the search screen on open.
       Logger.app.debug("fetch genres error: \(error)")
-      errorHandler.setError(error)
     }
     browseLoading = false
     // Genres render immediately; representative posters fill in asynchronously.
@@ -155,6 +181,7 @@ class SearchModel: ObservableObject {
                                         genres: [genre.id],
                                         countries: [],
                                         year: nil,
+                                        age: nil,
                                         sort: "rating-")
           guard let data = try? await service.filter(filter: filter, page: nil),
                 let first = data.items.first else {
@@ -190,6 +217,7 @@ class SearchModel: ObservableObject {
                                   genres: genreId > 0 ? [genreId] : [],
                                   countries: [],
                                   year: nil,
+                                  age: nil,
                                   sort: nil)
     do {
       let data = try await contentService.filter(filter: filter, page: nil)

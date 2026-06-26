@@ -25,6 +25,10 @@ class MediaItemModel: ObservableObject {
   @Published public var itemLoaded: Bool = false
   @Published public var bookmarkFolders: [Bookmark] = []
   @Published public var relatedItems: [MediaItem] = []
+  /// Resolved cast/crew portrait URLs (by name) from TMDB.
+  @Published public var personImages: [String: URL] = [:]
+
+  private let tmdbService: TMDBService = AppContext.shared.tmdbService
 
   /// Actor names parsed from the comma-separated `cast` field (trimmed, non-empty).
   public var castNames: [String] {
@@ -32,6 +36,69 @@ class MediaItemModel: ObservableObject {
       .split(separator: ",")
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .filter { !$0.isEmpty }
+  }
+
+  /// Director names parsed from the comma-separated `director` field.
+  public var directorNames: [String] {
+    mediaItem.director
+      .split(separator: ",")
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty }
+  }
+
+  /// Resolve TMDB portraits for the visible cast & crew (best-effort, cached).
+  func loadCastPhotos() async {
+    let names = Array(Set(castNames.prefix(12)).union(directorNames))
+    await withTaskGroup(of: (String, URL?).self) { group in
+      for name in names where personImages[name] == nil {
+        group.addTask { [tmdbService] in (name, await tmdbService.personImageURL(for: name)) }
+      }
+      for await (name, url) in group {
+        if let url { personImages[name] = url }
+      }
+    }
+  }
+
+  /// The content type to use for facet filters opened from this item, so a
+  /// serial's genre opens serials and a movie's opens movies.
+  private var facetContentType: MediaType {
+    MediaType(rawValue: mediaItem.type) ?? .movie
+  }
+
+  private func facetFilter(genres: [Int] = [], countries: [Int] = [], year: String? = nil) -> MediaItemsFilter {
+    MediaItemsFilter(contentType: facetContentType,
+                     genres: genres,
+                     countries: countries,
+                     year: year,
+                     age: nil,
+                     sort: nil)
+  }
+
+  // MARK: - Tappable metadata routes
+
+  /// Route to a catalog filtered by a single genre.
+  func genreRoute(id: Int, title: String) -> (any Hashable)? {
+    linkProvider.filteredCatalog(filter: facetFilter(genres: [id]), title: title)
+  }
+
+  /// Route to a catalog filtered by a single country.
+  func countryRoute(id: Int, title: String) -> (any Hashable)? {
+    linkProvider.filteredCatalog(filter: facetFilter(countries: [id]), title: title)
+  }
+
+  /// Route to a catalog filtered by a single year.
+  func yearRoute(_ year: Int) -> (any Hashable)? {
+    linkProvider.filteredCatalog(filter: facetFilter(year: "\(year)"), title: "\(year)")
+  }
+
+  /// Route to a person search for an actor (kino.pub `field=cast`).
+  func actorRoute(_ name: String) -> (any Hashable)? {
+    linkProvider.personSearch(query: name, field: "cast", title: name)
+  }
+
+  /// Route to a person search for a director (kino.pub `field=director`).
+  func directorRoute(_ name: String) -> (any Hashable)? {
+    linkProvider.personSearch(query: name, field: "director", title: name)
   }
 
   init(mediaItemId: Int,
@@ -76,6 +143,7 @@ class MediaItemModel: ObservableObject {
                                       genres: genres,
                                       countries: [],
                                       year: nil,
+                                      age: nil,
                                       sort: nil)
         let response = try await itemsService.filter(filter: filter, page: nil)
         relatedItems = response.items

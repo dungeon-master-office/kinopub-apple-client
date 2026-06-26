@@ -27,6 +27,7 @@ extension EnvironmentValues {
 
 typealias AppContextProtocol = AuthorizationServiceProvider
 & VideoContentServiceProvider
+& CollectionsServiceProvider
 & ConfigurationProvider
 & KeychainStorageProvider
 & AccessTokenServiceProvider
@@ -36,6 +37,7 @@ typealias AppContextProtocol = AuthorizationServiceProvider
 & UserServiceProvider
 & UserActionsServiceProvider
 & LocalWatchProgressProvider
+& TMDBServiceProvider
 
 // MARK: - AppContext
 
@@ -44,6 +46,7 @@ struct AppContext: AppContextProtocol {
   var configuration: Configuration
   var authService: AuthorizationService
   var contentService: VideoContentService
+  var collectionsService: CollectionsService
   var accessTokenService: AccessTokenService
   var userService: UserService
   var keychainStorage: KeychainStorage
@@ -52,6 +55,7 @@ struct AppContext: AppContextProtocol {
   var downloadedFilesDatabase: DownloadedFilesDatabase<DownloadMeta>
   var actionsService: UserActionsService
   var localProgressStore: LocalWatchProgressStore
+  var tmdbService: TMDBService
 
   static let shared: AppContext = {
     let configuration = BundleConfiguration()
@@ -75,6 +79,7 @@ struct AppContext: AppContextProtocol {
     return AppContext(configuration: configuration,
                       authService: authService,
                       contentService: VideoContentServiceImpl(apiClient: apiClient),
+                      collectionsService: CollectionsServiceImpl(apiClient: apiClient),
                       accessTokenService: accessTokenService,
                       userService: UserServiceImpl(apiClient: apiClient),
                       keychainStorage: keychainStorage,
@@ -82,7 +87,8 @@ struct AppContext: AppContextProtocol {
                       downloadManager: downloadManager,
                       downloadedFilesDatabase: downloadedFilesDatabase,
                       actionsService: UserActionsServiceImpl(apiClient: apiClient),
-                      localProgressStore: LocalWatchProgressStore())
+                      localProgressStore: LocalWatchProgressStore(),
+                      tmdbService: TMDBServiceImpl(apiKey: configuration.tmdbAPIKey))
   }()
   
   // MARK: - API Client building

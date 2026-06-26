@@ -28,6 +28,8 @@ struct SidebarNavigationDetail: View {
         .id("library-\(type.rawValue)")
     case .sport:
       sport
+    case .collections:
+      collections
     case .watching:
       watching
     case .bookmarks:
@@ -65,6 +67,12 @@ struct SidebarNavigationDetail: View {
     SportView(model: SportModel(itemsService: appContext.contentService,
                                 authState: authState,
                                 errorHandler: errorHandler))
+  }
+
+  var collections: some View {
+    CollectionsView(model: CollectionsModel(collectionsService: appContext.collectionsService,
+                                            authState: authState,
+                                            errorHandler: errorHandler))
   }
 
   var watching: some View {

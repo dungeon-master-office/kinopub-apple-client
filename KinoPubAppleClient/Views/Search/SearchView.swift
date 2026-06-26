@@ -16,6 +16,9 @@ struct SearchView: View {
   @Environment(\.appContext) var appContext
   @StateObject private var model: SearchModel
 
+  /// Selected results type filter; `nil` means "All".
+  @State private var selectedResultType: MediaType?
+
   private let browseColumns = [GridItem(.adaptive(minimum: 220), spacing: 16)]
   private let resultsColumns = [GridItem(.adaptive(minimum: 130), spacing: 16)]
 
@@ -37,6 +40,10 @@ struct SearchView: View {
       .background(Color.KinoPub.background)
       .task {
         await model.loadGenres()
+      }
+      // A new query starts from the "All" type filter.
+      .onChange(of: model.query) { _ in
+        selectedResultType = nil
       }
       .navigationDestination(for: SearchRoutes.self) { route in
         switch route {
@@ -62,6 +69,21 @@ struct SearchView: View {
           SeasonView(model: SeasonModel(season: season, linkProvider: SearchRoutesLinkProvider()))
         case .genre(let id, let title):
           genreResults(id: id, title: title)
+        case .filteredCatalog(let filter, let title):
+          FilteredCatalogView(catalog: MediaCatalog(itemsService: appContext.contentService,
+                                                    authState: authState,
+                                                    errorHandler: errorHandler,
+                                                    filter: filter),
+                              title: title,
+                              linkProvider: SearchRoutesLinkProvider())
+        case .personSearch(let query, let field, let title):
+          PersonSearchView(model: SearchModel(itemsService: appContext.contentService,
+                                              authState: authState,
+                                              errorHandler: errorHandler),
+                           query: query,
+                           field: field,
+                           title: title,
+                           linkProvider: SearchRoutesLinkProvider())
         }
       }
       .handleError(state: $errorHandler.state)
@@ -167,24 +189,80 @@ struct SearchView: View {
   // MARK: - Results (non-empty query)
 
   var resultsContent: some View {
-    LazyVGrid(columns: resultsColumns, spacing: 16) {
-      ForEach(model.results, id: \.id) { item in
-        if item.skeleton ?? false {
-          PosterCard(imageURL: nil)
-        } else {
-          NavigationLink(value: SearchRoutes.details(item)) {
-            PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
-          }
+    VStack(alignment: .leading, spacing: 12) {
+      typeFilterBar
+      LazyVGrid(columns: resultsColumns, spacing: 16) {
+        ForEach(filteredResults, id: \.id) { item in
+          if item.skeleton ?? false {
+            PosterCard(imageURL: nil, title: "Placeholder")
+              .redacted(reason: .placeholder)
+          } else {
+            NavigationLink(value: SearchRoutes.details(item)) {
+              PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
+            }
 #if os(macOS)
-          .buttonStyle(.plain)
+            .buttonStyle(.plain)
 #endif
-          .simultaneousGesture(TapGesture().onEnded {
-            model.recordRecent(item)
-          })
+            .simultaneousGesture(TapGesture().onEnded {
+              model.recordRecent(item)
+            })
+          }
         }
       }
     }
     .padding(16)
+  }
+
+  // MARK: - Results type filter
+
+  /// The results filtered by the selected type (or all when none selected).
+  private var filteredResults: [MediaItem] {
+    guard let selectedResultType else { return model.results }
+    return model.results.filter { MediaType(rawValue: $0.type) == selectedResultType }
+  }
+
+  /// Content types present in the currently loaded results, in canonical order.
+  private var availableResultTypes: [MediaType] {
+    let present = Set(model.results.compactMap { MediaType(rawValue: $0.type) })
+    return MediaType.allCases.filter { present.contains($0) }
+  }
+
+  private func resultCount(for type: MediaType?) -> Int {
+    guard let type else { return model.results.count }
+    return model.results.filter { MediaType(rawValue: $0.type) == type }.count
+  }
+
+  @ViewBuilder
+  private var typeFilterBar: some View {
+    // Only worth showing once results span more than one type.
+    let types = availableResultTypes
+    if types.count > 1 {
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 8) {
+          typePill(title: "All".localized, count: resultCount(for: nil), type: nil)
+          ForEach(types) { type in
+            typePill(title: type.title.localized, count: resultCount(for: type), type: type)
+          }
+        }
+      }
+    }
+  }
+
+  private func typePill(title: String, count: Int, type: MediaType?) -> some View {
+    let isSelected = selectedResultType == type
+    return Button {
+      selectedResultType = type
+    } label: {
+      Text("\(title) (\(count))")
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundStyle(isSelected ? Color.white : Color.KinoPub.text)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(
+          Capsule().fill(isSelected ? Color.KinoPub.accent : Color.white.opacity(0.1))
+        )
+    }
+    .buttonStyle(.plain)
   }
 
   // MARK: - Genre results destination
@@ -194,7 +272,8 @@ struct SearchView: View {
       LazyVGrid(columns: resultsColumns, spacing: 16) {
         ForEach(model.genreResults, id: \.id) { item in
           if item.skeleton ?? false {
-            PosterCard(imageURL: nil)
+            PosterCard(imageURL: nil, title: "Placeholder")
+              .redacted(reason: .placeholder)
           } else {
             NavigationLink(value: SearchRoutes.details(item)) {
               PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)

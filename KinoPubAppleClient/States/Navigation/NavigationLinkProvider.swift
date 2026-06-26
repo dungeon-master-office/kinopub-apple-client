@@ -14,6 +14,15 @@ protocol NavigationLinkProvider {
   func trailerPlayer(for item: any PlayableItem) -> any Hashable
   func seasons(for seasons: [Season]) -> any Hashable
   func season(for season: Season) -> any Hashable
+  /// A filtered catalog (genre/country/year/etc.) opened from a detail page.
+  func filteredCatalog(filter: MediaItemsFilter, title: String) -> (any Hashable)?
+  /// A person search (actor/director) opened from a detail page.
+  func personSearch(query: String, field: String, title: String) -> (any Hashable)?
+}
+
+extension NavigationLinkProvider {
+  func filteredCatalog(filter: MediaItemsFilter, title: String) -> (any Hashable)? { nil }
+  func personSearch(query: String, field: String, title: String) -> (any Hashable)? { nil }
 }
 
 struct SearchRoutesLinkProvider: NavigationLinkProvider {
@@ -36,6 +45,14 @@ struct SearchRoutesLinkProvider: NavigationLinkProvider {
   func season(for season: Season) -> any Hashable {
     SearchRoutes.season(season)
   }
+
+  func filteredCatalog(filter: MediaItemsFilter, title: String) -> (any Hashable)? {
+    SearchRoutes.filteredCatalog(filter, title)
+  }
+
+  func personSearch(query: String, field: String, title: String) -> (any Hashable)? {
+    SearchRoutes.personSearch(query, field, title)
+  }
 }
 
 struct MainRoutesLinkProvider: NavigationLinkProvider {
@@ -57,6 +74,14 @@ struct MainRoutesLinkProvider: NavigationLinkProvider {
   
   func season(for season: Season) -> any Hashable {
     MainRoutes.season(season)
+  }
+
+  func filteredCatalog(filter: MediaItemsFilter, title: String) -> (any Hashable)? {
+    MainRoutes.filteredCatalog(filter, title)
+  }
+
+  func personSearch(query: String, field: String, title: String) -> (any Hashable)? {
+    MainRoutes.personSearch(query, field, title)
   }
 }
 
@@ -123,6 +148,28 @@ struct WatchingRoutesLinkProvider: NavigationLinkProvider {
 
   func season(for season: Season) -> any Hashable {
     WatchingRoutes.season(season)
+  }
+}
+
+struct CollectionsRoutesLinkProvider: NavigationLinkProvider {
+  func link(for item: MediaItem) -> any Hashable {
+    CollectionsRoutes.details(item)
+  }
+
+  func player(for item: any PlayableItem) -> any Hashable {
+    CollectionsRoutes.player(item)
+  }
+
+  func trailerPlayer(for item: any PlayableItem) -> any Hashable {
+    CollectionsRoutes.trailerPlayer(item)
+  }
+
+  func seasons(for seasons: [Season]) -> any Hashable {
+    CollectionsRoutes.seasons(seasons)
+  }
+
+  func season(for season: Season) -> any Hashable {
+    CollectionsRoutes.season(season)
   }
 }
 

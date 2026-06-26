@@ -11,6 +11,7 @@ import KinoPubBackend
 struct MainView: View {
   @EnvironmentObject var navigationState: NavigationState
   @EnvironmentObject var errorHandler: ErrorHandler
+  @EnvironmentObject var authState: AuthState
   @Environment(\.appContext) var appContext
   
   @StateObject private var catalog: MediaCatalog
@@ -91,6 +92,21 @@ struct MainView: View {
           SeasonsView(model: SeasonsModel(seasons: seasons, linkProvider: MainRoutesLinkProvider()))
         case .season(let season):
           SeasonView(model: SeasonModel(season: season, linkProvider: MainRoutesLinkProvider()))
+        case .filteredCatalog(let filter, let title):
+          FilteredCatalogView(catalog: MediaCatalog(itemsService: appContext.contentService,
+                                                    authState: authState,
+                                                    errorHandler: errorHandler,
+                                                    filter: filter),
+                              title: title,
+                              linkProvider: MainRoutesLinkProvider())
+        case .personSearch(let query, let field, let title):
+          PersonSearchView(model: SearchModel(itemsService: appContext.contentService,
+                                              authState: authState,
+                                              errorHandler: errorHandler),
+                           query: query,
+                           field: field,
+                           title: title,
+                           linkProvider: MainRoutesLinkProvider())
         }
       }
       .handleError(state: $errorHandler.state)
@@ -121,9 +137,138 @@ struct MainView: View {
 
 struct MainView_Previews: PreviewProvider {
   @StateObject static var navState = NavigationState()
-  
+
   static var previews: some View {
     MainView(catalog: MediaCatalog(itemsService: VideoContentServiceMock(), authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock()), errorHandler: ErrorHandler()))
       .environmentObject(navState)
+  }
+}
+
+// MARK: - Filtered catalog destination
+
+/// A standalone, paginated catalog showing the results of a single preset
+/// `MediaItemsFilter` (e.g. tapping a genre/country/year on a detail page).
+/// It pushes detail links onto whichever NavigationStack already contains it,
+/// via the supplied `linkProvider`.
+struct FilteredCatalogView: View {
+  @EnvironmentObject var errorHandler: ErrorHandler
+  @StateObject private var catalog: MediaCatalog
+  private let title: String
+  private let linkProvider: NavigationLinkProvider
+  @State private var showShortCutPicker: Bool = false
+  @State private var showFilterPicker: Bool = false
+
+  init(catalog: @autoclosure @escaping () -> MediaCatalog,
+       title: String,
+       linkProvider: NavigationLinkProvider) {
+    _catalog = StateObject(wrappedValue: catalog())
+    self.title = title
+    self.linkProvider = linkProvider
+  }
+
+  private var toolbarItemPlacement: ToolbarItemPlacement {
+#if os(iOS)
+    .topBarTrailing
+#elseif os(macOS)
+    .navigation
+#endif
+  }
+
+  // Lands on the actual section catalog (e.g. Serials) pre-filtered, with the section's own
+  // sort/filter/search chrome — a deep link into the section, not a one-off page.
+  var body: some View {
+    GeometryReader { geometryProxy in
+      ContentItemsListView(width: geometryProxy.size.width, items: $catalog.items, onLoadMoreContent: { item in
+        catalog.loadMoreContent(after: item)
+      }, onRefresh: {
+        await catalog.refresh()
+      }, navigationLinkProvider: { item in
+        linkProvider.link(for: item)
+      })
+    }
+    .searchable(text: $catalog.query, placement: .automatic)
+    .background(Color.KinoPub.background)
+    .navigationTitle(catalog.title.localized)
+    .toolbar {
+      ToolbarItem(placement: toolbarItemPlacement) {
+        Button { showShortCutPicker = true } label: {
+          Image(systemName: "arrow.up.arrow.down")
+        }
+      }
+      ToolbarItem(placement: toolbarItemPlacement) {
+        Button { showFilterPicker = true } label: {
+          Image(systemName: "line.3.horizontal.decrease.circle")
+        }
+      }
+    }
+    .sheet(isPresented: $showShortCutPicker) {
+      ShortcutSelectionView(shortcut: $catalog.shortcut, mediaType: $catalog.contentType)
+    }
+    .sheet(isPresented: $showFilterPicker) {
+      FilterView(model: FilterModel(), onApply: { filter in
+        catalog.apply(filter: filter)
+      }, onClear: {
+        catalog.clearFilter()
+      })
+    }
+    .task {
+      await catalog.fetchItems()
+    }
+    .handleError(state: $errorHandler.state)
+  }
+}
+
+// MARK: - Person search destination
+
+/// A standalone results screen for a preset person search (actor/director).
+/// Runs the query against the given `field` ("cast"/"director") on appear and
+/// pushes detail links via the supplied `linkProvider`.
+struct PersonSearchView: View {
+  @EnvironmentObject var errorHandler: ErrorHandler
+  @StateObject private var model: SearchModel
+  private let query: String
+  private let field: String
+  private let title: String
+  private let linkProvider: NavigationLinkProvider
+
+  private let resultsColumns = [GridItem(.adaptive(minimum: 130), spacing: 16)]
+
+  init(model: @autoclosure @escaping () -> SearchModel,
+       query: String,
+       field: String,
+       title: String,
+       linkProvider: NavigationLinkProvider) {
+    _model = StateObject(wrappedValue: model())
+    self.query = query
+    self.field = field
+    self.title = title
+    self.linkProvider = linkProvider
+  }
+
+  var body: some View {
+    ScrollView {
+      LazyVGrid(columns: resultsColumns, spacing: 16) {
+        ForEach(model.results, id: \.id) { item in
+          if item.skeleton ?? false {
+            PosterCard(imageURL: nil, title: "Placeholder")
+              .redacted(reason: .placeholder)
+          } else {
+            NavigationLink(value: linkProvider.link(for: item)) {
+              PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
+            }
+#if os(macOS)
+            .buttonStyle(.plain)
+#endif
+          }
+        }
+      }
+      .padding(16)
+    }
+    .background(Color.KinoPub.background)
+    .navigationTitle(title)
+    .task {
+      model.preset(query: query, field: field)
+    }
+    .handleError(state: $errorHandler.state)
   }
 }

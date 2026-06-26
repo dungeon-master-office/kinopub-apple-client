@@ -104,6 +104,13 @@
 		CCFDF43E2A828B6B0035D8E0 /* Providers.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCFDF43D2A828B6B0035D8E0 /* Providers.swift */; };
 		E9B23707EB014F078A5F0143 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A0D46F9D2449768FBBC265 /* HistoryView.swift */; };
 		7AEC655FD7434C10B7B0E39C /* SportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F03D8CE7F3C4AA4AB0C8BEA /* SportView.swift */; };
+		1131CDC9936E45ACB72818AA /* CollectionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60A8F5C7D6274479919AD25F /* CollectionsService.swift */; };
+		00F44064D1424897BB1C22B8 /* CollectionsServiceImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7811B97B446F45EEA0F3128F /* CollectionsServiceImpl.swift */; };
+		C5BF7A739EE24673BBA8C540 /* CollectionsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406DFCAF09BC40C08AE680F9 /* CollectionsModel.swift */; };
+		7AB2C53B0AEA4619AAAFCB43 /* CollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17AB5C067D7242C98AB63C7E /* CollectionsView.swift */; };
+		6EADDABF2C7E44C7AF8DB04E /* CollectionDetailModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ADECA273F29409C805FDB2A /* CollectionDetailModel.swift */; };
+		66B482CE4ED941C781262A4A /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7AEC6DB63ED4E709CBDD412 /* CollectionDetailView.swift */; };
+		A505BD23AA47435DAFB7676B /* TMDBService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA206CDEFA004318BB4243F9 /* TMDBService.swift */; };
 		004DA870AEAB48D39E765EC5 /* InlinePlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0147169BF0594D23A485BA23 /* InlinePlayerView.swift */; };
 		DB63D35C0BF448DBBE343B62 /* LocalWatchProgressStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE2F22A1E0784EEEA12B9467 /* LocalWatchProgressStore.swift */; };
 		9322A36C27DD40CEA6FEB4C7 /* SportModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F02162D92FD24B56A6991CD2 /* SportModel.swift */; };
@@ -117,6 +124,13 @@
 		832A183220814749A7092C79 /* WatchingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchingModel.swift; sourceTree = "<group>"; };
 		A3A0D46F9D2449768FBBC265 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		2F03D8CE7F3C4AA4AB0C8BEA /* SportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SportView.swift; sourceTree = "<group>"; };
+		60A8F5C7D6274479919AD25F /* CollectionsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CollectionsService.swift; path = KinoPubAppleClient/Services/Collections/CollectionsService.swift; sourceTree = SOURCE_ROOT; };
+		7811B97B446F45EEA0F3128F /* CollectionsServiceImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CollectionsServiceImpl.swift; path = KinoPubAppleClient/Services/Collections/CollectionsServiceImpl.swift; sourceTree = SOURCE_ROOT; };
+		406DFCAF09BC40C08AE680F9 /* CollectionsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CollectionsModel.swift; path = KinoPubAppleClient/Views/Collections/CollectionsModel.swift; sourceTree = SOURCE_ROOT; };
+		17AB5C067D7242C98AB63C7E /* CollectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CollectionsView.swift; path = KinoPubAppleClient/Views/Collections/CollectionsView.swift; sourceTree = SOURCE_ROOT; };
+		0ADECA273F29409C805FDB2A /* CollectionDetailModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CollectionDetailModel.swift; path = KinoPubAppleClient/Views/Collections/CollectionDetailModel.swift; sourceTree = SOURCE_ROOT; };
+		B7AEC6DB63ED4E709CBDD412 /* CollectionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CollectionDetailView.swift; path = KinoPubAppleClient/Views/Collections/CollectionDetailView.swift; sourceTree = SOURCE_ROOT; };
+		FA206CDEFA004318BB4243F9 /* TMDBService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TMDBService.swift; path = KinoPubAppleClient/Services/TMDB/TMDBService.swift; sourceTree = SOURCE_ROOT; };
 		0147169BF0594D23A485BA23 /* InlinePlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = InlinePlayerView.swift; path = KinoPubAppleClient/Views/Player/InlinePlayerView.swift; sourceTree = SOURCE_ROOT; };
 		CE2F22A1E0784EEEA12B9467 /* LocalWatchProgressStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LocalWatchProgressStore.swift; path = KinoPubAppleClient/Services/LocalWatchProgress/LocalWatchProgressStore.swift; sourceTree = SOURCE_ROOT; };
 		F02162D92FD24B56A6991CD2 /* SportModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SportModel.swift; sourceTree = "<group>"; };
@@ -234,6 +248,13 @@
 			isa = PBXGroup;
 			children = (
 				2F03D8CE7F3C4AA4AB0C8BEA /* SportView.swift */,
+				60A8F5C7D6274479919AD25F /* CollectionsService.swift */,
+				7811B97B446F45EEA0F3128F /* CollectionsServiceImpl.swift */,
+				406DFCAF09BC40C08AE680F9 /* CollectionsModel.swift */,
+				17AB5C067D7242C98AB63C7E /* CollectionsView.swift */,
+				0ADECA273F29409C805FDB2A /* CollectionDetailModel.swift */,
+				B7AEC6DB63ED4E709CBDD412 /* CollectionDetailView.swift */,
+				FA206CDEFA004318BB4243F9 /* TMDBService.swift */,
 				0147169BF0594D23A485BA23 /* InlinePlayerView.swift */,
 				CE2F22A1E0784EEEA12B9467 /* LocalWatchProgressStore.swift */,
 				F02162D92FD24B56A6991CD2 /* SportModel.swift */,
@@ -831,6 +852,13 @@
 				CC71E6FA2A6C0655004AFB3F /* BookmarksView.swift in Sources */,
 				E9B23707EB014F078A5F0143 /* HistoryView.swift in Sources */,
 				7AEC655FD7434C10B7B0E39C /* SportView.swift in Sources */,
+				1131CDC9936E45ACB72818AA /* CollectionsService.swift in Sources */,
+				00F44064D1424897BB1C22B8 /* CollectionsServiceImpl.swift in Sources */,
+				C5BF7A739EE24673BBA8C540 /* CollectionsModel.swift in Sources */,
+				7AB2C53B0AEA4619AAAFCB43 /* CollectionsView.swift in Sources */,
+				6EADDABF2C7E44C7AF8DB04E /* CollectionDetailModel.swift in Sources */,
+				66B482CE4ED941C781262A4A /* CollectionDetailView.swift in Sources */,
+				A505BD23AA47435DAFB7676B /* TMDBService.swift in Sources */,
 				004DA870AEAB48D39E765EC5 /* InlinePlayerView.swift in Sources */,
 				DB63D35C0BF448DBBE343B62 /* LocalWatchProgressStore.swift in Sources */,
 				9322A36C27DD40CEA6FEB4C7 /* SportModel.swift in Sources */,

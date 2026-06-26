@@ -33,6 +33,7 @@ struct Sidebar: View {
           row(.category(type))
         }
         row(.sport)
+        row(.collections)
       }
 
       Section("Other".localized) {
@@ -55,7 +56,7 @@ struct Sidebar: View {
     .listStyle(.sidebar)
     .scrollContentBackground(.hidden)
     .background(Color.KinoPub.background)
-    .navigationTitle("kinopub")
+    .navigationTitle("KinoPub")
 #if os(macOS)
     .navigationSplitViewColumnWidth(min: 220, ideal: 240)
 #endif

@@ -12,11 +12,13 @@ public struct SearchItemsRequest: Endpoint {
   private var contentType: MediaType?
   private var page: Int?
   private var query: String?
+  private var field: String?
 
-  public init(contentType: MediaType?, page: Int? = nil, query: String? = nil) {
+  public init(contentType: MediaType?, page: Int? = nil, query: String? = nil, field: String? = nil) {
     self.contentType = contentType
     self.page = page
     self.query = query
+    self.field = field
   }
 
   public var path: String {
@@ -40,6 +42,10 @@ public struct SearchItemsRequest: Endpoint {
 
     if let query = query {
       params["q"] = query
+    }
+
+    if let field = field, !field.isEmpty {
+      params["field"] = field
     }
 
     return params

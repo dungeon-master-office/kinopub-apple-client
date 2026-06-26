@@ -33,6 +33,21 @@ struct MediaItemView: View {
   private var mediaItem: MediaItem { itemModel.mediaItem }
   private var isSkeleton: Bool { !itemModel.itemLoaded }
 
+  /// Wraps `label` in a NavigationLink to `route` when one exists; otherwise
+  /// renders the label as-is. Lets tappable metadata degrade gracefully on
+  /// link providers that don't support facet routes.
+  @ViewBuilder
+  private func facetLink<Label: View>(_ route: (any Hashable)?, @ViewBuilder label: () -> Label) -> some View {
+    if let route {
+      NavigationLink(value: route) {
+        label()
+      }
+      .buttonStyle(.plain)
+    } else {
+      label()
+    }
+  }
+
   var body: some View {
     ScrollView(.vertical) {
       VStack(alignment: .leading, spacing: 28) {
@@ -79,7 +94,10 @@ struct MediaItemView: View {
     }
     // Cache artwork/title locally so a started title can resume in Continue Watching.
     .onChange(of: itemModel.itemLoaded) { loaded in
-      if loaded { appContext.localProgressStore.cacheItem(itemModel.mediaItem) }
+      if loaded {
+        appContext.localProgressStore.cacheItem(itemModel.mediaItem)
+        Task { await itemModel.loadCastPhotos() }
+      }
     }
     .handleError(state: $errorHandler.state)
   }
@@ -87,7 +105,7 @@ struct MediaItemView: View {
   // MARK: - Hero
 
   private var hero: some View {
-    HeroBackdrop(imageURL: mediaItem.posters.wide ?? mediaItem.posters.big, height: 460) {
+    HeroBackdrop(imageURL: mediaItem.posters.wide ?? mediaItem.posters.big, height: 460, tallBlur: true) {
       VStack(alignment: .leading, spacing: 10) {
         Text(mediaItem.localizedTitle)
           .font(.system(size: 34, weight: .bold))
@@ -95,15 +113,15 @@ struct MediaItemView: View {
           .skeleton(enabled: isSkeleton, size: CGSize(width: 240, height: 36))
 
         Text(genreLine)
-          .font(.system(size: 15, weight: .medium))
-          .foregroundStyle(.white.opacity(0.85))
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(.white)
           .skeleton(enabled: isSkeleton, size: CGSize(width: 180, height: 16))
 
         if !mediaItem.plot.isEmpty {
           VStack(alignment: .leading, spacing: 4) {
             Text(mediaItem.plot)
               .font(.system(size: 14))
-              .foregroundStyle(.white.opacity(0.85))
+              .foregroundStyle(.white.opacity(0.95))
               .lineLimit(plotExpanded ? nil : 2)
               .multilineTextAlignment(.leading)
             Button(plotExpanded ? "Свернуть" : "ЕЩЕ") {
@@ -482,10 +500,16 @@ struct MediaItemView: View {
     if !actors.isEmpty || !directors.isEmpty {
       MediaShelf(title: "Cast & Crew".localized, showsChevron: false) {
         ForEach(directors, id: \.self) { name in
-          CastAvatarView(name: name, role: "Director".localized)
+          facetLink(itemModel.directorRoute(name)) {
+            CastAvatarView(imageURL: itemModel.personImages[name]?.absoluteString,
+                           name: name, role: "Director".localized)
+          }
         }
         ForEach(actors, id: \.self) { name in
-          CastAvatarView(name: name, role: "Actor".localized)
+          facetLink(itemModel.actorRoute(name)) {
+            CastAvatarView(imageURL: itemModel.personImages[name]?.absoluteString,
+                           name: name, role: "Actor".localized)
+          }
         }
       }
     }
@@ -500,12 +524,7 @@ struct MediaItemView: View {
         Text("Description")
           .font(.system(size: 22, weight: .bold))
           .foregroundStyle(Color.KinoPub.text)
-        let genres = mediaItem.genres.compactMap { $0.title }.joined(separator: " · ").uppercased()
-        if !genres.isEmpty {
-          Text(genres)
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(Color.KinoPub.subtitle)
-        }
+        genreChips
         Text(mediaItem.plot)
           .font(.system(size: 14))
           .foregroundStyle(Color.KinoPub.text)
@@ -521,10 +540,39 @@ struct MediaItemView: View {
     }
   }
 
+  /// Tappable genre chips. Each opens a catalog filtered by that genre, scoped
+  /// to this item's own content type (a serial's genre opens serials, etc.).
+  @ViewBuilder
+  private var genreChips: some View {
+    let genres = mediaItem.genres.filter { ($0.title?.isEmpty == false) }
+    if !genres.isEmpty {
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 8) {
+          ForEach(genres, id: \.id) { genre in
+            facetLink(itemModel.genreRoute(id: genre.id, title: genre.title ?? "")) {
+              chip(genre.title?.uppercased() ?? "")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private func chip(_ text: String) -> some View {
+    Text(text)
+      .font(.system(size: 12, weight: .semibold))
+      .foregroundStyle(Color.KinoPub.accent)
+      .padding(.horizontal, 10)
+      .padding(.vertical, 5)
+      .background(
+        Capsule().fill(Color.KinoPub.accent.opacity(0.15))
+      )
+  }
+
   // MARK: - Information & Languages
 
   private var infoSection: some View {
-    MediaItemInfoSection(mediaItem: mediaItem)
+    MediaItemInfoSection(mediaItem: mediaItem, itemModel: itemModel)
       .padding(.horizontal, 20)
   }
 }
@@ -537,6 +585,7 @@ struct MediaItemView: View {
 private struct MediaItemInfoSection: View {
 
   let mediaItem: MediaItem
+  @ObservedObject var itemModel: MediaItemModel
 
   var body: some View {
     // Prefer a two-column layout, but fall back to a stacked layout when the
@@ -561,16 +610,43 @@ private struct MediaItemInfoSection: View {
       sectionTitle("Information".localized)
 
       if mediaItem.year > 0 {
-        infoRow(label: "Premiere".localized, value: "\(mediaItem.year)")
+        facetRow(label: "Premiere".localized,
+                 value: "\(mediaItem.year)",
+                 route: itemModel.yearRoute(mediaItem.year))
       }
 
-      let countries = mediaItem.countries.map { $0.title }.joined(separator: ", ")
-      if !countries.isEmpty {
-        infoRow(label: "Country".localized, value: countries)
+      if !mediaItem.countries.isEmpty {
+        VStack(alignment: .leading, spacing: 2) {
+          Text("Country".localized.uppercased())
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(Color.KinoPub.subtitle)
+          ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+              ForEach(Array(mediaItem.countries.enumerated()), id: \.offset) { _, country in
+                facetLink(itemModel.countryRoute(id: country.id, title: country.title)) {
+                  facetValueText(country.title, isLink: itemModel.countryRoute(id: country.id, title: country.title) != nil)
+                }
+              }
+            }
+          }
+        }
       }
 
-      if !mediaItem.director.isEmpty {
-        infoRow(label: "Director", value: mediaItem.director)
+      if !itemModel.directorNames.isEmpty {
+        VStack(alignment: .leading, spacing: 2) {
+          Text("Director".localized.uppercased())
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(Color.KinoPub.subtitle)
+          ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+              ForEach(itemModel.directorNames, id: \.self) { name in
+                facetLink(itemModel.directorRoute(name)) {
+                  facetValueText(name, isLink: itemModel.directorRoute(name) != nil)
+                }
+              }
+            }
+          }
+        }
       }
 
       if let imdbRating = mediaItem.imdbRating {
@@ -617,6 +693,38 @@ private struct MediaItemInfoSection: View {
         .font(.system(size: 14))
         .foregroundStyle(Color.KinoPub.text)
     }
+  }
+
+  /// An info row whose value is tappable (when a `route` exists) to open a
+  /// filtered catalog (e.g. year).
+  @ViewBuilder
+  private func facetRow(label: String, value: String, route: (any Hashable)?) -> some View {
+    VStack(alignment: .leading, spacing: 2) {
+      Text(label.uppercased())
+        .font(.system(size: 11, weight: .semibold))
+        .foregroundStyle(Color.KinoPub.subtitle)
+      facetLink(route) {
+        facetValueText(value, isLink: route != nil)
+      }
+    }
+  }
+
+  @ViewBuilder
+  private func facetLink<Label: View>(_ route: (any Hashable)?, @ViewBuilder label: () -> Label) -> some View {
+    if let route {
+      NavigationLink(value: route) {
+        label()
+      }
+      .buttonStyle(.plain)
+    } else {
+      label()
+    }
+  }
+
+  private func facetValueText(_ value: String, isLink: Bool) -> some View {
+    Text(value)
+      .font(.system(size: 14, weight: isLink ? .semibold : .regular))
+      .foregroundStyle(isLink ? Color.KinoPub.accent : Color.KinoPub.text)
   }
 
   @ViewBuilder

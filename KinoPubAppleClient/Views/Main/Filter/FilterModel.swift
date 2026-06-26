@@ -10,11 +10,12 @@ import SwiftUI
 import KinoPubBackend
 
 /// Lightweight value describing the active catalog filter consumed by `MediaCatalog`.
-struct MediaItemsFilter: Equatable {
+struct MediaItemsFilter: Equatable, Hashable {
   var contentType: MediaType
   var genres: [Int]
   var countries: [Int]
   var year: String?
+  var age: String?
   var sort: String?
 }
 
@@ -54,6 +55,7 @@ class FilterModel: ObservableObject {
                             genres: genres,
                             countries: countries,
                             year: year,
+                            age: nil,
                             sort: nil)
   }
 

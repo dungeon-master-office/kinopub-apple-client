@@ -12,13 +12,16 @@ public struct HeroBackdrop<Overlay: View>: View {
 
   private let imageURL: String?
   private let height: CGFloat
+  private let tallBlur: Bool
   private let overlay: Overlay
 
   public init(imageURL: String?,
               height: CGFloat = 460,
+              tallBlur: Bool = false,
               @ViewBuilder overlay: () -> Overlay) {
     self.imageURL = imageURL
     self.height = height
+    self.tallBlur = tallBlur
     self.overlay = overlay()
   }
 
@@ -41,10 +44,12 @@ public struct HeroBackdrop<Overlay: View>: View {
       }
       .overlay {
         // Frosted blur over the lower portion so overlay text never mixes with busy artwork.
+        // `tallBlur` covers ~bottom two-thirds (detail page); default covers ~bottom third
+        // (Home gallery) so it stays subtle.
         Rectangle()
           .fill(.ultraThinMaterial)
           .mask(
-            LinearGradient(colors: [.clear, .clear, .black],
+            LinearGradient(colors: tallBlur ? [.clear, .black, .black] : [.clear, .clear, .black],
                            startPoint: .top,
                            endPoint: .bottom)
           )

@@ -13,6 +13,7 @@ public struct FilterItemsRequest: Endpoint {
   private var genres: [Int]?
   private var countries: [Int]?
   private var year: String?
+  private var age: String?
   private var sort: String?
   private var page: Int?
 
@@ -20,12 +21,14 @@ public struct FilterItemsRequest: Endpoint {
               genres: [Int]? = nil,
               countries: [Int]? = nil,
               year: String? = nil,
+              age: String? = nil,
               sort: String? = nil,
               page: Int? = nil) {
     self.contentType = contentType
     self.genres = genres
     self.countries = countries
     self.year = year
+    self.age = age
     self.sort = sort
     self.page = page
   }
@@ -55,6 +58,10 @@ public struct FilterItemsRequest: Endpoint {
 
     if let year = year, !year.isEmpty {
       params["year"] = year
+    }
+
+    if let age = age, !age.isEmpty {
+      params["age"] = age
     }
 
     if let sort = sort, !sort.isEmpty {

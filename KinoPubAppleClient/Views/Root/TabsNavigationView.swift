@@ -30,6 +30,7 @@ struct TabsNavigationView: View {
       searchTab
       mainTab
       sportTab
+      collectionsTab
       bookmarksTab
       watchingTab
       historyTab
@@ -80,6 +81,17 @@ struct TabsNavigationView: View {
     .tag(NavigationTabs.sport)
     .tabItem {
       Label("Sport", systemImage: "sportscourt")
+    }
+    .toolbarBackground(Color.KinoPub.background, for: placement)
+  }
+
+  var collectionsTab: some View {
+    CollectionsView(model: CollectionsModel(collectionsService: appContext.collectionsService,
+                                            authState: authState,
+                                            errorHandler: errorHandler))
+    .tag(NavigationTabs.collections)
+    .tabItem {
+      Label("Collections", systemImage: "rectangle.stack")
     }
     .toolbarBackground(Color.KinoPub.background, for: placement)
   }
