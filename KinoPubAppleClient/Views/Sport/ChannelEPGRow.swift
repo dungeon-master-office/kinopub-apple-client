@@ -20,6 +20,16 @@ enum EPGTimeFormat {
     return formatter
   }()
 
+  /// Date + time (relative, e.g. "Today at 14:30" / "5 Jul at 14:30") — for the "guide updated"
+  /// caption, since the guide now refreshes at most once a day so the date matters.
+  static let dateTime: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.timeStyle = .short
+    formatter.dateStyle = .medium
+    formatter.doesRelativeDateFormatting = true
+    return formatter
+  }()
+
   /// "12:00 – 13:30" in the user's local timezone.
   static func range(_ start: Date, _ stop: Date) -> String {
     "\(time.string(from: start)) – \(time.string(from: stop))"

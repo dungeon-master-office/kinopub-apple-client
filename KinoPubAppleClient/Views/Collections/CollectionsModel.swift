@@ -47,6 +47,9 @@ class CollectionsModel: ObservableObject {
   private var bag = Set<AnyCancellable>()
 
   @Published public var collections: [Collection] = []
+  /// Preview items per collection (keyed by collection id), so each collection renders as a shelf —
+  /// the same layout as Bookmarks. Nil until that collection's items have loaded (shows placeholders).
+  @Published public var collectionItems: [Int: [MediaItem]] = [:]
   @Published public var isLoading: Bool = true
   @Published public var selectedSort: CollectionsSort = .new
 
@@ -58,6 +61,8 @@ class CollectionsModel: ObservableObject {
     self.authState = authState
     self.errorHandler = errorHandler
     subscribe()
+    // Load on creation, not via the view's `.task` (unreliable in a compact split view / nested stack).
+    Task { await fetchCollections() }
   }
 
   func fetchCollections() async {
@@ -68,15 +73,36 @@ class CollectionsModel: ObservableObject {
 
     isLoading = true
     pagination = nil
+    collectionItems = [:]
     do {
       let data = try await collectionsService.fetchCollections(page: nil, sort: selectedSort.apiValue)
       collections = data.collections
       pagination = data.pagination
+      loadItems(for: data.collections)
     } catch {
       Logger.app.debug("fetch collections error: \(error)")
       errorHandler.setError(error)
     }
     isLoading = false
+  }
+
+  /// Loads each collection's preview items in parallel (best-effort) so they fill in as they arrive,
+  /// each shelf showing placeholders until then — exactly like the Bookmarks folders.
+  private func loadItems(for collections: [Collection]) {
+    let service = collectionsService
+    Task {
+      await withTaskGroup(of: (Int, [MediaItem]).self) { group in
+        for collection in collections {
+          group.addTask {
+            let items = (try? await service.fetchCollection(id: collection.id).1) ?? []
+            return (collection.id, items)
+          }
+        }
+        for await (id, items) in group {
+          collectionItems[id] = items
+        }
+      }
+    }
   }
 
   /// Loads the next page when the user scrolls near the end of the grid.
@@ -107,6 +133,7 @@ class CollectionsModel: ObservableObject {
       let data = try await collectionsService.fetchCollections(page: nextPage, sort: selectedSort.apiValue)
       collections.append(contentsOf: data.collections)
       self.pagination = data.pagination
+      loadItems(for: data.collections)
     } catch {
       Logger.app.debug("fetch more collections error: \(error)")
       errorHandler.setError(error)

@@ -25,9 +25,6 @@ struct HistoryView: View {
     NavigationStack(path: $navigationState.historyRoutes) {
       historyList
       .kinoScreen("History".localized)
-      .task {
-        await catalog.fetchItems()
-      }
       .routeDestinations()
       .handleError(state: $errorHandler.state)
       .toast(message: $catalog.toastMessage)
@@ -183,7 +180,7 @@ struct HistoryItemCell: View {
 struct HistoryView_Previews: PreviewProvider {
   static var previews: some View {
     HistoryView(catalog: HistoryModel(itemsService: VideoContentServiceMock(),
-                                      authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock()),
+                                      authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock(), deviceService: DeviceServiceMock()),
                                       errorHandler: ErrorHandler()))
   }
 }

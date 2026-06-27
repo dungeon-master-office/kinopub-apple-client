@@ -79,10 +79,12 @@ struct DeviceSettingsView: View {
       Section {
         Toggle("4K".localized, isOn: $model.settings.support4k)
         Toggle("HEVC".localized, isOn: $model.settings.supportHevc)
+        Toggle("HDR".localized, isOn: $model.settings.supportHdr)
       } footer: {
         Text("Changes take effect within a minute".localized)
       }
     }
+    .formStyle(.grouped)
     .scrollContentBackground(.hidden)
     .background(Color.KinoPub.background)
   }

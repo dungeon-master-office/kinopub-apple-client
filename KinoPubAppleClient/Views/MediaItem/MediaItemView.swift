@@ -33,6 +33,11 @@ struct MediaItemView: View {
   @State private var stillSelection: StillSelection?
   @State private var showCreateFolder: Bool = false
   @State private var newFolderName: String = ""
+  /// Preferred 3D view mode (shared with the player via UserDefaults). Picked here for 3D titles.
+  @AppStorage("preferredThreeDMode") private var threeDModeRaw: String = ThreeDMode.sbsMono.rawValue
+  /// Person picked in the Cast & Crew modal — pushed onto this page's stack after the modal closes.
+  @State private var pendingPersonRoute: Route?
+  @State private var showPerson: Bool = false
 
   init(model: @autoclosure @escaping () -> MediaItemModel) {
     _itemModel = StateObject(wrappedValue: model())
@@ -108,8 +113,25 @@ struct MediaItemView: View {
     .sheet(isPresented: $showComments) {
       CommentsView(mediaId: mediaItem.id)
     }
-    .sheet(isPresented: $showCastCrew) {
-      CastCrewView(directors: itemModel.directorNames, actors: itemModel.castNames, staff: itemModel.staff)
+    .sheet(isPresented: $showCastCrew, onDismiss: {
+      // The modal closed; if a person was picked, open their section on this page.
+      if pendingPersonRoute != nil { showPerson = true }
+    }) {
+      CastCrewView(directors: itemModel.directorNames,
+                   actors: itemModel.castNames,
+                   staff: itemModel.staff,
+                   onSelect: { name, field in
+                     pendingPersonRoute = .personSearch(name, field, name)
+                   })
+    }
+    // Programmatic push (iOS 16-compatible) onto whichever stack this page lives in.
+    .navigationDestination(isPresented: $showPerson) {
+      if let route = pendingPersonRoute {
+        RouteDestinationView(route: route)
+      }
+    }
+    .onChange(of: showPerson) { presented in
+      if !presented { pendingPersonRoute = nil }
     }
     .sheet(isPresented: $showFacts) {
       FactsView(facts: itemModel.facts)
@@ -276,8 +298,38 @@ struct MediaItemView: View {
     }
     bookmarkMenu
     downloadButton
+    if mediaItem.type.lowercased() == "3d" {
+      threeDModeButton
+    }
     // Trailer button removed from the hero — the Trailers shelf below already exposes it.
     // Like/dislike moved next to the ratings (see `voteControl`).
+  }
+
+  /// 3D view-mode picker for 3D titles (Side-by-Side / Over-Under × 2D / Anaglyph). Writes the
+  /// shared preference the player reads — on a flat screen true stereo can't be shown, so it's either
+  /// one eye as 2D or a red-cyan anaglyph (for glasses).
+  @ViewBuilder
+  private var threeDModeButton: some View {
+    Menu {
+      ForEach(ThreeDMode.allCases) { mode in
+        Button { threeDModeRaw = mode.rawValue } label: {
+          if threeDModeRaw == mode.rawValue {
+            Label(mode.title.localized, systemImage: "checkmark")
+          } else {
+            Text(mode.title.localized)
+          }
+        }
+      }
+    } label: {
+      circleIcon("cube")
+    }
+    .menuIndicator(.hidden)
+    #if os(macOS)
+    .menuStyle(.button)
+    .buttonStyle(.plain)
+    .fixedSize()
+    #endif
+    .accessibilityLabel("3D mode")
   }
 
   private var watchlistButton: some View {
@@ -322,9 +374,7 @@ struct MediaItemView: View {
       .background(Capsule(style: .continuous)
         .fill(active ? activeColor : Color.KinoPub.selectionBackground))
     }
-#if os(macOS)
     .buttonStyle(.plain)
-#endif
     .accessibilityLabel(up ? "Like" : "Dislike")
   }
 
@@ -363,8 +413,12 @@ struct MediaItemView: View {
       // Fill the icon when the item is in at least one folder.
       circleIcon(libraryState.isInAnyBookmarkFolder(itemId: mediaItem.id) ? "folder.fill" : "folder")
     }
+    .menuIndicator(.hidden)
     #if os(macOS)
-    .menuStyle(.borderlessButton)
+    // `.button` + `.plain` renders our circle label faithfully (borderlessButton strips the
+    // background and tints the symbol with the accent colour).
+    .menuStyle(.button)
+    .buttonStyle(.plain)
     .fixedSize()
     #endif
     .accessibilityLabel("Add to Bookmark")
@@ -378,7 +432,9 @@ struct MediaItemView: View {
     }
     .menuIndicator(.hidden)
 #if os(macOS)
-    .menuStyle(.borderlessButton)
+    .menuStyle(.button)
+    .buttonStyle(.plain)
+    .fixedSize()
 #endif
     .accessibilityLabel("Download")
   }
@@ -392,16 +448,12 @@ struct MediaItemView: View {
       NavigationLink(value: itemModel.linkProvider.player(for: episode)) {
         playLabel(title, subtitle: resumeSubtitle, fullWidth: fullWidth)
       }
-      #if os(macOS)
       .buttonStyle(.plain)
-      #endif
     } else {
       NavigationLink(value: itemModel.linkProvider.player(for: mediaItem)) {
         playLabel(title, subtitle: resumeSubtitle, fullWidth: fullWidth)
       }
-      #if os(macOS)
       .buttonStyle(.plain)
-      #endif
     }
   }
 
@@ -512,9 +564,7 @@ struct MediaItemView: View {
     Button(action: action) {
       circleIcon(systemName)
     }
-    #if os(macOS)
     .buttonStyle(.plain)
-    #endif
     .accessibilityLabel(accessibility)
   }
 
@@ -685,9 +735,7 @@ struct MediaItemView: View {
                     downloadBadge(itemId: mediaItem.id, video: episode.number, season: season.number)
                   }
                 }
-                #if os(macOS)
                 .buttonStyle(.plain)
-                #endif
                 .id(episode.id)
                 .contextMenu {
                   Button {
@@ -808,6 +856,47 @@ struct MediaItemView: View {
     return min(max(best, 0.02), 1.0)
   }
 
+  // MARK: - Loading skeletons
+  // Reserve the same footprint as the real shelf while a dynamically-loaded block is in flight, so it
+  // swaps content in place (or collapses once) instead of popping in and shoving the page around.
+
+  private func skeletonPosterShelf(_ title: String) -> some View {
+    MediaShelf(title: title, showsChevron: false) {
+      ForEach(0..<6, id: \.self) { _ in PosterCard.placeholder() }
+    }
+  }
+
+  private var skeletonTrailerShelf: some View {
+    // Render the real card with no image so the placeholder is exactly the trailer cell's size.
+    MediaShelf(title: "Trailers".localized, showsChevron: false) {
+      EpisodeCard(imageURL: nil, title: "Trailer")
+        .redacted(reason: .placeholder)
+    }
+  }
+
+  private var skeletonImagesShelf: some View {
+    // StillThumbnail with no URL renders its skeleton fill at the exact still size.
+    MediaShelf(title: "Images".localized, showsChevron: false) {
+      ForEach(0..<6, id: \.self) { _ in StillThumbnail(url: nil) }
+    }
+  }
+
+  // Approximate the text blocks (heights can't be exact for multi-line copy, but reserving close to
+  // the real footprint turns the extras pop-in into a barely-perceptible settle).
+  private func skeletonTextSection(_ title: String, rows: Int, rowHeight: CGFloat) -> some View {
+    VStack(alignment: .leading, spacing: 14) {
+      extrasHeader(title, action: nil)
+      VStack(spacing: 10) {
+        ForEach(0..<rows, id: \.self) { _ in
+          RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(Color.KinoPub.skeleton)
+            .frame(height: rowHeight)
+        }
+      }
+      .padding(.horizontal, 20)
+    }
+  }
+
   // MARK: - Trailers
 
   @ViewBuilder
@@ -817,10 +906,11 @@ struct MediaItemView: View {
         NavigationLink(value: itemModel.linkProvider.trailerPlayer(for: mediaItem)) {
           EpisodeCard(imageURL: mediaItem.posters.big, title: "Trailer")
         }
-        #if os(macOS)
         .buttonStyle(.plain)
-        #endif
       }
+    } else if !itemModel.itemLoaded {
+      // Whether a trailer exists is known only once the item loads; hold its place until then.
+      skeletonTrailerShelf
     }
   }
 
@@ -829,33 +919,32 @@ struct MediaItemView: View {
   @ViewBuilder
   private var relatedSection: some View {
     if !itemModel.relatedItems.isEmpty {
-      MediaShelf(title: "Related".localized, showsChevron: false) {
+      MediaShelf(title: "Related".localized,
+                 headerValue: Route.mediaList(itemModel.relatedItems, "Related".localized)) {
         ForEach(itemModel.relatedItems) { item in
           NavigationLink(value: itemModel.linkProvider.link(for: item)) {
             PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
           }
-          #if os(macOS)
           .buttonStyle(.plain)
-          #endif
         }
       }
+    } else if itemModel.itemLoaded && !itemModel.relatedLoaded {
+      skeletonPosterShelf("Related".localized)
     }
   }
 
   // MARK: - More from director / with actor
 
   @ViewBuilder
-  private func peopleShelf(_ title: String, items: [MediaItem]) -> some View {
+  private func peopleShelf(_ title: String, items: [MediaItem], headerValue: (any Hashable)? = nil) -> some View {
     if !items.isEmpty {
-      MediaShelf(title: title, showsChevron: false) {
+      MediaShelf(title: title, headerValue: headerValue) {
         ForEach(items) { item in
           NavigationLink(value: itemModel.linkProvider.link(for: item)) {
             PosterCard(imageURL: item.posters.medium, title: item.localizedTitle)
               .overlay(alignment: .topTrailing) { MediaCardStatusBadge(item: item) }
           }
-          #if os(macOS)
           .buttonStyle(.plain)
-          #endif
         }
       }
     }
@@ -864,14 +953,26 @@ struct MediaItemView: View {
   @ViewBuilder
   private var moreFromDirectorSection: some View {
     if let director = itemModel.primaryDirector {
-      peopleShelf(String(format: "More from %@".localized, director), items: itemModel.moreFromDirector)
+      if !itemModel.moreFromDirector.isEmpty {
+        peopleShelf(String(format: "More from %@".localized, director),
+                    items: itemModel.moreFromDirector,
+                    headerValue: Route.personSearch(director, "director", director))
+      } else if !itemModel.moreFromLoaded {
+        skeletonPosterShelf(String(format: "More from %@".localized, director))
+      }
     }
   }
 
   @ViewBuilder
   private var moreWithActorSection: some View {
     if let actor = itemModel.primaryActor {
-      peopleShelf(String(format: "More with %@".localized, actor), items: itemModel.moreWithActor)
+      if !itemModel.moreWithActor.isEmpty {
+        peopleShelf(String(format: "More with %@".localized, actor),
+                    items: itemModel.moreWithActor,
+                    headerValue: Route.personSearch(actor, "cast", actor))
+      } else if !itemModel.moreWithLoaded {
+        skeletonPosterShelf(String(format: "More with %@".localized, actor))
+      }
     }
   }
 
@@ -889,7 +990,13 @@ struct MediaItemView: View {
   }
 
   private var staffShelf: some View {
-    let top = Array(itemModel.staff.prefix(14))
+    // Lead with a single main director, then the cast — seeing actors matters more than a long list
+    // of every director/crew member (the full ordered list stays available in the modal).
+    let directors = itemModel.staff.filter { $0.professionKey == "DIRECTOR" }
+    let actors = itemModel.staff.filter { $0.professionKey == "ACTOR" }
+    let others = itemModel.staff.filter { $0.professionKey != "DIRECTOR" && $0.professionKey != "ACTOR" }
+    let ordered = Array(directors.prefix(1)) + actors + others
+    let top = Array(ordered.prefix(14))
     return MediaShelf(title: "Cast & Crew".localized,
                       showsChevron: itemModel.staff.count > top.count,
                       onHeaderTap: { showCastCrew = true }) {
@@ -905,10 +1012,11 @@ struct MediaItemView: View {
 
   @ViewBuilder
   private var castNamesShelf: some View {
-    let directors = itemModel.directorNames
+    // Just the main director up front, then the cast (the full director list is in the modal).
+    let directors = Array(itemModel.directorNames.prefix(1))
     let allActors = itemModel.castNames
     let actors = Array(allActors.prefix(12))
-    let hasMore = allActors.count > actors.count
+    let hasMore = allActors.count > actors.count || itemModel.directorNames.count > directors.count
     if !actors.isEmpty || !directors.isEmpty {
       MediaShelf(title: "Cast & Crew".localized,
                  showsChevron: hasMore,
@@ -980,6 +1088,8 @@ struct MediaItemView: View {
           .buttonStyle(.plain)
         }
       }
+    } else if itemModel.itemLoaded && !itemModel.extrasLoaded {
+      skeletonImagesShelf
     }
   }
 
@@ -995,6 +1105,8 @@ struct MediaItemView: View {
         }
         .padding(.horizontal, 20)
       }
+    } else if itemModel.itemLoaded && !itemModel.extrasLoaded {
+      skeletonTextSection("Facts".localized, rows: 3, rowHeight: 56)
     }
   }
 
@@ -1010,6 +1122,8 @@ struct MediaItemView: View {
         }
         .padding(.horizontal, 20)
       }
+    } else if itemModel.itemLoaded && !itemModel.extrasLoaded {
+      skeletonTextSection("Reviews".localized, rows: 2, rowHeight: 110)
     }
   }
 
@@ -1173,13 +1287,11 @@ private struct MediaItemInfoSection: View {
           Text("Country".localized.uppercased())
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(Color.KinoPub.subtitle)
-          ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-              ForEach(Array(mediaItem.countries.enumerated()), id: \.offset) { _, country in
-                sectionFacet(filter: itemModel.countryFilter(id: country.id),
-                             route: itemModel.countryRoute(id: country.id, title: country.title)) {
-                  facetValueText(country.title, isLink: true)
-                }
+          FlowLayout(spacing: 10, lineSpacing: 6) {
+            ForEach(Array(mediaItem.countries.enumerated()), id: \.offset) { _, country in
+              sectionFacet(filter: itemModel.countryFilter(id: country.id),
+                           route: itemModel.countryRoute(id: country.id, title: country.title)) {
+                facetValueText(country.title, isLink: true)
               }
             }
           }
@@ -1191,17 +1303,10 @@ private struct MediaItemInfoSection: View {
           Text("Director".localized.uppercased())
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(Color.KinoPub.subtitle)
-          ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-              ForEach(Array(itemModel.directorNames.enumerated()), id: \.offset) { index, name in
-                if index > 0 {
-                  Text("•")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color.KinoPub.subtitle)
-                }
-                facetLink(itemModel.directorRoute(name)) {
-                  facetValueText(name, isLink: itemModel.directorRoute(name) != nil)
-                }
+          FlowLayout(spacing: 10, lineSpacing: 6) {
+            ForEach(Array(itemModel.directorNames.enumerated()), id: \.offset) { _, name in
+              facetLink(itemModel.directorRoute(name)) {
+                facetValueText(name, isLink: itemModel.directorRoute(name) != nil)
               }
             }
           }
@@ -1349,9 +1454,7 @@ private struct MediaItemInfoSection: View {
       Link(destination: url) {
         ratingContent(label: label, value: value, isLink: true)
       }
-      #if os(macOS)
       .buttonStyle(.plain)
-      #endif
     } else {
       ratingContent(label: label, value: value, isLink: false)
     }
@@ -1400,6 +1503,9 @@ struct CastCrewView: View {
   let directors: [String]
   let actors: [String]
   let staff: [KpStaffMember]
+  /// Called when a person is tapped: (name, field) where field is "cast" or "director". The view
+  /// dismisses itself first, then the presenter opens that person's section (like More with / More from).
+  var onSelect: ((_ name: String, _ field: String) -> Void)?
   @Environment(\.dismiss) private var dismiss
 
   private let columns = [GridItem(.adaptive(minimum: 100), spacing: 14, alignment: .top)]
@@ -1411,8 +1517,8 @@ struct CastCrewView: View {
           if !staff.isEmpty {
             staffContent
           } else {
-            if !directors.isEmpty { namesSection(title: "Directors".localized, names: directors) }
-            if !actors.isEmpty { namesSection(title: "Cast".localized, names: actors) }
+            if !directors.isEmpty { namesSection(title: "Directors".localized, names: directors, field: "director") }
+            if !actors.isEmpty { namesSection(title: "Cast".localized, names: actors, field: "cast") }
           }
         }
         .padding(.vertical, 16)
@@ -1439,15 +1545,30 @@ struct CastCrewView: View {
         sectionTitle(profession)
         LazyVGrid(columns: columns, alignment: .leading, spacing: 22) {
           ForEach(members) { member in
-            CastAvatarView(imageURL: member.posterUrl,
-                           name: member.displayName,
-                           role: member.description?.isEmpty == false ? member.description : nil,
-                           diameter: 80)
+            personButton(name: member.displayName,
+                         field: member.professionKey == "DIRECTOR" ? "director" : "cast") {
+              CastAvatarView(imageURL: member.posterUrl,
+                             name: member.displayName,
+                             role: member.description?.isEmpty == false ? member.description : nil,
+                             diameter: 80)
+            }
           }
         }
         .padding(.horizontal, 20)
       }
     }
+  }
+
+  /// Wraps a person avatar so tapping it dismisses the modal and opens that person's section.
+  @ViewBuilder
+  private func personButton<Label: View>(name: String, field: String, @ViewBuilder label: () -> Label) -> some View {
+    Button {
+      onSelect?(name, field)
+      dismiss()
+    } label: {
+      label()
+    }
+    .buttonStyle(.plain)
   }
 
   private var orderedProfessionGroups: [(String, [KpStaffMember])] {
@@ -1462,13 +1583,15 @@ struct CastCrewView: View {
   }
 
   @ViewBuilder
-  private func namesSection(title: String, names: [String]) -> some View {
+  private func namesSection(title: String, names: [String], field: String) -> some View {
     VStack(alignment: .leading, spacing: 14) {
       sectionTitle(title)
       LazyVGrid(columns: columns, alignment: .leading, spacing: 22) {
         ForEach(names, id: \.self) { name in
-          CastAvatarView(imageURL: ActorImageProvider.photoURLString(for: name),
-                         name: name, diameter: 80)
+          personButton(name: name, field: field) {
+            CastAvatarView(imageURL: ActorImageProvider.photoURLString(for: name),
+                           name: name, diameter: 80)
+          }
         }
       }
       .padding(.horizontal, 20)

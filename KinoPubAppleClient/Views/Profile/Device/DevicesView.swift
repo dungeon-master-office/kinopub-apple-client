@@ -52,6 +52,11 @@ struct DevicesView: View {
     _model = StateObject(wrappedValue: model())
   }
 
+  /// Native apps/devices (everything the API doesn't flag as a browser session).
+  private var devices: [ManagedDevice] { model.devices.filter { !($0.isBrowser ?? false) } }
+  /// Web/browser sessions reported alongside devices by the API.
+  private var sessions: [ManagedDevice] { model.devices.filter { $0.isBrowser ?? false } }
+
   var body: some View {
     ZStack {
       Color.KinoPub.background.edgesIgnoringSafeArea(.all)
@@ -59,12 +64,24 @@ struct DevicesView: View {
         ProgressView()
       } else {
         Form {
-          Section(footer: Text("Remove devices you no longer use. The current device can't be removed here — use Logout.".localized)) {
-            ForEach(model.devices) { device in
-              row(device)
+          // Real devices and browser sessions are separated so the list isn't a confusing mix.
+          if !devices.isEmpty {
+            Section(header: Text("Devices".localized),
+                    footer: Text("Remove devices you no longer use. The current device can't be removed here — use Logout.".localized)) {
+              ForEach(devices) { device in
+                row(device)
+              }
+            }
+          }
+          if !sessions.isEmpty {
+            Section(header: Text("Browser sessions".localized)) {
+              ForEach(sessions) { device in
+                row(device)
+              }
             }
           }
         }
+        .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Color.KinoPub.background)
       }

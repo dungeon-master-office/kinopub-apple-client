@@ -31,6 +31,11 @@ enum Route: Hashable {
   case genre(Int, String)
   case bookmark(Bookmark)
   case collection(Collection)
+  /// A "see all" grid of already-loaded items (a search section opened in full): (items, title).
+  case mediaList([MediaItem], String)
+  /// A "see all" grid of people surfaced from a search (Cast & Crew): (people, title). Tapping a
+  /// person opens their filmography, like the Cast & Crew on a film page / Apple TV.
+  case castCrew([SearchPerson], String)
 
   func hash(into hasher: inout Hasher) {
     switch self {
@@ -56,6 +61,10 @@ enum Route: Hashable {
       hasher.combine(9); hasher.combine(bookmark)
     case .collection(let collection):
       hasher.combine(10); hasher.combine(collection)
+    case .mediaList(let items, let title):
+      hasher.combine(11); hasher.combine(items); hasher.combine(title)
+    case .castCrew(let people, let title):
+      hasher.combine(12); hasher.combine(people); hasher.combine(title)
     }
   }
 

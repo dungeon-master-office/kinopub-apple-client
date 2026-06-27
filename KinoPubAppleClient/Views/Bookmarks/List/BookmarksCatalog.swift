@@ -28,6 +28,8 @@ class BookmarksCatalog: ObservableObject {
     self.authState = authState
     self.errorHandler = errorHandler
     observeFolderCache()
+    // Load on creation, not via the view's `.task` (unreliable in a compact split view / nested stack).
+    Task { await fetchItems() }
   }
 
   /// Keep the folder list in sync with the shared cache so a folder deleted on its detail screen

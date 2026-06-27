@@ -25,6 +25,8 @@ struct InlinePlayerView: View {
 struct PlatformInlinePlayer: UIViewControllerRepresentable {
   let url: URL
 
+  func makeCoordinator() -> Coordinator { Coordinator() }
+
   func makeUIViewController(context: Context) -> AVPlayerViewController {
     try? AVAudioSession.sharedInstance().setCategory(.playback)
     try? AVAudioSession.sharedInstance().setActive(true)
@@ -32,20 +34,44 @@ struct PlatformInlinePlayer: UIViewControllerRepresentable {
     let controller = AVPlayerViewController()
     controller.player = AVPlayer(url: url)
     controller.videoGravity = .resizeAspect
-    // PiP disabled for the inline Sport player: this representable nils its player on dismantle
-    // (channel switch / scroll / navigating away), which black-screens an active PiP window. Proper
-    // PiP here needs lifecycle handling via AVPlayerViewControllerDelegate + on-device testing.
-    controller.allowsPictureInPicturePlayback = false
-    controller.canStartPictureInPictureAutomaticallyFromInline = false
+    // PiP re-enabled: keep playing in a floating window while using the rest of the app. The
+    // black-screen-on-dismantle problem is handled by the coordinator, which retains the controller
+    // while PiP is active (so nilling the player on dismantle is deferred until PiP actually ends).
+    controller.allowsPictureInPicturePlayback = true
+    controller.canStartPictureInPictureAutomaticallyFromInline = true
+    controller.delegate = context.coordinator
     controller.player?.play()
     return controller
   }
 
   func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {}
 
-  static func dismantleUIViewController(_ controller: AVPlayerViewController, coordinator: ()) {
-    controller.player?.pause()
-    controller.player = nil
+  static func dismantleUIViewController(_ controller: AVPlayerViewController, coordinator: Coordinator) {
+    // While PiP is active, keep the player alive (the coordinator retains the controller and tears it
+    // down when PiP stops) so the floating window doesn't go black. Otherwise stop & release now.
+    if coordinator.isPiPActive {
+      coordinator.retainedController = controller
+    } else {
+      controller.player?.pause()
+      controller.player = nil
+    }
+  }
+
+  final class Coordinator: NSObject, AVPlayerViewControllerDelegate {
+    var isPiPActive = false
+    /// Keeps the controller alive after SwiftUI dismantles the view, so PiP can continue.
+    var retainedController: AVPlayerViewController?
+
+    func playerViewControllerWillStartPictureInPicture(_ playerViewController: AVPlayerViewController) {
+      isPiPActive = true
+    }
+
+    func playerViewControllerDidStopPictureInPicture(_ playerViewController: AVPlayerViewController) {
+      isPiPActive = false
+      retainedController?.player?.pause()
+      retainedController?.player = nil
+      retainedController = nil
+    }
   }
 }
 #else

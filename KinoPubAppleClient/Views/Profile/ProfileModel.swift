@@ -20,6 +20,11 @@ class ProfileModel: ObservableObject {
     @Published public var userData: UserData = UserData.mock()
     @Published var selectedLanguage: String
     @Published var shouldShowExitAlert: Bool = false
+    /// True while the async logout (deregister device → clear session) is in flight, so the UI can
+    /// disable the button and show a spinner.
+    @Published var isLoggingOut: Bool = false
+    /// Flips true once logout finishes, so the presenting Profile modal can dismiss itself.
+    @Published var didLogout: Bool = false
     
     let availableLanguages = [
         "en": "English",
@@ -59,7 +64,13 @@ class ProfileModel: ObservableObject {
     }
     
     func logout() {
-        authState.logout()
+        guard !isLoggingOut else { return }
+        isLoggingOut = true
+        Task {
+            await authState.logout()
+            isLoggingOut = false
+            didLogout = true
+        }
     }
     
     func changeLanguage(to language: String) {

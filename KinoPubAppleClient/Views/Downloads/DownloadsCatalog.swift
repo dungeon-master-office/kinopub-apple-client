@@ -94,6 +94,8 @@ class DownloadsCatalog: ObservableObject {
     }
     // Mutate the published array too, so `isEmpty` flips and the placeholder shows once all are gone.
     downloadedItems.remove(atOffsets: indexSet)
+    // Reflect the freed space immediately (the "storage used" figure is otherwise stale until refresh).
+    recomputeTotalSize()
   }
 
   func deleteActiveDownload(at indexSet: IndexSet) {
@@ -101,6 +103,7 @@ class DownloadsCatalog: ObservableObject {
       downloadManager.removeDownload(for: activeDownloads[index].url)
     }
     activeDownloads.remove(atOffsets: indexSet)
+    recomputeTotalSize()
   }
 
   func cancelHLSDownload(at indexSet: IndexSet) {
@@ -108,6 +111,7 @@ class DownloadsCatalog: ObservableObject {
       hlsManager.cancelDownload(key: hlsActive[index].id)
     }
     hlsActive.remove(atOffsets: indexSet)
+    recomputeTotalSize()
   }
 
   func deleteHLSCompleted(at indexSet: IndexSet) {
@@ -115,6 +119,7 @@ class DownloadsCatalog: ObservableObject {
       hlsStore.remove(hlsCompleted[index])
     }
     hlsCompleted.remove(atOffsets: indexSet)
+    recomputeTotalSize()
   }
 
   /// Sum the on-disk size of every completed download (HLS bundles + mp4 files) off the main thread.

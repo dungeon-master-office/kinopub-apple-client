@@ -20,6 +20,8 @@ class AuthModel: ObservableObject {
 
   @Published var deviceCode: String = ""
   @Published var close: Bool = false
+  /// The page the user opens to enter the code (shown as a hint, e.g. "kino.pub/device").
+  @Published var verificationURL: String = ""
 
   private var tempVerificationResponse: VerificationResponse?
 
@@ -36,6 +38,7 @@ class AuthModel: ObservableObject {
       do {
         let response = try await authService.fetchDeviceCode()
         self.deviceCode = response.userCode
+        self.verificationURL = response.verificationUri
         self.tempVerificationResponse = response
         Logger.app.debug("receive device code: \(response.userCode)")
         scheduleCheck(for: response)
@@ -43,6 +46,23 @@ class AuthModel: ObservableObject {
         handleError(error)
       }
     }
+  }
+
+  func copyCode() {
+    guard !deviceCode.isEmpty else { return }
+    #if os(iOS)
+    UIPasteboard.general.string = deviceCode
+    #elseif os(macOS)
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.setString(deviceCode, forType: .string)
+    #endif
+  }
+
+  /// Human-friendly activation page (host + path, without the scheme), e.g. "kino.pub/device".
+  var activationDisplayURL: String {
+    guard let url = URL(string: verificationURL), let host = url.host else { return verificationURL }
+    let path = url.path
+    return path.isEmpty || path == "/" ? host : host + path
   }
 
   func openActivationURL() {

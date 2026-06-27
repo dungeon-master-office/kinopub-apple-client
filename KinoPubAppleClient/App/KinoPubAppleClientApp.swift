@@ -18,7 +18,8 @@ struct KinoPubAppleClientApp: App {
   @StateObject var navigationState = NavigationState()
   @StateObject var errorHandler = ErrorHandler()
   @StateObject var authState = AuthState(authService: AppContext.shared.authService,
-                                         accessTokenService: AppContext.shared.accessTokenService)
+                                         accessTokenService: AppContext.shared.accessTokenService,
+                                         deviceService: AppContext.shared.deviceService)
   @StateObject var networkMonitor = NetworkMonitor()
 
 #if os(macOS)

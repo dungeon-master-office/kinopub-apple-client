@@ -93,12 +93,16 @@ final class DeviceServiceImpl: DeviceService {
       var settings = try await fetchSettings(deviceId: device.id)
       guard settings.supportHevc != hevc
               || settings.support4k != hevc
+              || settings.supportHdr != hevc
               || settings.mixedPlaylist != hevc else { return }
       settings.supportHevc = hevc
       settings.support4k = hevc
+      // Advertise HDR too so kino.pub includes HDR/Dolby-Vision renditions; the native player picks
+      // HDR on capable displays and tone-maps to SDR otherwise.
+      settings.supportHdr = hevc
       settings.mixedPlaylist = hevc
       try await updateSettings(deviceId: device.id, settings: settings)
-      Logger.app.debug("device capabilities synced to HEVC-decodable=\(hevc) (+mixedPlaylist)")
+      Logger.app.debug("device capabilities synced to HEVC-decodable=\(hevc) (+HDR +mixedPlaylist)")
     } catch {
       Logger.app.debug("syncCapabilities error: \(error)")
     }

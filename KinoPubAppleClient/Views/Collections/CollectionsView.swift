@@ -37,24 +37,22 @@ struct CollectionsView: View {
       .toolbar {
         ToolbarItem(placement: .primaryAction) { sortMenu }
       }
-      .task { await model.fetchCollections() }
       .refreshable { await model.refresh() }
       .handleError(state: $errorHandler.state)
   }
 
   @ViewBuilder
   private var content: some View {
-    WidthReader { width in
-      ScrollView {
-        if model.isLoading {
-          placeholderGrid(width: width)
-        } else if model.collections.isEmpty {
-          emptyState.frame(minHeight: 320)
-        } else {
-          grid(width: width)
-        }
+    ScrollView {
+      if model.isLoading {
+        placeholderList
+      } else if model.collections.isEmpty {
+        emptyState.frame(minHeight: 320)
+      } else {
+        collectionsList
       }
     }
+    .background(Color.KinoPub.background)
   }
 
   // MARK: - Sort
@@ -72,35 +70,81 @@ struct CollectionsView: View {
     }
   }
 
-  private func grid(width: CGFloat) -> some View {
-    LazyVGrid(columns: PosterGridLayout.columns(width: width), spacing: 16) {
+  /// One horizontal shelf per collection (title → opens the collection), mirroring the Bookmarks list.
+  private var collectionsList: some View {
+    LazyVStack(alignment: .leading, spacing: 28) {
       ForEach(model.collections) { collection in
-        NavigationLink(value: Route.collection(collection)) {
-          CollectionCard(collection: collection)
-            .onAppear {
-              model.loadMoreContent(after: collection)
+        MediaShelf(title: collection.title,
+                   headerValue: Route.collection(collection)) {
+          if let items = model.collectionItems[collection.id] {
+            let shown = Array(items.prefix(10))
+            ForEach(shown) { item in
+              NavigationLink(value: Route.details(item)) {
+                PosterCard(imageURL: item.posters.medium,
+                           title: item.localizedTitle,
+                           imdbRating: item.imdbRating,
+                           kinopoiskRating: item.kinopoiskRating)
+                .overlay(alignment: .topTrailing) { MediaCardStatusBadge(item: item) }
+              }
+              .buttonStyle(.plain)
             }
+            // Trailing "+N more" card opens the full collection (same as tapping the header).
+            let remaining = (collection.itemsCount ?? items.count) - shown.count
+            if remaining > 0 {
+              NavigationLink(value: Route.collection(collection)) {
+                moreCard(remaining)
+              }
+              .buttonStyle(.plain)
+            }
+          } else {
+            // Loading placeholder shelf.
+            ForEach(0..<4, id: \.self) { _ in PosterCard.placeholder() }
+          }
         }
-#if os(macOS)
-        .buttonStyle(.plain)
-#endif
+        .onAppear { model.loadMoreContent(after: collection) }
       }
     }
-    .padding(16)
+    .padding(.vertical, 16)
   }
 
-  /// Responsive skeleton grid shown while collections load (matches the real grid's columns).
-  private func placeholderGrid(width: CGFloat) -> some View {
-    LazyVGrid(columns: PosterGridLayout.columns(width: width), spacing: 16) {
-      ForEach(0..<9, id: \.self) { _ in
-        Color.KinoPub.skeleton
-          .aspectRatio(3.0 / 4.0, contentMode: .fit)
-          .frame(maxWidth: .infinity)
-          .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-          .opacity(0.5)
+  /// "+N more" tile shown at the end of a collection shelf; matches the poster tile's footprint.
+  private func moreCard(_ count: Int) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+      RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .fill(Color.white.opacity(0.06))
+        .frame(width: 140, height: 210)
+        .overlay {
+          VStack(spacing: 8) {
+            Image(systemName: "arrow.right.circle.fill")
+              .font(.system(size: 30))
+              .foregroundStyle(Color.KinoPub.accent)
+            Text("+\(count)")
+              .font(.system(size: 20, weight: .bold))
+              .foregroundStyle(Color.KinoPub.text)
+            Text("More".localized)
+              .font(.system(size: 13))
+              .foregroundStyle(Color.KinoPub.subtitle)
+          }
+          .padding(8)
+        }
+        .overlay(
+          RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+        )
+    }
+    .frame(width: 140)
+  }
+
+  /// Skeleton shelves shown while the collection list loads (matches the real shelf layout).
+  private var placeholderList: some View {
+    LazyVStack(alignment: .leading, spacing: 28) {
+      ForEach(0..<4, id: \.self) { _ in
+        MediaShelf(title: " ", showsChevron: false) {
+          ForEach(0..<4, id: \.self) { _ in PosterCard.placeholder() }
+        }
       }
     }
-    .padding(16)
+    .padding(.vertical, 16)
   }
 
   // MARK: - States
@@ -157,7 +201,7 @@ struct CollectionCard: View {
 struct CollectionsView_Previews: PreviewProvider {
   static var previews: some View {
     CollectionsView(model: CollectionsModel(collectionsService: CollectionsServiceMock(),
-                                            authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock()),
+                                            authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock(), deviceService: DeviceServiceMock()),
                                             errorHandler: ErrorHandler()))
   }
 }

@@ -38,8 +38,11 @@ public struct MediaItem: Codable, Hashable {
   public let finished: Bool
   public let advert: Bool
   public let poorQuality: Bool
-  public let createdAt: Int
-  public let updatedAt: Int
+  // Optional: kino.pub returns `null` for these on some titles (e.g. unreleased films), and a
+  // non-optional Int there made the WHOLE list response fail to decode — silently emptying actor/
+  // director searches that happened to include such a title.
+  public let createdAt: Int?
+  public let updatedAt: Int?
   public let inWatchlist: Bool?
   public let subscribed: Bool?
   public let ac3: Int?

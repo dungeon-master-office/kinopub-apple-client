@@ -112,7 +112,7 @@ struct FilterView: View {
     Section {
       Toggle("Kinopoisk Rating".localized, isOn: $model.kinopoiskFilterEnabled)
       if model.kinopoiskFilterEnabled {
-        ratingPicker(title: "From".localized, selection: $model.kinopoiskMin)
+        ratingSlider(title: "From".localized, value: $model.kinopoiskMin)
       }
     }
   }
@@ -121,7 +121,7 @@ struct FilterView: View {
     Section {
       Toggle("IMDB Rating".localized, isOn: $model.imdbFilterEnabled)
       if model.imdbFilterEnabled {
-        ratingPicker(title: "From".localized, selection: $model.imdbMin)
+        ratingSlider(title: "From".localized, value: $model.imdbMin)
       }
     }
   }
@@ -148,13 +148,19 @@ struct FilterView: View {
     .pickerStyle(.menu)
   }
 
-  func ratingPicker(title: String, selection: Binding<Int>) -> some View {
-    Picker(title, selection: selection) {
-      ForEach(ratingRange, id: \.self) { value in
-        Text(verbatim: "\(value)").tag(value)
+  func ratingSlider(title: String, value: Binding<Double>) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+      HStack {
+        Text(title)
+        Spacer()
+        Text(String(format: "%.1f", value.wrappedValue))
+          .foregroundStyle(Color.KinoPub.accent)
+          .monospacedDigit()
       }
+      // 0…10 in 0.1 steps.
+      Slider(value: value, in: 0...10, step: 0.1)
+        .tint(Color.KinoPub.accent)
     }
-    .pickerStyle(.menu)
   }
 }
 

@@ -39,6 +39,8 @@ class SportModel: ObservableObject {
     self.epgService = epgService
     self.authState = authState
     self.errorHandler = errorHandler
+    // Load on creation, not via the view's `.task` (unreliable in a compact split view / nested stack).
+    Task { await fetchChannels() }
   }
 
   func fetchChannels(forceGuideRefresh: Bool = false) async {
@@ -68,7 +70,8 @@ class SportModel: ObservableObject {
     defer { isLoadingGuide = false }
     do {
       epgByChannel = try await epgService.fetchGuide(for: channels, forceRefresh: forceRefresh)
-      guideUpdatedAt = Date()
+      // Real download time (from the cache), not the moment of this cache hit.
+      guideUpdatedAt = await epgService.lastUpdated() ?? Date()
     } catch {
       Logger.app.debug("fetch epg error: \(error)")
     }

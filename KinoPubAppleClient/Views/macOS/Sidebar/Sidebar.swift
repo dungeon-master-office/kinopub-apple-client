@@ -20,33 +20,37 @@ struct Sidebar: View {
   @EnvironmentObject var errorHandler: ErrorHandler
   @EnvironmentObject var navigationState: NavigationState
   @EnvironmentObject var networkMonitor: NetworkMonitor
+  @ObservedObject private var visibility = SectionVisibilityStore.shared
 
   @State private var showProfile = false
 
   var body: some View {
-    List(selection: $selection) {
-      Section {
-        row(.search)
+    // Custom selection binding so picking a section also pops its stack back to root (like a tab bar).
+    // Goes through the normal `selection` binding, so List highlighting/behaviour is unaffected.
+    List(selection: Binding(
+      get: { selection },
+      set: { newValue in
+        selection = newValue
+        if let newValue { navigationState.popToRoot(for: newValue) }
       }
-
+    )) {
       Section("Library".localized) {
+        row(.search)
         row(.new)
         ForEach(SidebarItem.libraryCategories, id: \.self) { type in
-          row(.category(type))
+          if visibility.isVisible(.category(type)) { row(.category(type)) }
         }
-        ForEach(CatalogPreset.allCases) { preset in
-          row(.preset(preset))
+        ForEach(CatalogPreset.visible) { preset in
+          if visibility.isVisible(.preset(preset)) { row(.preset(preset)) }
         }
-        row(.sport)
+        if visibility.isVisible(.sport) { row(.sport) }
         row(.collections)
       }
 
       Section("Other".localized) {
-        row(.newEpisodes)
-        row(.watching)
-        row(.bookmarks)
-        row(.history)
-        row(.downloads)
+        ForEach(SectionVisibilityStore.editableOther) { item in
+          if visibility.isVisible(item) { row(item) }
+        }
       }
 
       // Profile sits in its own section so it reads as separate from the library/other rows.
@@ -118,7 +122,8 @@ private struct ProfileSheetContent: View {
     // dismiss control to that bar instead of nesting another stack.
     ProfileView(model: model)
       .toolbar {
-#if os(macOS)
+        // `.cancellationAction` adapts per platform (no #if): a leading close on iOS/iPad, the
+        // standard cancel slot on macOS.
         ToolbarItem(placement: .cancellationAction) {
           Button {
             dismiss()
@@ -127,16 +132,6 @@ private struct ProfileSheetContent: View {
               .fontWeight(.bold)
           }
         }
-#else
-        ToolbarItem(placement: .topBarTrailing) {
-          Button {
-            dismiss()
-          } label: {
-            Image(systemName: "xmark")
-              .fontWeight(.bold)
-          }
-        }
-#endif
       }
   }
 }
@@ -147,7 +142,8 @@ struct Sidebar_Previews: PreviewProvider {
     var body: some View {
       Sidebar(selection: $selection)
         .environmentObject(AuthState(authService: AuthorizationServiceMock(),
-                                     accessTokenService: AccessTokenServiceMock()))
+                                     accessTokenService: AccessTokenServiceMock(),
+                                     deviceService: DeviceServiceMock()))
         .environmentObject(ErrorHandler())
         .environmentObject(NavigationState())
     }

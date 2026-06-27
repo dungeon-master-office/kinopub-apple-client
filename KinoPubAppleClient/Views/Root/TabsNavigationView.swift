@@ -203,6 +203,7 @@ struct MoreView: View {
   @EnvironmentObject private var errorHandler: ErrorHandler
   @EnvironmentObject private var authState: AuthState
   @EnvironmentObject private var networkMonitor: NetworkMonitor
+  @ObservedObject private var visibility = SectionVisibilityStore.shared
 
   /// Real navigation path (type-erased so it can hold both SidebarItem section pushes and Route
   /// detail pushes from inside the embedded sections).
@@ -214,13 +215,19 @@ struct MoreView: View {
     NavigationStack(path: $path) {
       List {
         Section("Library".localized) {
-          ForEach(SidebarItem.libraryCategories, id: \.self) { type in categoryRow(type) }
-          ForEach(CatalogPreset.allCases) { preset in presetRow(preset) }
-          sectionRow(.sport)
+          ForEach(SidebarItem.libraryCategories, id: \.self) { type in
+            if visibility.isVisible(.category(type)) { categoryRow(type) }
+          }
+          ForEach(CatalogPreset.visible) { preset in
+            if visibility.isVisible(.preset(preset)) { presetRow(preset) }
+          }
+          if visibility.isVisible(.sport) { sectionRow(.sport) }
           sectionRow(.collections)
         }
         Section("Other".localized) {
-          ForEach(otherRows) { sectionRow($0) }
+          ForEach(otherRows) { item in
+            if visibility.isVisible(item) { sectionRow(item) }
+          }
         }
         Section { sectionRow(.profile) }
       }

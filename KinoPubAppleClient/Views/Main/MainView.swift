@@ -78,9 +78,6 @@ struct MainView: View {
       })
       .routeDestinations()
       .handleError(state: $errorHandler.state)
-      .task {
-        await catalog.initialFetch()
-      }
       // The deep-link filter is already captured by the catalog above; clear it so a later
       // manual selection of this section isn't unexpectedly pre-filtered.
       .onAppear {
@@ -112,7 +109,7 @@ struct MainView_Previews: PreviewProvider {
   @StateObject static var navState = NavigationState()
 
   static var previews: some View {
-    MainView(catalog: MediaCatalog(itemsService: VideoContentServiceMock(), authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock()), errorHandler: ErrorHandler()))
+    MainView(catalog: MediaCatalog(itemsService: VideoContentServiceMock(), authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock(), deviceService: DeviceServiceMock()), errorHandler: ErrorHandler()))
       .environmentObject(navState)
   }
 }
@@ -179,16 +176,16 @@ struct FilteredCatalogView: View {
       SortSelectionView(sort: $catalog.sort)
     }
     .sheet(isPresented: $showFilterPicker) {
+      // Seed the sheet with the section's active filter (e.g. a preset's genre), so opening Filters
+      // on Cartoons/Stand-up shows that genre selected instead of "Any".
       FilterView(model: FilterModel(contentType: catalog.contentType,
-                                    filterDataService: appContext.contentService),
+                                    filterDataService: appContext.contentService,
+                                    initialFilter: catalog.activeFilter),
                  onApply: { filter in
                    catalog.apply(filter: filter)
                  }, onClear: {
                    catalog.clearFilter()
                  })
-    }
-    .task {
-      await catalog.initialFetch()
     }
     .handleError(state: $errorHandler.state)
   }
@@ -202,6 +199,7 @@ struct FilteredCatalogView: View {
 struct PersonSearchView: View {
   @EnvironmentObject var errorHandler: ErrorHandler
   @StateObject private var model: SearchModel
+  @State private var sort: MediaItemsSort = .default
   private let query: String
   private let field: String
   private let title: String
@@ -219,20 +217,25 @@ struct PersonSearchView: View {
     self.linkProvider = linkProvider
   }
 
+  /// Results sorted by the chosen option. Skeleton placeholders are kept in place (they sort to
+  /// stable positions on empty fields), so loading still shows the grid.
+  private var sortedResults: [MediaItem] {
+    let anyReal = model.results.contains { !($0.skeleton ?? false) }
+    return anyReal ? sort.sorted(model.results) : model.results
+  }
+
   var body: some View {
     WidthReader { width in
       ScrollView {
         LazyVGrid(columns: PosterGridLayout.columns(width: width), spacing: 16) {
-          ForEach(model.results, id: \.id) { item in
+          ForEach(sortedResults, id: \.id) { item in
             if item.skeleton ?? false {
               PosterCard.placeholder(width: nil)
             } else {
               NavigationLink(value: linkProvider.link(for: item)) {
                 PosterCard(imageURL: item.posters.medium, title: item.localizedTitle, width: nil)
               }
-#if os(macOS)
               .buttonStyle(.plain)
-#endif
             }
           }
         }
@@ -240,6 +243,25 @@ struct PersonSearchView: View {
       }
     }
     .kinoScreen(title)
+    .toolbar {
+      ToolbarItem(placement: .primaryAction) {
+        Menu {
+          ForEach(MediaItemsSort.allCases) { option in
+            Button {
+              sort = option
+            } label: {
+              if sort == option {
+                Label(option.localizedTitle, systemImage: "checkmark")
+              } else {
+                Text(option.localizedTitle)
+              }
+            }
+          }
+        } label: {
+          SortDotIcon(active: sort != .default)
+        }
+      }
+    }
     .task {
       model.preset(query: query, field: field)
     }

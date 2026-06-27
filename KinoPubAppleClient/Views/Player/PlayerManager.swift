@@ -11,8 +11,88 @@ import Combine
 import KinoPubBackend
 import KinoPubKit
 import AVFoundation
+import CoreImage
 import KinoPubLogging
 import OSLog
+
+/// How a stereoscopic (3D) source is shown on a flat screen. True stereo can't be output on
+/// iPhone/iPad/Mac, so the choices are: pick one eye (normal 2D) or red-cyan anaglyph (for glasses).
+/// The source can be packed Side-by-Side (two eyes left/right) or Over-Under (top/bottom).
+enum ThreeDMode: String, CaseIterable, Identifiable {
+  case off
+  case sbsMono
+  case sbsAnaglyph
+  case ouMono
+  case ouAnaglyph
+
+  var id: String { rawValue }
+
+  var title: String {
+    switch self {
+    case .off: return "3D: Off"
+    case .sbsMono: return "Side-by-Side · 2D"
+    case .sbsAnaglyph: return "Side-by-Side · Anaglyph"
+    case .ouMono: return "Over-Under · 2D"
+    case .ouAnaglyph: return "Over-Under · Anaglyph"
+    }
+  }
+
+  var isSideBySide: Bool { self == .sbsMono || self == .sbsAnaglyph }
+  var isAnaglyph: Bool { self == .sbsAnaglyph || self == .ouAnaglyph }
+}
+
+/// Builds an `AVVideoComposition` that reshapes each frame of a packed-stereo video into a flat
+/// image: one eye scaled to full frame (2D), or a red-cyan anaglyph combining both eyes.
+enum ThreeDVideoComposition {
+  static func make(for asset: AVAsset, mode: ThreeDMode) -> AVVideoComposition? {
+    guard mode != .off else { return nil }
+    let sideBySide = mode.isSideBySide
+    let anaglyph = mode.isAnaglyph
+    return AVMutableVideoComposition(asset: asset) { request in
+      let src = request.sourceImage
+      let e = src.extent
+
+      // Each eye cropped from its half and stretched back to the full frame (half-packed sources
+      // squeeze each eye, so un-squeezing restores the correct aspect).
+      func leftEye() -> CIImage {
+        if sideBySide {
+          return src.cropped(to: CGRect(x: e.minX, y: e.minY, width: e.width / 2, height: e.height))
+            .transformed(by: CGAffineTransform(scaleX: 2, y: 1))
+        } else { // Over-Under: left eye on top (CI origin is bottom-left → upper half)
+          return src.cropped(to: CGRect(x: e.minX, y: e.midY, width: e.width, height: e.height / 2))
+            .transformed(by: CGAffineTransform(translationX: 0, y: -e.height / 2))
+            .transformed(by: CGAffineTransform(scaleX: 1, y: 2))
+        }
+      }
+      func rightEye() -> CIImage {
+        if sideBySide {
+          return src.cropped(to: CGRect(x: e.midX, y: e.minY, width: e.width / 2, height: e.height))
+            .transformed(by: CGAffineTransform(translationX: -e.width / 2, y: 0))
+            .transformed(by: CGAffineTransform(scaleX: 2, y: 1))
+        } else {
+          return src.cropped(to: CGRect(x: e.minX, y: e.minY, width: e.width, height: e.height / 2))
+            .transformed(by: CGAffineTransform(scaleX: 1, y: 2))
+        }
+      }
+
+      let output: CIImage
+      if anaglyph {
+        let leftRed = leftEye().applyingFilter("CIColorMatrix", parameters: [
+          "inputRVector": CIVector(x: 1, y: 0, z: 0, w: 0),
+          "inputGVector": CIVector(x: 0, y: 0, z: 0, w: 0),
+          "inputBVector": CIVector(x: 0, y: 0, z: 0, w: 0)])
+        let rightCyan = rightEye().applyingFilter("CIColorMatrix", parameters: [
+          "inputRVector": CIVector(x: 0, y: 0, z: 0, w: 0),
+          "inputGVector": CIVector(x: 0, y: 1, z: 0, w: 0),
+          "inputBVector": CIVector(x: 0, y: 0, z: 1, w: 0)])
+        output = leftRed.applyingFilter("CIAdditionCompositing", parameters: [kCIInputBackgroundImageKey: rightCyan])
+      } else {
+        output = leftEye()
+      }
+      request.finish(with: output.cropped(to: e), context: nil)
+    }
+  }
+}
 
 enum WatchMode {
   case media
@@ -28,9 +108,26 @@ class PlayerManager: ObservableObject {
   /// so failures (e.g. an HLS stream AVPlayer rejects) surface on-device instead of silently.
   @Published var playbackError: String?
   
+  /// Whether the playing title is a 3D (stereoscopic) release, so the player offers 3D view modes.
+  var is3D: Bool { (playItem as? MediaItem)?.type.lowercased() == "3d" }
+  /// Current 3D view mode (Off for non-3D titles).
+  @Published var threeDMode: ThreeDMode = .off
+
+  /// Last-used 3D view mode, shared across launches and platforms (iOS picks it on the detail page,
+  /// macOS switches it live in the player). Defaults to Side-by-Side 2D — the common packing, shown
+  /// flat so it's watchable without glasses.
+  private static let threeDModeKey = "preferredThreeDMode"
+  static var preferredThreeDMode: ThreeDMode {
+    get { ThreeDMode(rawValue: UserDefaults.standard.string(forKey: threeDModeKey) ?? "") ?? .sbsMono }
+    set { UserDefaults.standard.set(newValue.rawValue, forKey: threeDModeKey) }
+  }
+
   lazy var player: AVPlayer = {
     guard let fileURL else { return AVPlayer() }
     let item = AVPlayerItem(url: fileURL)
+    if is3D, let comp = ThreeDVideoComposition.make(for: item.asset, mode: threeDMode) {
+      item.videoComposition = comp
+    }
     // Cap the adaptive HLS stream to the user's chosen quality. kino.pub serves one master
     // playlist with every rendition, so this is the lever that limits quality — `.auto` leaves
     // it untouched. Harmless for local/trailer playback (no effect on non-HLS items).
@@ -124,6 +221,11 @@ class PlayerManager: ObservableObject {
     self.watchMode = watchMode
     self.actionsService = actionsService
     self.downloadedFilesDatabase = downloadedFilesDatabase
+    // A 3D title starts in the user's last-chosen mode (default: one eye as 2D, so it's watchable —
+    // raw packed stereo would show a doubled image).
+    if watchMode == .media, (playItem as? MediaItem)?.type.lowercased() == "3d" {
+      threeDMode = PlayerManager.preferredThreeDMode
+    }
     // Seed the resume point synchronously from the local store so the native "Continue" prompt can
     // appear the moment the player presents (no race with the async server fetch, which only
     // refines it). Covers the "open from Continue Watching" case that previously started at 0.
@@ -296,5 +398,15 @@ class PlayerManager: ObservableObject {
   func cancelContinueWatching() {
     self.continueTime = nil
   }
-  
+
+  // MARK: - 3D view mode
+
+  /// Switch the 3D rendering live (rebuilds the per-frame composition on the current item).
+  func setThreeDMode(_ mode: ThreeDMode) {
+    threeDMode = mode
+    PlayerManager.preferredThreeDMode = mode
+    guard let item = player.currentItem else { return }
+    item.videoComposition = ThreeDVideoComposition.make(for: item.asset, mode: mode)
+  }
+
 }

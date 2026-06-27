@@ -47,6 +47,27 @@ struct RecentSearchItem: Codable, Identifiable, Hashable {
   let poster: String
 }
 
+/// A person surfaced from a search, shown as a circle in "Cast & Crew". A person can be both an
+/// actor and a director (e.g. Jackie Chan), so both roles are tracked and shown together.
+struct SearchPerson: Identifiable, Hashable {
+  let name: String   // canonical name as stored by kino.pub (correct casing)
+  let isActor: Bool
+  let isDirector: Bool
+  var id: String { name }
+  var displayName: String { name }
+
+  /// Field used to open their filmography (acting is usually the larger set).
+  var searchField: String { isActor ? "cast" : "director" }
+
+  var roleLabel: String {
+    switch (isActor, isDirector) {
+    case (true, true): return "\("Actor".localized) · \("Director".localized)"
+    case (false, true): return "Director".localized
+    default: return "Actor".localized
+    }
+  }
+}
+
 @MainActor
 class SearchModel: ObservableObject {
 
@@ -95,6 +116,64 @@ class SearchModel: ObservableObject {
 
   public func count(for scope: SearchScope) -> Int {
     results(for: scope).filter { !($0.skeleton ?? false) }.count
+  }
+
+  // MARK: - Apple-TV-style section buckets (committed search)
+
+  /// Movies bucket (everything that isn't a series), preserving relevance order.
+  public var movieResults: [MediaItem] { allResults.filter { !$0.isSeries } }
+  /// TV Shows bucket (series), preserving relevance order.
+  public var tvResults: [MediaItem] { allResults.filter { $0.isSeries } }
+  /// The strongest matches across all buckets (title matches first) for the "Top Results" row.
+  public var topResults: [MediaItem] { Array(allResults.prefix(6)) }
+
+  /// People surfaced when the query matches an actor/director field. kino.pub returns films (not
+  /// person entities), so we recover the person's CANONICAL name from the matched films' cast/
+  /// director field (correct casing/spelling) — important so the avatar CDN lookup (md5 of the name)
+  /// actually resolves, and so the displayed name looks right. Tapping a circle opens their films.
+  public var people: [SearchPerson] {
+    let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    guard q.count >= 3 else { return [] }
+
+    let actors = rankedNames(query: q, field: "cast", in: castResults)
+    let directors = rankedNames(query: q, field: "director", in: directorResults)
+    let directorKeys = Set(directors.map { $0.lowercased() })
+
+    var result: [SearchPerson] = []
+    var seen = Set<String>()
+    // Actors first (usually the larger, more relevant set); flag dual-role where the same name also
+    // directs. Then any directors not already listed.
+    for name in actors {
+      let key = name.lowercased()
+      guard seen.insert(key).inserted else { continue }
+      result.append(SearchPerson(name: name, isActor: true, isDirector: directorKeys.contains(key)))
+    }
+    for name in directors where !seen.contains(name.lowercased()) {
+      seen.insert(name.lowercased())
+      result.append(SearchPerson(name: name, isActor: false, isDirector: true))
+    }
+    return result
+  }
+
+  /// Distinct person names (canonical casing as stored by kino.pub) that match the query inside the
+  /// items' cast/director field, ordered by how many matched titles credit them (most prolific
+  /// first). kino.pub returns films, not person entities, so we mine the credits — e.g. query "джеки"
+  /// → ["Джеки Чан", "Джеки Уивер", …].
+  private func rankedNames(query q: String, field: String, in items: [MediaItem]) -> [String] {
+    var order: [String] = []          // first-seen order of lowercased keys
+    var canonical: [String: String] = [:]
+    var counts: [String: Int] = [:]
+    for item in items where !(item.skeleton ?? false) {
+      let raw = field == "director" ? item.director : item.cast
+      for piece in raw.split(separator: ",") {
+        let name = piece.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.lowercased().contains(q) else { continue }
+        let key = name.lowercased()
+        if canonical[key] == nil { canonical[key] = name; order.append(key) }
+        counts[key, default: 0] += 1
+      }
+    }
+    return order.sorted { (counts[$0] ?? 0) > (counts[$1] ?? 0) }.map { canonical[$0] ?? $0 }
   }
   @Published public var genres: [MediaGenre] = []
   @Published public var genrePosters: [Int: String] = [:]
@@ -153,7 +232,9 @@ class SearchModel: ObservableObject {
   /// per-scope counts (like the kino.pub web search).
   func performSearch(query: String) async {
     let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else {
+    // kino.pub's search needs at least 3 characters; below that we keep the live suggestions only
+    // and don't hit the API (avoids empty/erroring requests on every keystroke).
+    guard trimmed.count >= 3 else {
       titleResults = []
       castResults = []
       directorResults = []
@@ -169,8 +250,10 @@ class SearchModel: ObservableObject {
     directorResults = []
 
     async let titles = contentService.search(query: trimmed, contentType: nil, field: nil, page: nil)
-    async let cast = contentService.search(query: trimmed, contentType: nil, field: "cast", page: nil)
-    async let directors = contentService.search(query: trimmed, contentType: nil, field: "director", page: nil)
+    // Cast/director via the reliable cast=/director= FILTER (the search?field=cast full-text match
+    // misses most actors/directors).
+    async let cast = contentService.itemsByPerson(name: trimmed, field: "cast", page: nil)
+    async let directors = contentService.itemsByPerson(name: trimmed, field: "director", page: nil)
 
     let t = (try? await titles)?.items ?? []
     let c = (try? await cast)?.items ?? []
@@ -211,7 +294,14 @@ class SearchModel: ObservableObject {
     pagedQuery = trimmed
 
     do {
-      let data = try await contentService.search(query: trimmed, contentType: nil, field: field, page: nil)
+      // Person screens (actor/director) use the reliable cast=/director= filter; plain title searches
+      // keep using the search endpoint.
+      let data: PaginatedData<MediaItem>
+      if let field, field == "cast" || field == "director" {
+        data = try await contentService.itemsByPerson(name: trimmed, field: field, page: nil)
+      } else {
+        data = try await contentService.search(query: trimmed, contentType: nil, field: field, page: nil)
+      }
       guard trimmed == pagedQuery else { return }
       results = data.items
       pagination = data.pagination
@@ -235,7 +325,12 @@ class SearchModel: ObservableObject {
     let field = searchField
     Task {
       do {
-        let data = try await contentService.search(query: trimmed, contentType: nil, field: field, page: nextPage)
+        let data: PaginatedData<MediaItem>
+        if let field, field == "cast" || field == "director" {
+          data = try await contentService.itemsByPerson(name: trimmed, field: field, page: nextPage)
+        } else {
+          data = try await contentService.search(query: trimmed, contentType: nil, field: field, page: nextPage)
+        }
         // Guard against a query change while the page was in flight.
         guard pagedQuery == trimmed else { return }
         results.append(contentsOf: data.items)

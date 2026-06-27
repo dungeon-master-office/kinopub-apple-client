@@ -15,6 +15,7 @@ struct HomeView: View {
   @EnvironmentObject var authState: AuthState
   @Environment(\.appContext) var appContext
   @StateObject private var model: HomeModel
+  @ObservedObject private var visibility = SectionVisibilityStore.shared
 
   @State private var heroIndex: Int = 0
   @State private var isHeroInteracting: Bool = false
@@ -35,7 +36,9 @@ struct HomeView: View {
             continueWatchingShelf
           }
           ForEach(model.shelves) { shelf in
-            shelfView(shelf)
+            if isShelfVisible(shelf) {
+              shelfView(shelf)
+            }
           }
         }
         .padding(.bottom, 24)
@@ -44,9 +47,6 @@ struct HomeView: View {
       .navigationTitle("Home")
       // iOS 26: hero bleeds under the transparent glass bar. Pre-26: blurred bar + restored safe area.
       .heroNavBar()
-      .task {
-        await model.fetchData()
-      }
       .routeDestinations()
       .handleError(state: $errorHandler.state)
     }
@@ -131,7 +131,8 @@ struct HomeView: View {
   }
 
   private var continueWatchingShelf: some View {
-    MediaShelf(title: "Continue Watching".localized) {
+    MediaShelf(title: "Continue Watching".localized,
+               headerValue: Route.mediaList(model.continueWatching.map { $0.item }, "Continue Watching".localized)) {
       ForEach(model.continueWatching) { entry in
         NavigationLink(value: Route.details(entry.item)) {
           ContinueWatchingCard(imageURL: entry.item.posters.wide ?? entry.item.posters.big,
@@ -142,11 +143,16 @@ struct HomeView: View {
             MediaCardStatusBadge(item: entry.item, showsWatched: false)
           }
         }
-#if os(macOS)
-        .buttonStyle(PlainButtonStyle())
-#endif
+        .buttonStyle(.plain)
       }
     }
+  }
+
+  /// A shelf maps to a library category (via its filter's content type). Hide it from Home when the
+  /// user has hidden that section in Profile → Sections. Skeleton/filterless shelves always show.
+  private func isShelfVisible(_ shelf: HomeModel.Shelf) -> Bool {
+    guard let type = shelf.filter?.contentType else { return true }
+    return visibility.isVisible(.category(type))
   }
 
   @ViewBuilder
@@ -163,9 +169,7 @@ struct HomeView: View {
                      kinopoiskRating: item.kinopoiskRating)
           .overlay(alignment: .topTrailing) { MediaCardStatusBadge(item: item) }
         }
-#if os(macOS)
-        .buttonStyle(PlainButtonStyle())
-#endif
+        .buttonStyle(.plain)
       }
     }
   }
@@ -174,7 +178,7 @@ struct HomeView: View {
 struct HomeView_Previews: PreviewProvider {
   static var previews: some View {
     HomeView(model: HomeModel(itemsService: VideoContentServiceMock(),
-                              authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock()),
+                              authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock(), deviceService: DeviceServiceMock()),
                               errorHandler: ErrorHandler()))
   }
 }

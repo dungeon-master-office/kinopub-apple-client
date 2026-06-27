@@ -25,14 +25,19 @@ final class AuthState: ObservableObject {
   
   private var authService: AuthorizationService
   private var accessTokenService: AccessTokenService
-  
+  private var deviceService: DeviceService
+
   /// Initializes the `AuthState` with the provided services.
   /// - Parameters:
   ///   - authService: The authorization service used for authentication.
   ///   - accessTokenService: The access token service used for managing access tokens.
-  init(authService: AuthorizationService, accessTokenService: AccessTokenService) {
+  ///   - deviceService: Used to deregister this device from the account on logout.
+  init(authService: AuthorizationService,
+       accessTokenService: AccessTokenService,
+       deviceService: DeviceService) {
     self.authService = authService
     self.accessTokenService = accessTokenService
+    self.deviceService = deviceService
   }
   
   /// Checks the authentication state of the user.
@@ -87,8 +92,13 @@ final class AuthState: ObservableObject {
     return error is URLError
   }
 
-  /// Logs out the user.
-  func logout() {
+  /// Logs out the user. Deregisters this device from the account first (while the token is still
+  /// valid), then clears the local session. Device removal is best-effort — logout proceeds even if
+  /// it fails (e.g. offline).
+  func logout() async {
+    if let id = try? await deviceService.fetchCurrentDevice().id {
+      try? await deviceService.removeDevice(id: id)
+    }
     authService.logout()
     userState = .unauthorized
     shouldShowAuthentication = true

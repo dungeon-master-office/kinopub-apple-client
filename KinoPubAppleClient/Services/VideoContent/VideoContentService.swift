@@ -12,6 +12,10 @@ protocol VideoContentService {
   func fetch(shortcut: MediaShortcut, contentType: MediaType, page: Int?, forceRefresh: Bool) async throws -> PaginatedData<MediaItem>
   func search(query: String?, contentType: MediaType?, field: String?, page: Int?) async throws -> PaginatedData<MediaItem>
   func filter(filter: MediaItemsFilter, page: Int?, forceRefresh: Bool) async throws -> PaginatedData<MediaItem>
+  /// Films of a person via the `/v1/items?cast=`/`director=` FILTER (reliable, unlike the
+  /// `search?field=cast` full-text match). `field` is "cast" or "director"; no type restriction so
+  /// the full filmography (movies + series) is returned.
+  func itemsByPerson(name: String, field: String, page: Int?) async throws -> PaginatedData<MediaItem>
   func fetchGenres(type: MediaType?) async throws -> [MediaGenre]
   func fetchCountries() async throws -> [Country]
   func fetchDetails(for id: String) async throws -> SingleItemData<MediaItem>
@@ -50,6 +54,10 @@ struct VideoContentServiceMock: VideoContentService {
   }
 
   func filter(filter: MediaItemsFilter, page: Int?, forceRefresh: Bool) async throws -> PaginatedData<MediaItem> {
+    return PaginatedData.mock(data: [])
+  }
+
+  func itemsByPerson(name: String, field: String, page: Int?) async throws -> PaginatedData<MediaItem> {
     return PaginatedData.mock(data: [])
   }
 

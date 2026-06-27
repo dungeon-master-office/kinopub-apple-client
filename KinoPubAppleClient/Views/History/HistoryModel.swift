@@ -30,6 +30,8 @@ class HistoryModel: ObservableObject {
     self.contentService = itemsService
     self.authState = authState
     self.errorHandler = errorHandler
+    // Load on creation, not via the view's `.task` (unreliable in a compact split view / nested stack).
+    Task { await fetchItems() }
   }
 
   // MARK: - Derived state (filtering + day grouping)
@@ -119,12 +121,17 @@ class HistoryModel: ObservableObject {
   /// Remove a title from watch history (kinoapi `clear-for-media`), optimistically dropping it from
   /// the list and re-syncing on failure.
   func removeFromHistory(_ historyItem: HistoryItem) {
-    let mediaId = historyItem.item.id
-    historyItems.removeAll { $0.item.id == mediaId }
-    items.removeAll { $0.id == mediaId }
+    let itemId = historyItem.item.id
+    historyItems.removeAll { $0.item.id == itemId }
+    items.removeAll { $0.id == itemId }
+    // Also drop any locally-tracked progress so the title disappears from Continue Watching too.
+    AppContext.shared.localProgressStore.clear(id: itemId)
     Task {
       do {
-        try await AppContext.shared.actionsService.clearHistory(forMedia: mediaId)
+        // `clear-for-item` takes the ITEM id (the whole title). The old `clear-for-media` call passed
+        // the item id to an endpoint that expects a media id, so it silently cleared nothing and the
+        // entry came back on refresh.
+        try await AppContext.shared.actionsService.clearHistory(forItem: itemId)
         toastMessage = .info("Removed from history".localized)
       } catch {
         Logger.app.debug("clear history error: \(error)")

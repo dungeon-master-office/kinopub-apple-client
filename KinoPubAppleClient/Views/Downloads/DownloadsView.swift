@@ -142,10 +142,22 @@ struct DownloadsView: View {
     .listRowBackground(Color.KinoPub.background)
   }
 
+  /// Opens the player for a downloaded item. On macOS a `NavigationLink` inside a `List` row doesn't
+  /// fire on click, so push the route via a Button there; NavigationLink elsewhere (chevron + swipe).
+  @ViewBuilder
+  private func playRow(_ route: Route, @ViewBuilder label: () -> some View) -> some View {
+#if os(macOS)
+    Button { navigationState.downloadsRoutes.append(route) } label: { label() }
+      .buttonStyle(.plain)
+#else
+    NavigationLink(value: route) { label() }
+#endif
+  }
+
   /// Completed HLS downloads (.movpkg). Tapping opens the player; swipe deletes the bundle.
   var hlsCompletedList: some View {
     ForEach(catalog.hlsCompleted, id: \.relativePath) { asset in
-      NavigationLink(value: Route.player(asset.meta)) {
+      playRow(Route.player(asset.meta)) {
         DownloadedItemView(mediaItem: asset.meta, progress: nil, fileURL: asset.localFileURL) { _ in }
       }
       .contextMenu { detailLink(for: asset.meta) }
@@ -174,7 +186,7 @@ struct DownloadsView: View {
 
   var downloadedFilesList: some View {
     ForEach(catalog.downloadedItems, id: \.originalURL) { fileInfo in
-      NavigationLink(value: Route.player(fileInfo.metadata)) {
+      playRow(Route.player(fileInfo.metadata)) {
         DownloadedItemView(mediaItem: fileInfo.metadata, progress: nil, fileURL: fileInfo.localFileURL) { _ in }
       }
       .contextMenu { detailLink(for: fileInfo.metadata) }

@@ -22,6 +22,9 @@ public struct ContentItemsListView: View {
   /// Optional per-item long-press / right-click context menu (e.g. "Remove from folder"). When nil,
   /// no context menu is attached.
   public var contextMenu: ((MediaItem) -> AnyView)?
+  /// Optional content placed at the top of the scroll view, above the grid (e.g. a collection's meta
+  /// header) so it scrolls away with the content instead of being pinned.
+  public var header: AnyView
 
 #if os(iOS)
   @Environment(\.horizontalSizeClass) private var sizeClass
@@ -65,7 +68,8 @@ public struct ContentItemsListView: View {
               onRefresh: @escaping @Sendable () async -> Void,
               navigationLinkProvider: @escaping (MediaItem) -> any Hashable,
               statusOverlay: @escaping (MediaItem) -> AnyView = { _ in AnyView(EmptyView()) },
-              contextMenu: ((MediaItem) -> AnyView)? = nil) {
+              contextMenu: ((MediaItem) -> AnyView)? = nil,
+              header: AnyView = AnyView(EmptyView())) {
     self._items = items
     self.width = width
     self.onRefresh = onRefresh
@@ -73,10 +77,12 @@ public struct ContentItemsListView: View {
     self.navigationLinkProvider = navigationLinkProvider
     self.statusOverlay = statusOverlay
     self.contextMenu = contextMenu
+    self.header = header
   }
 
   public var body: some View {
     ScrollView {
+      header
       LazyVGrid(columns: gridLayout, spacing: 24, content: {
         ForEach(items, id: \.id) { item in
           itemCell(item)
@@ -95,9 +101,7 @@ public struct ContentItemsListView: View {
         .overlay(alignment: .topTrailing) { statusOverlay(item) }
         .onAppear { onLoadMoreContent(item) }
     }
-#if os(macOS)
-    .buttonStyle(PlainButtonStyle())
-#endif
+    .buttonStyle(.plain)
 
     if let contextMenu {
       cell.contextMenu { contextMenu(item) }

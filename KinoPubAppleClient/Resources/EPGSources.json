@@ -4,7 +4,7 @@
     {
       "id": "iptv.online",
       "url": "https://iptv.online/epg/epg-lite.xml",
-      "cacheHours": 6,
+      "cacheHours": 24,
       "map": {
         "Eurosport 1": "Xeurosport1",
         "Eurosport 2": "Xeurosport2",

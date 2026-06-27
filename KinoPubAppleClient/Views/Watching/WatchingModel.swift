@@ -92,6 +92,10 @@ class WatchingModel: ObservableObject {
     self.errorHandler = errorHandler
     self.tab = tab
     subscribeForReload()
+    // Load as soon as the model exists, decoupled from the view's `.task` (which doesn't reliably
+    // fire across the compact ↔ regular split-view transition / the sidebar detail's nested stack).
+    // `fetchItems` no-ops until authorized and retries via `subscribeForAuth`.
+    Task { await fetchItems() }
   }
 
   func fetchItems() async {

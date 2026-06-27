@@ -36,10 +36,7 @@ struct CollectionDetailView: View {
     } else if model.items.isEmpty {
       emptyState
     } else {
-      VStack(spacing: 0) {
-        metaHeader
-        itemsGrid
-      }
+      itemsGrid
     }
   }
 
@@ -78,7 +75,7 @@ struct CollectionDetailView: View {
 
   private var sortMenu: some View {
     Menu {
-      ForEach(CollectionItemsSort.allCases) { sort in
+      ForEach(MediaItemsSort.allCases) { sort in
         Button {
           model.selectedSort = sort
         } label: {
@@ -90,19 +87,18 @@ struct CollectionDetailView: View {
         }
       }
     } label: {
-      HStack(spacing: 4) {
+      // Icon-only toolbar control (a dot marks a non-default sort), matching the catalog screens.
+      ZStack(alignment: .topTrailing) {
         Image(systemName: "arrow.up.arrow.down")
-          .font(.system(size: 12))
-        Text(model.selectedSort.localizedTitle)
-          .font(.system(size: 13, weight: .semibold))
+          .font(.system(size: 16))
+        if model.selectedSort != .default {
+          Circle()
+            .fill(Color.KinoPub.accent)
+            .frame(width: 7, height: 7)
+            .offset(x: 5, y: -4)
+        }
       }
       .foregroundStyle(Color.KinoPub.accent)
-      .padding(.horizontal, 12)
-      .padding(.vertical, 6)
-      .background {
-        Capsule(style: .continuous)
-          .fill(Color.KinoPub.selectionBackground)
-      }
     }
     .menuStyle(.borderlessButton)
   }
@@ -117,7 +113,11 @@ struct CollectionDetailView: View {
                            },
                            navigationLinkProvider: { item in
                              RouteLinkProvider().link(for: item)
-                           }, statusOverlay: { AnyView(MediaCardStatusBadge(item: $0)) })
+                           },
+                           statusOverlay: { AnyView(MediaCardStatusBadge(item: $0)) },
+                           // Meta scrolls with the grid (was a pinned header that broke the large-title
+                           // → nav-bar-title collapse).
+                           header: AnyView(metaHeader))
     }
   }
 
