@@ -1,0 +1,34 @@
+name: CI
+
+# Compile-checks every push to the main branches and every PR, so "merge to main" is always green.
+on:
+  push:
+    branches: [ main, integration/all-issues ]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode
+        run: xcodebuild -version
+
+      - name: Build (iOS, unsigned)
+        run: |
+          xcodebuild \
+            -project KinoPubAppleClient.xcodeproj \
+            -scheme KinoPubAppleClient \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            build

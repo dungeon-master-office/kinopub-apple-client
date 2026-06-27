@@ -1,0 +1,38 @@
+name: Release
+
+# Cut a release by pushing a tag like `v1.0.0` (or run manually with a tag input).
+# Builds an unsigned IPA for sideloading and publishes a GitHub Release with auto-generated
+# changelog + the IPA attached.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag/version to release (e.g. v1.0.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode
+        run: xcodebuild -version
+
+      - name: Build unsigned IPA
+        run: ./scripts/build-ipa.sh
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: dist/*.ipa
+          fail_on_unmatched_files: true
