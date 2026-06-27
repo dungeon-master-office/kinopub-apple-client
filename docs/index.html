@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KinoPub</title>
+  <meta name="description" content="Unofficial kino.pub client for iPhone, iPad & Mac.">
+  <!-- Custom-scheme redirector: GitHub Markdown strips altstore://, so the README/wiki buttons point
+       here (https) and we forward to the app scheme on the device. -->
+  <script>
+    (function () {
+      try {
+        var r = new URLSearchParams(location.search).get('r');
+        if (r) { location.replace(r); }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, sans-serif;
+           background: #0e0e10; color: #eaeaea; margin: 0;
+           min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; }
+    .card { max-width: 440px; padding: 40px 24px; }
+    h1 { margin: .1em 0 .3em; font-size: 2rem; }
+    p { color: #b8b8be; line-height: 1.5; }
+    .btn { display: inline-block; margin: 8px 6px; padding: 12px 20px; border-radius: 12px;
+           text-decoration: none; font-weight: 600; }
+    .primary { background: #1F8AFF; color: #fff; }
+    .ghost { border: 1px solid #333; color: #eaeaea; }
+    #redir { display: none; color: #1F8AFF; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>KinoPub</h1>
+    <p>Unofficial kino.pub client for iPhone, iPad &amp; Mac. Community fork — not affiliated with kino.pub.</p>
+    <p id="redir">Opening your sideload app…</p>
+    <p>
+      <a class="btn primary" href="https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest">Download</a>
+      <a class="btn ghost" href="https://github.com/dungeon-master-office/kinopub-apple-client/wiki">Install guide &amp; FAQ</a>
+    </p>
+    <p><a class="ghost" style="border:none;color:#8a8a90" href="https://github.com/dungeon-master-office/kinopub-apple-client">Source on GitHub</a></p>
+  </div>
+  <script>
+    if (new URLSearchParams(location.search).get('r')) {
+      document.getElementById('redir').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
