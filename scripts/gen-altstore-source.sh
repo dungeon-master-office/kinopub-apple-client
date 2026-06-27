@@ -24,7 +24,22 @@ echo "==> Reading releases of ${REPO}"
 releases="$(gh api "repos/${REPO}/releases" --paginate)"
 
 # One version entry per release that ships an .ipa (newest first).
+# md2txt turns the release-please Markdown changelog into clean plain text for AltStore's "What's New".
 versions="$(echo "${releases}" | jq '
+  def md2txt:
+    (. // "")
+    | gsub("\r"; "")
+    | gsub("<!--[\\s\\S]*?-->"; "")                                   # HTML comments
+    | gsub("##\\s*\\[[^\\]]+\\]\\([^)]+\\)\\s*\\([^)]+\\)"; "")        # "## [x.y.z](url) (date)" header
+    | gsub("\\s*\\(\\[[0-9a-f]{6,}\\]\\([^)]+\\)\\)"; "")             # trailing ([hash](url))
+    | gsub("\\[(?<t>[^\\]]+)\\]\\([^)]+\\)"; .t)                      # [text](url) -> text
+    | gsub("\\*\\*"; "") | gsub("`"; "")                              # bold / code ticks
+    | gsub("(?m)^#{1,6}\\s*"; "")                                     # heading markers
+    | gsub("(?m)^\\s*Full Changelog.*$"; "")                         # GitHub auto footer
+    | gsub("(?m)^[*-]\\s+"; "• ")                                     # bullets
+    | gsub("\n{3,}"; "\n\n")
+    | sub("^\\s+"; "") | sub("\\s+$"; "")
+    | if . == "" then "Bug fixes and improvements." else . end;
   [ .[]
     | select(.draft == false)
     | . as $r
@@ -32,7 +47,7 @@ versions="$(echo "${releases}" | jq '
     | {
         version: ($r.tag_name | ltrimstr("v")),
         date: ($r.published_at | split("T")[0]),
-        localizedDescription: (($r.body // "") | gsub("\r"; "") | .[0:1500]),
+        localizedDescription: ($r.body | md2txt | .[0:1500]),
         downloadURL: $ipa.browser_download_url,
         size: $ipa.size,
         minOSVersion: "16.0"
