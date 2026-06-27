@@ -78,6 +78,14 @@ jq -n \
       tintColor: "FF6500",
       category: "entertainment",
       screenshotURLs: $screenshots,
+
+      # Legacy AltStore fields (older AltStore reads these top-level keys; newer reads `versions`).
+      version: ($versions[0].version // "1.0"),
+      versionDate: ($versions[0].date // ""),
+      versionDescription: ($versions[0].localizedDescription // ""),
+      downloadURL: ($versions[0].downloadURL // ""),
+      size: ($versions[0].size // 0),
+
       versions: $versions
     }
   ],
