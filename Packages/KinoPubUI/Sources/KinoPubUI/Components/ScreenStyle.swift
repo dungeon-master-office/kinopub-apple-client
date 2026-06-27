@@ -77,11 +77,17 @@ public extension View {
   /// floating islands over the scrolling content instead of a flat opaque bar.
   @ViewBuilder
   func glassCapsule() -> some View {
+    // `glassEffect` only exists in the iOS/macOS 26 SDK (Xcode 26 = Swift 6.2). Compile-time gate so
+    // older toolchains (e.g. CI on Xcode 16) still build, falling back to a material capsule.
+#if compiler(>=6.2)
     if #available(iOS 26.0, macOS 26.0, *) {
       self.glassEffect(.regular, in: Capsule())
     } else {
       self.background(.ultraThinMaterial, in: Capsule())
     }
+#else
+    self.background(.ultraThinMaterial, in: Capsule())
+#endif
   }
 }
 
