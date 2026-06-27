@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/dungeon-master-office/kinopub-apple-client/compare/v1.1.1...v1.1.2) (2026-06-27)
+
+
+### 🐛 Fixes
+
+* sync app version across project, settings and releases ([d2d947c](https://github.com/dungeon-master-office/kinopub-apple-client/commit/d2d947ca0035eab8e3748072050b1426512c9a98))
+
 ## [1.1.1](https://github.com/dungeon-master-office/kinopub-apple-client/compare/v1.1.0...v1.1.1) (2026-06-27)
 
 
