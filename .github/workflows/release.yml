@@ -24,7 +24,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
+  ios:
+    name: iOS IPA
     runs-on: macos-15
     timeout-minutes: 60
     steps:
@@ -46,3 +47,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${{ steps.tag.outputs.tag }}" dist/*.ipa --clobber --repo "${{ github.repository }}"
+
+  macos:
+    name: macOS app
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Resolve tag
+        id: tag
+        run: echo "tag=${{ github.event.release.tag_name || github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Show Xcode
+        run: xcodebuild -version
+
+      - name: Build macOS app (ad-hoc signed)
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: ./scripts/build-macos.sh
+
+      - name: Upload macOS zip to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ steps.tag.outputs.tag }}" dist/*-macOS-*.zip --clobber --repo "${{ github.repository }}"

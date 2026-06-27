@@ -1,2 +1,23 @@
+# Build output
+build/
 build-ipad/
+build-macos/
+dist/
+DerivedData/
+*.xcarchive
+*.ipa
+
+# Xcode user-specific data (also avoids leaking local usernames)
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# Local icon exports (sources kept locally, not in the repo)
 AppIcon Exports/
