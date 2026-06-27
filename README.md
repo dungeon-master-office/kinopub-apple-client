@@ -7,6 +7,7 @@ Native **iOS · iPadOS · macOS · tvOS** client for the [kino.pub](https://kino
 [![CI](https://github.com/dungeon-master-office/kinopub-apple-client/actions/workflows/ci.yml/badge.svg)](https://github.com/dungeon-master-office/kinopub-apple-client/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/dungeon-master-office/kinopub-apple-client?sort=semver)](https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/dungeon-master-office/kinopub-apple-client/total)](https://github.com/dungeon-master-office/kinopub-apple-client/releases)
+[![AltStore source](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json&query=%24.apps%5B0%5D.versions%5B0%5D.version&prefix=v&label=AltStore&color=1F8AFF)](#auto-updating-source-altstore--sidestore--feather)
 [![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20iPadOS%20%7C%20macOS%20%7C%20tvOS-blue)](#requirements)
 [![Last commit](https://img.shields.io/github/last-commit/dungeon-master-office/kinopub-apple-client)](https://github.com/dungeon-master-office/kinopub-apple-client/commits/main)
 
@@ -68,9 +69,9 @@ Add this repo as a source to install in one tap and **get new versions automatic
 
 [![AltStore source](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json&query=%24.apps%5B0%5D.versions%5B0%5D.version&prefix=v&label=AltStore%20source&style=for-the-badge&color=1F8AFF)](https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest)
 
-[![Add to AltStore](https://img.shields.io/badge/Add_to-AltStore-1F8AFF?style=for-the-badge)](https://intradeus.github.io/http-protocol-redirector?r=altstore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)
+[![Add to AltStore](https://img.shields.io/badge/Add_to-AltStore-1F8AFF?style=for-the-badge)](https://dungeon-master-office.github.io/kinopub-apple-client/?r=altstore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)
 &nbsp;
-[![Add to SideStore](https://img.shields.io/badge/Add_to-SideStore-8A4FFF?style=for-the-badge)](https://intradeus.github.io/http-protocol-redirector?r=sidestore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)
+[![Add to SideStore](https://img.shields.io/badge/Add_to-SideStore-8A4FFF?style=for-the-badge)](https://dungeon-master-office.github.io/kinopub-apple-client/?r=sidestore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)
 
 </div>
 
