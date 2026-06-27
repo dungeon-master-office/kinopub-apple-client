@@ -203,6 +203,13 @@ class PlayerManager: ObservableObject {
       if let chosen, FileManager.default.fileExists(atPath: chosen.localFileURL.path) {
         return chosen.localFileURL
       }
+      // A 3D title needs a progressive (non-HLS) source: AVVideoComposition (the SBS/OU/anaglyph
+      // reshaping) is ignored on HLS, so streaming via hls4 would just show the raw packed image.
+      // Use the direct mp4 URL so the 3D composition actually applies.
+      if is3D {
+        let mp4 = BestVideoQualityFinder.bestProgressiveURL(for: playItem.files)
+        if !mp4.isEmpty, let url = URL(string: mp4) { return url }
+      }
       let urlString = BestVideoQualityFinder.findBestURL(for: playItem.files)
       guard !urlString.isEmpty, let url = URL(string: urlString) else { return nil }
       return url
