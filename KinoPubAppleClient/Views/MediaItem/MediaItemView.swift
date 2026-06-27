@@ -298,7 +298,7 @@ struct MediaItemView: View {
     }
     bookmarkMenu
     downloadButton
-    if mediaItem.type.lowercased() == "3d" {
+    if FeatureFlags.threeDEnabled, mediaItem.type.lowercased() == "3d" {
       threeDModeButton
     }
     // Trailer button removed from the hero — the Trailers shelf below already exposes it.

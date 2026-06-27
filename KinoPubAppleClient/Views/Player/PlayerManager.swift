@@ -15,6 +15,15 @@ import CoreImage
 import KinoPubLogging
 import OSLog
 
+/// Central feature toggles. Flip to re-enable work-in-progress features.
+enum FeatureFlags {
+  /// 3D (stereoscopic) playback. OFF: `AVVideoComposition`'s SBS/OU/anaglyph reshaping doesn't
+  /// reliably apply to kino.pub's streams (shows a doubled/packed image), so the whole feature —
+  /// the detail-page mode picker and the player composition — is hidden until reworked (likely a
+  /// Metal / `AVPlayerItemVideoOutput` renderer instead of `AVVideoComposition`).
+  static let threeDEnabled = false
+}
+
 /// How a stereoscopic (3D) source is shown on a flat screen. True stereo can't be output on
 /// iPhone/iPad/Mac, so the choices are: pick one eye (normal 2D) or red-cyan anaglyph (for glasses).
 /// The source can be packed Side-by-Side (two eyes left/right) or Over-Under (top/bottom).
@@ -109,7 +118,7 @@ class PlayerManager: ObservableObject {
   @Published var playbackError: String?
   
   /// Whether the playing title is a 3D (stereoscopic) release, so the player offers 3D view modes.
-  var is3D: Bool { (playItem as? MediaItem)?.type.lowercased() == "3d" }
+  var is3D: Bool { FeatureFlags.threeDEnabled && (playItem as? MediaItem)?.type.lowercased() == "3d" }
   /// Current 3D view mode (Off for non-3D titles).
   @Published var threeDMode: ThreeDMode = .off
 
@@ -230,7 +239,7 @@ class PlayerManager: ObservableObject {
     self.downloadedFilesDatabase = downloadedFilesDatabase
     // A 3D title starts in the user's last-chosen mode (default: one eye as 2D, so it's watchable —
     // raw packed stereo would show a doubled image).
-    if watchMode == .media, (playItem as? MediaItem)?.type.lowercased() == "3d" {
+    if watchMode == .media, is3D {
       threeDMode = PlayerManager.preferredThreeDMode
     }
     // Seed the resume point synchronously from the local store so the native "Continue" prompt can
