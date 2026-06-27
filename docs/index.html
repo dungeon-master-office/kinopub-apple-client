@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>KinoPub</title>
-  <meta name="description" content="Unofficial kino.pub client for iPhone, iPad & Mac.">
-  <!-- Custom-scheme redirector: GitHub Markdown strips altstore://, so the README/wiki buttons point
-       here (https) and we forward to the app scheme on the device. -->
+  <title>KinoPub — Apple client</title>
+  <meta name="description" content="Unofficial kino.pub client for iPhone, iPad & Mac. One-tap install via AltStore / SideStore.">
+  <!-- Custom-scheme redirector: GitHub Markdown strips altstore://, so README/wiki buttons point here
+       (https) and we forward to the app scheme on the device. -->
   <script>
     (function () {
       try {
@@ -17,30 +17,55 @@
   </script>
   <style>
     :root { color-scheme: dark; }
-    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, sans-serif;
-           background: #0e0e10; color: #eaeaea; margin: 0;
-           min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; }
-    .card { max-width: 440px; padding: 40px 24px; }
-    h1 { margin: .1em 0 .3em; font-size: 2rem; }
-    p { color: #b8b8be; line-height: 1.5; }
-    .btn { display: inline-block; margin: 8px 6px; padding: 12px 20px; border-radius: 12px;
-           text-decoration: none; font-weight: 600; }
-    .primary { background: #1F8AFF; color: #fff; }
-    .ghost { border: 1px solid #333; color: #eaeaea; }
-    #redir { display: none; color: #1F8AFF; font-weight: 600; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+           background: #0e0e10; color: #eaeaea; margin: 0; padding: 48px 20px; }
+    .wrap { max-width: 880px; margin: 0 auto; text-align: center; }
+    h1 { font-size: 2.4rem; margin: .1em 0 .2em; }
+    .tag { color: #b8b8be; line-height: 1.5; max-width: 560px; margin: 0 auto 28px; }
+    .fork { color: #8a8a90; font-size: .9rem; }
+    .btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 24px 0 8px; }
+    .btn { display: inline-flex; align-items: center; padding: 13px 22px; border-radius: 13px;
+           text-decoration: none; font-weight: 600; font-size: 1rem; }
+    .primary  { background: #eaeaea; color: #111; }
+    .altstore { background: #1F8AFF; color: #fff; }
+    .sidestore{ background: #8A4FFF; color: #fff; }
+    .ghost    { border: 1px solid #2c2c30; color: #eaeaea; }
+    #redir { display: none; color: #1F8AFF; font-weight: 600; margin-top: 8px; }
+    .shots { display: flex; gap: 14px; overflow-x: auto; padding: 28px 4px 8px; scroll-snap-type: x mandatory; }
+    .shots img { height: 420px; border-radius: 18px; border: 1px solid #1d1d20; scroll-snap-align: center; }
+    .src { display: block; margin-top: 26px; color: #8a8a90; }
+    code { background: #1a1a1e; padding: 3px 8px; border-radius: 7px; color: #cfd; font-size: .85rem; }
   </style>
 </head>
 <body>
-  <div class="card">
+  <div class="wrap">
     <h1>KinoPub</h1>
-    <p>Unofficial kino.pub client for iPhone, iPad &amp; Mac. Community fork — not affiliated with kino.pub.</p>
+    <p class="tag">Native <strong>iOS · iPadOS · macOS · tvOS</strong> client for kino.pub.
+       One-tap install via AltStore / SideStore — with automatic updates.</p>
     <p id="redir">Opening your sideload app…</p>
-    <p>
-      <a class="btn primary" href="https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest">Download</a>
-      <a class="btn ghost" href="https://github.com/dungeon-master-office/kinopub-apple-client/wiki">Install guide &amp; FAQ</a>
-    </p>
-    <p><a class="ghost" style="border:none;color:#8a8a90" href="https://github.com/dungeon-master-office/kinopub-apple-client">Source on GitHub</a></p>
+
+    <div class="btns">
+      <a class="btn altstore"  href="./?r=altstore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json">➕ Add to AltStore</a>
+      <a class="btn sidestore" href="./?r=sidestore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json">➕ Add to SideStore</a>
+      <a class="btn primary"   href="https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest">⬇︎ Download IPA / macOS</a>
+      <a class="btn ghost"     href="https://github.com/dungeon-master-office/kinopub-apple-client/wiki">📖 Install guide &amp; FAQ</a>
+    </div>
+    <p class="fork">Manual source URL: <code>https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest/download/apps.json</code></p>
+
+    <div class="shots">
+      <img src="https://raw.githubusercontent.com/dungeon-master-office/kinopub-apple-client/main/Screenshots/6.jpeg" alt="screenshot" loading="lazy">
+      <img src="https://raw.githubusercontent.com/dungeon-master-office/kinopub-apple-client/main/Screenshots/5.jpeg" alt="screenshot" loading="lazy">
+      <img src="https://raw.githubusercontent.com/dungeon-master-office/kinopub-apple-client/main/Screenshots/7.jpeg" alt="screenshot" loading="lazy">
+      <img src="https://raw.githubusercontent.com/dungeon-master-office/kinopub-apple-client/main/Screenshots/10.jpeg" alt="screenshot" loading="lazy">
+      <img src="https://raw.githubusercontent.com/dungeon-master-office/kinopub-apple-client/main/Screenshots/1.jpeg" alt="screenshot" loading="lazy">
+      <img src="https://raw.githubusercontent.com/dungeon-master-office/kinopub-apple-client/main/Screenshots/8.jpeg" alt="screenshot" loading="lazy">
+    </div>
+
+    <a class="src" href="https://github.com/dungeon-master-office/kinopub-apple-client">Source on GitHub →</a>
+    <p class="fork">Community fork of leoru/kinopub-apple-client. Not affiliated with kino.pub.</p>
   </div>
+
   <script>
     if (new URLSearchParams(location.search).get('r')) {
       document.getElementById('redir').style.display = 'block';
