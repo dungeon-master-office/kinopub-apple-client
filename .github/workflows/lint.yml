@@ -30,10 +30,19 @@ jobs:
 
       - name: SwiftLint
         run: |
-          swiftlint version
-          swiftlint lint --quiet || true
+          if command -v swiftlint >/dev/null 2>&1; then
+            swiftlint version
+            swiftlint lint --quiet || true
+          else
+            echo "::notice::SwiftLint not available on this runner image — skipping."
+          fi
 
       - name: swift-format lint
         run: |
-          swift format --version || xcrun swift-format --version || true
-          (swift format lint --recursive --parallel . || xcrun swift-format lint --recursive --parallel .) || true
+          if command -v swift-format >/dev/null 2>&1; then
+            swift-format lint --recursive --parallel . || true
+          elif swift format --version >/dev/null 2>&1; then
+            swift format lint --recursive --parallel . || true
+          else
+            echo "::notice::swift-format not available — skipping."
+          fi
