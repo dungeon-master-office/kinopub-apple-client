@@ -62,15 +62,22 @@ yourself — full step-by-step guide in the **[Wiki](https://github.com/dungeon-
 
 ### Auto-updating source (AltStore · SideStore · Feather)
 
-Add this repo as a source to install and **get new versions automatically**:
+Add this repo as a source to install in one tap and **get new versions automatically**.
 
-```
-https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest/download/apps.json
-```
+<div align="center">
 
-One-tap on your iPhone/iPad:
-**[➕ Add to AltStore](altstore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)** ·
-**[➕ Add to SideStore](sidestore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)**
+[![AltStore source](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json&query=%24.apps%5B0%5D.versions%5B0%5D.version&prefix=v&label=AltStore%20source&style=for-the-badge&color=1F8AFF)](https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest)
+
+[![Add to AltStore](https://img.shields.io/badge/Add_to-AltStore-1F8AFF?style=for-the-badge)](https://intradeus.github.io/http-protocol-redirector?r=altstore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)
+&nbsp;
+[![Add to SideStore](https://img.shields.io/badge/Add_to-SideStore-8A4FFF?style=for-the-badge)](https://intradeus.github.io/http-protocol-redirector?r=sidestore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-office%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)
+
+</div>
+
+> Tap the buttons **on your iPhone/iPad**. Or add the source URL manually in AltStore/SideStore → Browse → Sources → ➕:
+> ```
+> https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest/download/apps.json
+> ```
 
 You'll need an active kino.pub subscription; sign in with the on-screen device code.
 
