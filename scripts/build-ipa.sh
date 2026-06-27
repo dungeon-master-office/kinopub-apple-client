@@ -28,11 +28,18 @@ PRODUCTS_DIR="${BUILD_DIR}/Build/Products/${CONFIGURATION}-iphoneos"
 
 cd "${ROOT_DIR}"
 
+# Version: Release Please manages version.txt (the SemVer marketing version); the build number comes
+# from CI (the run number) or defaults to 1 locally. Both are injected at build time so the project
+# file doesn't need to be edited per release.
+MARKETING_VERSION="$(tr -d '[:space:]' < "${ROOT_DIR}/version.txt" 2>/dev/null || true)"
+MARKETING_VERSION="${MARKETING_VERSION:-1.0}"
+BUILD_NUMBER="${BUILD_NUMBER:-1}"
+
 echo "==> Cleaning previous build"
 rm -rf "${BUILD_DIR}"
 mkdir -p "${DIST_DIR}"
 
-echo "==> Building ${SCHEME} (${CONFIGURATION}) for device, unsigned, bundle id: ${BUNDLE_ID}"
+echo "==> Building ${SCHEME} (${CONFIGURATION}) for device, unsigned, bundle id: ${BUNDLE_ID}, version: ${MARKETING_VERSION} (${BUILD_NUMBER})"
 xcodebuild \
   -project "${PROJECT}" \
   -scheme "${SCHEME}" \
@@ -42,6 +49,8 @@ xcodebuild \
   -destination "generic/platform=iOS" \
   -skipPackagePluginValidation \
   PRODUCT_BUNDLE_IDENTIFIER="${BUNDLE_ID}" \
+  MARKETING_VERSION="${MARKETING_VERSION}" \
+  CURRENT_PROJECT_VERSION="${BUILD_NUMBER}" \
   CODE_SIGNING_ALLOWED=NO \
   CODE_SIGNING_REQUIRED=NO \
   CODE_SIGN_IDENTITY="" \

@@ -1,0 +1,39 @@
+name: Lint
+
+# SwiftLint + swift-format style checks. Informational (not a required check) so it surfaces issues
+# as annotations without blocking merges while the codebase is brought up to standard.
+on:
+  push:
+    branches: [ main, integration/all-issues ]
+    paths: [ '**/*.swift', '.swiftlint.yml', '.swift-format', '.github/workflows/lint.yml' ]
+  pull_request:
+    branches: [ main, integration/all-issues ]
+    paths: [ '**/*.swift', '.swiftlint.yml', '.swift-format' ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    # Don't burn minutes on fork PRs automatically.
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SwiftLint
+        run: |
+          swiftlint version
+          swiftlint lint --quiet || true
+
+      - name: swift-format lint
+        run: |
+          swift format --version || xcrun swift-format --version || true
+          (swift format lint --recursive --parallel . || xcrun swift-format lint --recursive --parallel .) || true

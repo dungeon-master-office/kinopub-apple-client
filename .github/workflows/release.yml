@@ -1,24 +1,26 @@
 name: Release
 
-# Cut a release by pushing a tag like `v1.0.0` (or run manually with a tag input).
-# Builds an unsigned IPA for sideloading and publishes a GitHub Release with auto-generated
-# changelog + the IPA attached.
+# Builds the unsigned IPA and attaches it to a release.
+# - Automatic: when Release Please publishes a GitHub Release (after a release PR is merged).
+# - Manual: workflow_dispatch with an existing tag, or push a v* tag yourself.
 on:
+  release:
+    types: [ published ]
   push:
     tags:
       - 'v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag/version to release (e.g. v1.0.0)'
+        description: 'Existing tag to (re)build & attach the IPA to (e.g. v1.0.0)'
         required: true
 
 permissions:
   contents: write
 
-# A release per tag should never be cancelled mid-flight by a newer one.
+# A release build per tag should never be cancelled mid-flight by a newer one.
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.event.release.tag_name || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -28,17 +30,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Resolve tag
+        id: tag
+        run: echo "tag=${{ github.event.release.tag_name || github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
       - name: Show Xcode
         run: xcodebuild -version
 
       - name: Build unsigned IPA
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
         run: ./scripts/build-ipa.sh
 
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          name: ${{ github.event.inputs.tag || github.ref_name }}
-          generate_release_notes: true
-          files: dist/*.ipa
-          fail_on_unmatched_files: true
+      - name: Upload IPA to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ steps.tag.outputs.tag }}" dist/*.ipa --clobber --repo "${{ github.repository }}"

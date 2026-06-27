@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Installation guide & FAQ
+    url: https://github.com/dungeon-master-office/kinopub-apple-client/wiki
+    about: How to install the app (AltStore, Sideloadly, TrollStore…) and common problems.
+  - name: 💬 Discussions
+    url: https://github.com/dungeon-master-office/kinopub-apple-client/discussions
+    about: Questions, ideas, and general help.
+  - name: ⚠️ kino.pub account/subscription issues
+    url: https://kino.pub
+    about: Problems with the kino.pub service or your subscription are not handled here.

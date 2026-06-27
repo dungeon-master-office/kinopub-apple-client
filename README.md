@@ -1,56 +1,82 @@
-# kino.pub Apple Cross-Platform Client
+<div align="center">
 
-This is the iOS, iPadOS and macOS client for the kino.pub service built with SwiftUI. 
+# KinoPub — Apple Client
 
-# Requirements
+Native **iOS · iPadOS · macOS · tvOS** client for the [kino.pub](https://kino.pub) service, built with SwiftUI.
 
-- macOS 13.0.
-- Xcode 15.0.
-- Swift 5.8.
+[![CI](https://github.com/dungeon-master-office/kinopub-apple-client/actions/workflows/ci.yml/badge.svg)](https://github.com/dungeon-master-office/kinopub-apple-client/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/dungeon-master-office/kinopub-apple-client?sort=semver)](https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/dungeon-master-office/kinopub-apple-client/total)](https://github.com/dungeon-master-office/kinopub-apple-client/releases)
+[![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20iPadOS%20%7C%20macOS%20%7C%20tvOS-blue)](#requirements)
+[![Last commit](https://img.shields.io/github/last-commit/dungeon-master-office/kinopub-apple-client)](https://github.com/dungeon-master-office/kinopub-apple-client/commits/main)
 
-# Supported Platforms
+📥 **[Install](https://github.com/dungeon-master-office/kinopub-apple-client/wiki/Установка)** · 📖 **[Wiki / FAQ](https://github.com/dungeon-master-office/kinopub-apple-client/wiki)** · 🏷 **[Releases](https://github.com/dungeon-master-office/kinopub-apple-client/releases)**
 
-- iOS 16.0.
-- macOS 13.0.
+</div>
 
-## App Structure
+---
 
-The app is structured using the Swift Package Manager with the following packages:
+> ℹ️ **Community fork.** This is an actively-maintained fork of
+> [leoru/kinopub-apple-client](https://github.com/leoru/kinopub-apple-client) with many additional
+> features and cross-platform fixes. All credit for the original project goes to the upstream authors.
 
-- `KinoPubAppleClient` - The main app target containing shared code across platforms.
-- `KinoPubUI` - Reusable SwiftUI components.
-- `KinoPubKit` - Shared business logic.
-- `KinoPubBackend` - Networking layer.
+## Features
 
-The main app target KinoPubAppleClient contains the following folders:
+- 🎬 Catalog of movies & series, collections, bookmarks, watch history, "continue watching"
+- 🔎 Search by title **and** by cast / crew (full person pages)
+- ⬇️ Offline downloads (iOS HLS `.movpkg`, macOS/fallback mp4)
+- 📺 4K / HEVC / **HDR10** on capable devices
+- 🏟 Sport channels with multi-source EPG
+- 🧊 3D video player (SBS / Over-Under, anaglyph)
+- 🖥 Native macOS UI & full-screen player; 🍎 Apple TV UI
+- 🌍 16 UI languages
 
-- App - Application lifecycle code like app delegates.
-- Resources - Resources like GoogleService-Info.plist.
-- Views - SwiftUI view code organized by feature.
-- Services - Services for things like analytics and networking.
-- States - app states e.g. navigation, auth.
-- Custom - various custom classes.
-- Context - dependencies context e.g. services, managers.
+## Install
 
-## Third Party Libraries
+The app is distributed as an **unsigned IPA** in [Releases](https://github.com/dungeon-master-office/kinopub-apple-client/releases/latest)
+(it's not on the App Store). Install it with AltStore, SideStore, Sideloadly, TrollStore, or sign it
+yourself — full step-by-step guide in the **[Wiki](https://github.com/dungeon-master-office/kinopub-apple-client/wiki/Установка)**.
 
-The following third party libraries are used:
+You'll need an active kino.pub subscription; sign in with the on-screen device code.
 
-- [Firebase](https://firebase.google.com) - For authentication, analytics, crash reporting.
-- [PopupView](https://github.com/exyte/PopupView) - For displaying popups and overlays.
-- [KeychainAccess](https://github.com/kishikawakatsumi/KeychainAccess) - For storing data in the keychain.
-- [SkeletonUI](https://github.com/CSolanaM/SkeletonUI) - For rendering loading states.
+## Requirements
 
+- iOS / iPadOS **16+**, macOS **13+**
+- To build: **Xcode 16+** (Xcode 26 for the iOS 26 Liquid Glass icon & effects)
 
-## Packages
+## Building
 
-- `KinoPubUI` - Contains reusable SwiftUI components like buttons, texts, etc.
-- `KinoPubKit` - Shared business logic for things like authentication and data models.
-- `KinoPubBackend` - Networking layer that interfaces with the kino.pub API.
-- `KinoPubLogging` - Small package containing extensions for OSLog.
+```bash
+git clone https://github.com/dungeon-master-office/kinopub-apple-client.git
+cd kinopub-apple-client
+open KinoPubAppleClient.xcodeproj
+```
 
-# Contributing
+In **Signing & Capabilities** pick your team (the repo ships an empty `DEVELOPMENT_TEAM` — don't commit
+yours), then build & run. To produce an unsigned IPA locally: `./scripts/build-ipa.sh`.
 
-- Suggest your idea as a [feature request](https://github.com/leoru/kinopub-apple-client/issues/new?assignees=&labels=&template=feature_request.md&title=) for this project.
-- Create a [bug report](https://github.com/leoru/kinopub-apple-client/issues/new?assignees=&labels=&template=bug_report.md&title=) to help us improve.
-- Propose your own fixes, suggestions and open a pull request with the changes.
+## Project structure
+
+Swift Package Manager workspace:
+
+| Package | Purpose |
+|---|---|
+| `KinoPubAppleClient` | Main app target, shared across platforms |
+| `KinoPubUI` | Reusable SwiftUI components |
+| `KinoPubKit` | Shared business logic |
+| `KinoPubBackend` | Networking layer (kino.pub API) |
+| `KinoPubLogging` | OSLog helpers |
+
+Third-party: [PopupView](https://github.com/exyte/PopupView), [KeychainAccess](https://github.com/kishikawakatsumi/KeychainAccess),
+[SkeletonUI](https://github.com/CSolanaM/SkeletonUI), [Reachability](https://github.com/ashleymills/Reachability.swift).
+
+## Contributing
+
+Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). We use Conventional Commits; releases
+are automated via Release Please. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## License
+
+The upstream project ships **no license**, so this fork does not relicense it. All rights remain with
+the original authors; this fork is provided for personal/educational use. See [SECURITY.md](SECURITY.md)
+for vulnerability reporting.

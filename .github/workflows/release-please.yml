@@ -1,0 +1,25 @@
+name: Release Please
+
+# Conventional-commit driven SemVer. On every push to main, opens/updates a "release PR" that bumps
+# version.txt + CHANGELOG.md. Merging that PR creates the tag vX.Y.Z and the GitHub Release, which in
+# turn triggers the Release workflow to build & attach the IPA.
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

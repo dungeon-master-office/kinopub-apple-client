@@ -1,0 +1,18 @@
+# Normalize line endings
+* text=auto eol=lf
+
+# Treat Xcode project files as binary-ish to avoid noisy/garbled merges
+*.pbxproj merge=union linguist-generated=true
+*.xcworkspacedata text eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.movpkg binary
+*.svg text
+
+# Language stats: count the app as Swift, ignore vendored/generated
+Packages/** linguist-vendored=false
+*.xcstrings linguist-generated=true
