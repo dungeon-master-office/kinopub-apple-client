@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.2.0](https://github.com/dungeon-master-office/kinopub-apple-client/compare/v1.1.1...v1.2.0) (2026-06-27)
+
+
+### ✨ Features
+
+* AltStore/SideStore source for one-tap install + auto-updates ([d302bc4](https://github.com/dungeon-master-office/kinopub-apple-client/commit/d302bc49a39e82ad76dedf01aae4a86539d821ba))
+* GitHub Pages redirector for one-tap AltStore/SideStore source links ([ec616da](https://github.com/dungeon-master-office/kinopub-apple-client/commit/ec616da6e52e052630395ad8307733fda4e0275a))
+* **settings:** add About section (source code, report a problem, install guide) ([b3771e2](https://github.com/dungeon-master-office/kinopub-apple-client/commit/b3771e250f6abbaf426d40c200759318988bb2b3))
+
+
+### 🐛 Fixes
+
+* **altstore:** include legacy source fields for older AltStore compatibility ([f3a1a7b](https://github.com/dungeon-master-office/kinopub-apple-client/commit/f3a1a7ba7c4bab0e6428c415d0f8a1b4f1155f98))
+* render clean plain-text What's New in AltStore source (strip Markdown) ([e76b783](https://github.com/dungeon-master-office/kinopub-apple-client/commit/e76b783c9e68ecab5809e640a434eab9f51721dc))
+* sync app version across project, settings and releases ([d2d947c](https://github.com/dungeon-master-office/kinopub-apple-client/commit/d2d947ca0035eab8e3748072050b1426512c9a98))
+
+
+### 📝 Docs
+
+* AltStore/SideStore install banner with badges in README ([dc7c8aa](https://github.com/dungeon-master-office/kinopub-apple-client/commit/dc7c8aadd33d99760b8f2ff6fc1bfff2dba749de))
+* landing page with AltStore/SideStore buttons + screenshots ([099f3e5](https://github.com/dungeon-master-office/kinopub-apple-client/commit/099f3e5a6254eaef01e59f1536c40b24bb078cbd))
+* top AltStore version badge + use self-hosted Pages redirector for source buttons ([40aba5a](https://github.com/dungeon-master-office/kinopub-apple-client/commit/40aba5aa7fadac0f2635d9f150b1405db0e8ba8f))
+
 ## [1.1.1](https://github.com/dungeon-master-office/kinopub-apple-client/compare/v1.1.0...v1.1.1) (2026-06-27)
 
 
