@@ -105,23 +105,17 @@ struct MediaItemDescriptionCard: View {
           }
         }
       }
-#if os(macOS)
-      .buttonStyle(PlainButtonStyle())
-#endif
+      .buttonStyle(.plain)
       
       Button(action: { onWatchedToggle() }, label: {
         image(imageName: "eye")
       })
-#if os(macOS)
-      .buttonStyle(PlainButtonStyle())
-#endif
+      .buttonStyle(.plain)
 
       Button(action: { onWatchlistToggle() }, label: {
         image(imageName: "text.badge.plus")
       })
-#if os(macOS)
-      .buttonStyle(PlainButtonStyle())
-#endif
+      .buttonStyle(.plain)
 
       Button(action: {
         onBookmarkHandle()
@@ -137,18 +131,14 @@ struct MediaItemDescriptionCard: View {
           }
         }
       }
-#if os(macOS)
-      .buttonStyle(PlainButtonStyle())
-#endif
+      .buttonStyle(.plain)
 
       if let imdb = mediaItem.imdb, imdb > 0,
          let imdbURL = URL(string: "https://www.imdb.com/title/tt\(String(format: "%07d", imdb))/") {
         Link(destination: imdbURL) {
           image(imageName: "film")
         }
-#if os(macOS)
-        .buttonStyle(PlainButtonStyle())
-#endif
+        .buttonStyle(.plain)
       }
 
       if let kinopoisk = mediaItem.kinopoisk, kinopoisk > 0,
@@ -156,9 +146,7 @@ struct MediaItemDescriptionCard: View {
         Link(destination: kinopoiskURL) {
           image(imageName: "star.circle")
         }
-#if os(macOS)
-        .buttonStyle(PlainButtonStyle())
-#endif
+        .buttonStyle(.plain)
       }
     }
 

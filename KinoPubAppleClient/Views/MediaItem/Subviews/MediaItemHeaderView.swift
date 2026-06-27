@@ -21,7 +21,7 @@ struct MediaItemHeaderView: View {
   public var mediaItem: MediaItem
   public var linkProvider: NavigationLinkProvider
   public var isSkeleton: Bool
-  
+
   public init(size: HeaderSize = .standard,
               mediaItem: MediaItem,
               linkProvider: NavigationLinkProvider,

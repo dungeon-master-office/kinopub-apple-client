@@ -109,11 +109,16 @@ public struct FilterItemsRequest: Endpoint {
       params["sort"] = sort
     }
 
-    // Only the params above are honored by the mobile /v1/items API (verified against the live API).
-    // The web's rating / subtitles / period / language / translation / age / HD / 4K / AC3 filters
-    // are rendered server-side on the website and silently ignored by /v1/items, so we no longer
-    // send them. The ones we can reproduce (rating, HD/4K, AC3, period) are applied client-side on
-    // the results — see `MediaItemsFilter.clientSideMatches`.
+    // Period (e.g. popular-this-month) maps to the web's `period` param. Sent server-side rather than
+    // approximated client-side by `created_at` — that approximation is wrong for a views/watchers
+    // ranking (it means "added recently", which would empty a popularity-sorted list).
+    if let period = period, !period.isEmpty {
+      params["period"] = period
+    }
+
+    // The remaining web facets (rating / subtitles / language / translation / age / HD / 4K / AC3)
+    // are silently ignored by /v1/items, so the ones we can reproduce are applied client-side on the
+    // results — see `MediaItemsFilter.clientSideMatches`.
 
     if let page = page {
       params["page"] = "\(page)"

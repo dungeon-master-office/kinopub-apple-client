@@ -12,7 +12,7 @@ import KinoPubBackend
 
 struct SeasonView: View {
   @StateObject private var model: SeasonModel
-  
+
   init(model: @autoclosure @escaping () -> SeasonModel) {
     _model = StateObject(wrappedValue: model())
   }
@@ -41,9 +41,7 @@ struct SeasonView: View {
             })
               .padding(.bottom, 16)
           }
-#if os(macOS)
-          .buttonStyle(PlainButtonStyle())
-#endif
+          .buttonStyle(.plain)
         }
       })
       .padding(.horizontal, 16)

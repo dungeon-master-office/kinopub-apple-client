@@ -39,9 +39,11 @@ struct SidebarNavigationDetail: View {
     case .collections:
       collections
     case .newEpisodes:
-      newEpisodes
+      // "New episodes" and "Watching" are both WatchingView — distinct ids so switching between them
+      // doesn't reuse the wrong model (same view type would otherwise share one @StateObject).
+      newEpisodes.id("section-new-episodes")
     case .watching:
-      watching
+      watching.id("section-watching")
     case .bookmarks:
       bookmarks
     case .history:

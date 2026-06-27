@@ -54,7 +54,16 @@ class MediaCatalog: ObservableObject {
     self.contentType = filter?.contentType ?? contentType
     self.shortcut = shortcut
     self.activeFilter = filter
+    // Seed the top-level sort from the incoming filter (e.g. a Home shelf opened via "see all"), so the
+    // expanded catalog keeps the shelf's order instead of resetting to the default — fetchItems()
+    // otherwise overwrites the filter's sort with this control's value.
+    if let sortValue = filter?.sort, let option = SortOption(rawValue: sortValue) {
+      self.sort = option
+    }
     subscribe()
+    // Load on creation, not via the view's `.task` (unreliable in a compact split view / nested stack).
+    // `initialFetch` is idempotent (guards on `pagination`).
+    Task { await initialFetch() }
   }
 
   func fetchItems() async {

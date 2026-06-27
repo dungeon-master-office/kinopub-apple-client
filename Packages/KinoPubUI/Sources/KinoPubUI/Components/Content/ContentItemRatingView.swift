@@ -61,7 +61,8 @@ public struct RatingsDetailRow: View {
   }
 
   public var body: some View {
-    HStack(spacing: 18) {
+    // Wrap to a second line on narrow screens instead of overflowing the edge.
+    FlowLayout(spacing: 18, lineSpacing: 10) {
       if (kinopoiskScore ?? 0) > 0 {
         item(RatingBadge.kinopoisk, score: kinopoiskScore!, votes: kinopoiskVotes)
       }

@@ -46,7 +46,6 @@ struct SportView: View {
   private var sectionContent: some View {
     content
       .kinoScreen("Sport".localized)
-      .task { await model.fetchChannels() }
       .refreshable { await model.refresh() }
       .onReceive(ticker) { now = $0 }
       .handleError(state: $errorHandler.state)
@@ -94,7 +93,7 @@ struct SportView: View {
           Image(systemName: "checkmark.circle.fill")
             .font(.system(size: 11))
             .foregroundStyle(Color.KinoPub.accent)
-          Text("\("Guide updated".localized) \(EPGTimeFormat.time.string(from: updated))")
+          Text("\("Guide updated".localized) \(EPGTimeFormat.dateTime.string(from: updated))")
             .font(.system(size: 12))
             .foregroundStyle(Color.KinoPub.subtitle)
           Spacer(minLength: 0)
@@ -245,7 +244,7 @@ struct SportView_Previews: PreviewProvider {
   static var previews: some View {
     SportView(model: SportModel(itemsService: VideoContentServiceMock(),
                                 epgService: EPGServiceMock(),
-                                authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock()),
+                                authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock(), deviceService: DeviceServiceMock()),
                                 errorHandler: ErrorHandler()))
   }
 }

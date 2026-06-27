@@ -90,9 +90,7 @@ public struct SeasonItemView: View {
     Button(action: { showDownloadPicker = true }, label: {
       indicatorImage(systemName: "arrow.down.circle")
     })
-#if os(macOS)
-    .buttonStyle(PlainButtonStyle())
-#endif
+    .buttonStyle(.plain)
     // Picker to select quality of the episode to download
     .confirmationDialog("", isPresented: $showDownloadPicker, titleVisibility: .hidden) {
       ForEach(episode.files.dedupedByQuality) { file in

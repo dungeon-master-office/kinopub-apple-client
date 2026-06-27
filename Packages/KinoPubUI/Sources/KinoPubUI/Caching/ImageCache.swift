@@ -75,7 +75,10 @@ public final class ImageCache {
       }
     }
 
-    guard let (data, _) = try? await URLSession.shared.data(from: url),
+    // Reject non-2xx responses (e.g. the actor portrait CDN returns 403 for a missing photo) so the
+    // caller falls back to its placeholder (initials) instead of a default/error body.
+    guard let (data, response) = try? await URLSession.shared.data(from: url),
+          (response as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? true,
           let image = KinoPlatformImage(data: data) else {
       return nil
     }

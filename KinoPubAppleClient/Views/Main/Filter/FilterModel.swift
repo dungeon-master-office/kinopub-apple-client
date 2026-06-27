@@ -27,10 +27,10 @@ struct MediaItemsFilter: Equatable, Hashable {
 
   // Extended web-filter parameters. All optional so existing call sites keep working.
   var subtitles: String?
-  /// Minimum Kinopoisk rating (0...10), when set.
-  var kinopoiskMin: Int?
-  /// Minimum IMDb rating (0...10), when set.
-  var imdbMin: Int?
+  /// Minimum Kinopoisk rating (0...10, 0.1 steps), when set.
+  var kinopoiskMin: Double?
+  /// Minimum IMDb rating (0...10, 0.1 steps), when set.
+  var imdbMin: Double?
   var period: String?
   var language: String?
   var translation: String?
@@ -63,12 +63,12 @@ struct MediaItemsFilter: Equatable, Hashable {
 
   var imdbParam: String? {
     guard let imdbMin, imdbMin > 0 else { return nil }
-    return "\(imdbMin)"
+    return String(format: "%g", imdbMin)
   }
 
   var kinopoiskParam: String? {
     guard let kinopoiskMin, kinopoiskMin > 0 else { return nil }
-    return "\(kinopoiskMin)"
+    return String(format: "%g", kinopoiskMin)
   }
 
   /// HD / 4K quality identifiers (best-effort).
@@ -94,31 +94,22 @@ struct MediaItemsFilter: Equatable, Hashable {
   // Since each item already carries imdb_rating/kinopoisk_rating/quality/ac3/created_at, we apply
   // those facets on the fetched results instead, so the in-app filter matches the website.
 
-  /// Whether any facet must be applied client-side.
+  /// Whether any facet must be applied client-side. (Period is sent server-side now — see
+  /// FilterItemsRequest — so it's no longer a client-side facet.)
   var hasClientSideFacets: Bool {
-    (imdbMin ?? 0) > 0 || (kinopoiskMin ?? 0) > 0 || wantHD || withoutHD || want4K || wantAC3 || period != nil
+    (imdbMin ?? 0) > 0 || (kinopoiskMin ?? 0) > 0 || wantHD || withoutHD || want4K || wantAC3
   }
 
   /// Applies the client-side-only facets to a fetched item (`now` is the current unix time).
   func clientSideMatches(_ item: MediaItem, now: TimeInterval) -> Bool {
-    if let imdbMin, imdbMin > 0, (item.imdbRating ?? 0) < Double(imdbMin) { return false }
-    if let kinopoiskMin, kinopoiskMin > 0, (item.kinopoiskRating ?? 0) < Double(kinopoiskMin) { return false }
+    if let imdbMin, imdbMin > 0, (item.imdbRating ?? 0) < imdbMin { return false }
+    if let kinopoiskMin, kinopoiskMin > 0, (item.kinopoiskRating ?? 0) < kinopoiskMin { return false }
     if wantAC3, (item.ac3 ?? 0) != 1 { return false }
     if want4K, item.quality < 2160 { return false }
     if wantHD, item.quality < 720 { return false }
     if withoutHD, item.quality >= 720 { return false }
-    if let period, let window = Self.periodWindow(period), Double(item.createdAt) < now - window { return false }
+    // Period is applied server-side now (see FilterItemsRequest); not approximated by created_at here.
     return true
-  }
-
-  private static func periodWindow(_ period: String) -> TimeInterval? {
-    switch period {
-    case "day": return 86_400
-    case "week": return 7 * 86_400
-    case "month": return 30 * 86_400
-    case "year": return 365 * 86_400
-    default: return nil
-    }
   }
 }
 
@@ -149,10 +140,10 @@ class FilterModel: ObservableObject {
   @Published var yearMax: Int = 2026
 
   @Published var kinopoiskFilterEnabled: Bool = false
-  @Published var kinopoiskMin: Int = 0
+  @Published var kinopoiskMin: Double = 0
 
   @Published var imdbFilterEnabled: Bool = false
-  @Published var imdbMin: Int = 0
+  @Published var imdbMin: Double = 0
 
   @Published var wantHD: Bool = false
   @Published var withoutHD: Bool = false
@@ -288,6 +279,7 @@ enum SortOption: String, CaseIterable, Identifiable {
   case created = "created-"
   case rating = "rating-"
   case views = "views-"
+  case watchers = "watchers-"
   case kinopoisk = "kinopoisk_rating-"
   case imdb = "imdb_rating-"
 
@@ -300,6 +292,7 @@ enum SortOption: String, CaseIterable, Identifiable {
     case .created: return "Added"
     case .rating: return "By rating"
     case .views: return "By views"
+    case .watchers: return "By watchers"
     case .kinopoisk: return "By Kinopoisk"
     case .imdb: return "By IMDb"
     }

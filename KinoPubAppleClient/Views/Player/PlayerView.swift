@@ -47,20 +47,30 @@ struct PlayerView: View {
       }
       .playbackErrorAlert($playerManager.playbackError, onDismiss: { dismiss() })
 #elseif os(macOS)
-    VideoPlayer(player: playerManager.player)
+    // Native macOS player (AVKit): floating controls, scrubber, volume, the system fullscreen toggle
+    // and PiP — the standard QuickTime-style experience. No custom close button; exit with Esc, or the
+    // standard back button in the window toolbar once out of fullscreen.
+    MacNativePlayer(player: playerManager.player)
       .ignoresSafeArea(.all)
-      .toolbar(.hidden, for: .windowToolbar)
+      .onExitCommand { closePlayer() }
       .onAppear {
-        toggleSidebar()
-        playerManager.player.play()
-        Task {
-          await playerManager.fetchWatchMark()
-          playerManager.seekToContinueWatching() // auto-resume
-        }
+      toggleSidebar()
+      playerManager.player.play()
+      Task {
+        await playerManager.fetchWatchMark()
+        playerManager.seekToContinueWatching() // auto-resume
       }
-      .playbackErrorAlert($playerManager.playbackError, onDismiss: { dismiss() })
+    }
+    .playbackErrorAlert($playerManager.playbackError, onDismiss: { dismiss() })
 #endif
   }
+
+#if os(macOS)
+  private func closePlayer() {
+    playerManager.player.pause()
+    dismiss()
+  }
+#endif
 
 #if os(iOS)
   private func configureAudioSession() {
@@ -74,6 +84,49 @@ struct PlayerView: View {
     navigationState.columnVisibility = .detailOnly
   }
 }
+
+#if os(macOS)
+/// The native macOS video view (AVKit `AVPlayerView`) — floating controls, scrubber, volume, the
+/// system fullscreen toggle and PiP, matching how video plays elsewhere on the system.
+private struct MacNativePlayer: NSViewRepresentable {
+  let player: AVPlayer
+
+  func makeCoordinator() -> Coordinator { Coordinator() }
+
+  func makeNSView(context: Context) -> AVPlayerView {
+    let view = AVPlayerView()
+    view.player = player
+    view.controlsStyle = .floating
+    view.showsFullScreenToggleButton = true
+    view.allowsPictureInPicturePlayback = true
+    view.videoGravity = .resizeAspect
+    // Open straight into fullscreen, like a system video player. Toggle the window once it's attached;
+    // remember we did it so closing the player leaves fullscreen too.
+    DispatchQueue.main.async { [weak view] in
+      guard let window = view?.window, !window.styleMask.contains(.fullScreen) else { return }
+      context.coordinator.enteredFullScreen = true
+      window.toggleFullScreen(nil)
+    }
+    return view
+  }
+
+  func updateNSView(_ view: AVPlayerView, context: Context) {
+    if view.player !== player { view.player = player }
+  }
+
+  static func dismantleNSView(_ view: AVPlayerView, coordinator: Coordinator) {
+    if coordinator.enteredFullScreen, let window = view.window, window.styleMask.contains(.fullScreen) {
+      window.toggleFullScreen(nil)
+    }
+    view.player?.pause()
+    view.player = nil
+  }
+
+  final class Coordinator {
+    var enteredFullScreen = false
+  }
+}
+#endif
 
 private extension View {
   /// Presents the player's failure diagnosis (and pops the player on dismiss) so an unplayable
@@ -159,6 +212,10 @@ final class PlayerHostController: UIViewController {
     controller.allowsPictureInPicturePlayback = true
     controller.canStartPictureInPictureAutomaticallyFromInline = true
     controller.modalPresentationStyle = .fullScreen
+    // A long-lived coordinator keeps the player alive during PiP (so leaving this screen — which pops
+    // the route and tears down this host — doesn't kill the floating window) and re-presents it when
+    // the user taps "restore". Native PiP, no custom UI.
+    controller.delegate = PlayerPiPCoordinator.shared
     playerController = controller
 
     present(controller, animated: true) { [weak self] in
@@ -168,23 +225,13 @@ final class PlayerHostController: UIViewController {
   }
 
   func presentResumeAlertIfNeeded() {
+    // Always continue from where the user left off — no "Resume / Start over" prompt.
     guard !didAskResume,
           let resume = resumeTime, resume > 0,
           let controller = playerController,
-          controller.viewIfLoaded?.window != nil,
-          controller.presentedViewController == nil else { return }
+          controller.viewIfLoaded?.window != nil else { return }
     didAskResume = true
-
-    let alert = UIAlertController(title: "Continue Watching".localized,
-                                  message: Self.timeString(resume),
-                                  preferredStyle: .alert)
-    alert.addAction(UIAlertAction(title: "Resume".localized, style: .default) { [weak self] _ in
-      self?.onResume?()
-    })
-    alert.addAction(UIAlertAction(title: "Start from Beginning".localized, style: .default) { [weak self] _ in
-      self?.onStartOver?()
-    })
-    controller.present(alert, animated: true)
+    onResume?()
   }
 
   private static func timeString(_ time: TimeInterval) -> String {
@@ -193,6 +240,45 @@ final class PlayerHostController: UIViewController {
     formatter.unitsStyle = .positional
     formatter.zeroFormattingBehavior = .pad
     return formatter.string(from: time) ?? ""
+  }
+}
+
+/// App-lifetime delegate so native Picture-in-Picture survives the player route being popped.
+///
+/// When PiP starts, the presented `AVPlayerViewController` auto-dismisses (so the app is usable) and
+/// this host's route pops — which would normally deallocate the player and black out the PiP window.
+/// Holding a strong reference here keeps the player (and its `AVPlayer`) alive for the lifetime of the
+/// PiP session, and re-presents it from the top-most controller when the user taps "restore".
+final class PlayerPiPCoordinator: NSObject, AVPlayerViewControllerDelegate {
+  static let shared = PlayerPiPCoordinator()
+
+  private var retained: AVPlayerViewController?
+
+  func playerViewControllerWillStartPictureInPicture(_ controller: AVPlayerViewController) {
+    retained = controller
+  }
+
+  func playerViewControllerDidStopPictureInPicture(_ controller: AVPlayerViewController) {
+    if retained === controller { retained = nil }
+  }
+
+  func playerViewController(_ controller: AVPlayerViewController,
+                            restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
+    guard controller.presentingViewController == nil, let top = Self.topViewController() else {
+      completionHandler(true)
+      return
+    }
+    top.present(controller, animated: true) { completionHandler(true) }
+  }
+
+  private static func topViewController() -> UIViewController? {
+    let scene = UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
+      .first { $0.activationState == .foregroundActive }
+    var top = scene?.keyWindow?.rootViewController
+      ?? scene?.windows.first(where: { $0.isKeyWindow })?.rootViewController
+    while let presented = top?.presentedViewController { top = presented }
+    return top
   }
 }
 #endif

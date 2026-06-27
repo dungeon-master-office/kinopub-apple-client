@@ -37,14 +37,18 @@ class HomeModel: ObservableObject {
     }
   }
 
+  // Mirrors the kino.pub web home sections (type + order + period). Web order → API sort:
+  // views → views-, added → created-, watchers → watchers-. `period` is sent server-side
+  // (see FilterItemsRequest); "Популярные фильмы" = most viewed this month.
   private static let shelfSpecs: [ShelfSpec] = [
     ShelfSpec(title: "Популярные фильмы", type: .movie, sort: "views-", period: "month"),
     ShelfSpec(title: "Новые фильмы", type: .movie, sort: "created-", period: nil),
     ShelfSpec(title: "Популярные сериалы", type: .serial, sort: "watchers-", period: nil),
     ShelfSpec(title: "Новые сериалы", type: .serial, sort: "created-", period: nil),
     ShelfSpec(title: "Новые концерты", type: .concert, sort: "created-", period: nil),
-    ShelfSpec(title: "Новые докуфильмы", type: .documovie, sort: "created-", period: nil),
-    ShelfSpec(title: "Новые докусериалы", type: .docuserial, sort: "created-", period: nil),
+    ShelfSpec(title: "Новое в 3D", type: .threeD, sort: "created-", period: nil),
+    ShelfSpec(title: "Новые ДокуФильмы", type: .documovie, sort: "created-", period: nil),
+    ShelfSpec(title: "Новые Докусериалы", type: .docuserial, sort: "created-", period: nil),
     ShelfSpec(title: "Новые ТВ шоу", type: .tvshow, sort: "created-", period: nil)
   ]
 
@@ -75,6 +79,9 @@ class HomeModel: ObservableObject {
     self.itemsService = itemsService
     self.authState = authState
     self.errorHandler = errorHandler
+    // Load when the model is created, not on the view's `.task` (which doesn't reliably fire in a
+    // compact split view / nested navigation stack). `fetchData` is idempotent + auth-gated.
+    Task { await fetchData() }
   }
 
   func fetchData() async {
@@ -129,42 +136,51 @@ class HomeModel: ObservableObject {
     }
 
     // Best-effort: a history failure should never surface an error on Home.
-    let recent = (try? await history)?.history.map { $0.item } ?? []
-    // Deduplicate by id (a series shows up once), keep the most recent order.
+    let historyEntries = (try? await history)?.history ?? []
+    // Deduplicate by id (a series shows up once), keeping the most-recent occurrence and its
+    // real "last watched" timestamp so we can order against locally-tracked items below.
     var seen = Set<Int>()
-    let unique = recent.filter { seen.insert($0.id).inserted }
-    let candidates = Array(unique.prefix(10))
+    let uniqueHistory: [(item: MediaItem, watchedAt: TimeInterval)] = historyEntries.compactMap { entry in
+      guard seen.insert(entry.item.id).inserted else { return nil }
+      return (entry.item, entry.lastSeen ?? entry.time ?? entry.firstSeen ?? 0)
+    }
+    let candidates = Array(uniqueHistory.prefix(10))
 
     // Enrich each entry with its watch progress + last-watched episode (details carry the
-    // per-episode watching positions that the history list does not).
+    // per-episode watching positions that the history list does not), keeping the timestamp.
     let service = itemsService
-    let enriched: [ContinueItem] = await withTaskGroup(of: (Int, ContinueItem).self) { group in
-      for (index, item) in candidates.enumerated() {
+    let enriched: [(item: ContinueItem, watchedAt: TimeInterval)] = await withTaskGroup(of: (Int, ContinueItem).self) { group in
+      for (index, candidate) in candidates.enumerated() {
         group.addTask {
-          let full = (try? await service.fetchDetails(for: "\(item.id)").item) ?? item
+          let full = (try? await service.fetchDetails(for: "\(candidate.item.id)").item) ?? candidate.item
           return (index, HomeModel.continueItem(from: full))
         }
       }
       var slots = [ContinueItem?](repeating: nil, count: candidates.count)
       for await (index, value) in group { slots[index] = value }
-      return slots.compactMap { $0 }
+      return slots.enumerated().compactMap { index, item in
+        item.map { ($0, candidates[index].watchedAt) }
+      }
     }
 
-    // Surface locally-started titles (> 10s) that the backend doesn't list yet, newest first.
-    let backendIds = Set(enriched.map { $0.id })
-    let localOnly = AppContext.shared.localProgressStore.allEntries()
+    // Locally-started titles (> 10s) the backend doesn't list yet, with their own update time.
+    let backendIds = Set(enriched.map { $0.item.id })
+    let localOnly: [(item: ContinueItem, watchedAt: TimeInterval)] = AppContext.shared.localProgressStore.allEntries()
       .filter { !backendIds.contains($0.id) }
-      .map { entry -> ContinueItem in
+      .map { entry in
         let subtitle: String?
         if let season = entry.season, let episode = entry.episode {
           subtitle = "S\(season) · E\(episode)"
         } else {
           subtitle = entry.item.duration.totalFormatted
         }
-        return ContinueItem(id: entry.id, item: entry.item, progress: entry.progress, subtitle: subtitle)
+        let item = ContinueItem(id: entry.id, item: entry.item, progress: entry.progress, subtitle: subtitle)
+        return (item, entry.updatedAt)
       }
 
-    continueWatching = localOnly + enriched
+    // Single list ordered by real recency (newest first) across both sources, so Continue Watching
+    // matches what History shows instead of always floating local items to the front.
+    continueWatching = (enriched + localOnly).sorted { $0.watchedAt > $1.watchedAt }.map { $0.item }
     continueWatchingLoading = false
   }
 

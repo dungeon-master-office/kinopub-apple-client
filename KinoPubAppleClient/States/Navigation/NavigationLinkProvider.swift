@@ -102,6 +102,10 @@ struct RouteDestinationView: View {
       CollectionDetailView(model: CollectionDetailModel(collection: collection,
                                                         collectionsService: appContext.collectionsService,
                                                         errorHandler: errorHandler))
+    case .mediaList(let items, let title):
+      MediaListGridView(items: items, title: title)
+    case .castCrew(let people, let title):
+      SearchCastCrewView(people: people, title: title)
     }
   }
 

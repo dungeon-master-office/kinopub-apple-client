@@ -56,6 +56,17 @@ final class VideoContentServiceImpl: VideoContentService {
     return response
   }
 
+  func itemsByPerson(name: String, field: String, page: Int?) async throws -> PaginatedData<MediaItem> {
+    // No contentType → no `type` param → all of the person's films & series. Uses the documented,
+    // reliable cast=/director= filter rather than the flaky search?field=cast full-text match.
+    let request = FilterItemsRequest(director: field == "director" ? name : nil,
+                                     cast: field == "cast" ? name : nil,
+                                     page: page)
+    let response = try await apiClient.performRequest(with: request,
+                                                      decodingType: PaginatedData<MediaItem>.self)
+    return response
+  }
+
   func fetchGenres(type: MediaType?) async throws -> [MediaGenre] {
     let request = GenresRequest(type: type)
     let response = try await apiClient.performRequest(with: request,

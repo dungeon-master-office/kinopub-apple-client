@@ -47,6 +47,13 @@ class MediaItemModel: ObservableObject {
   @Published public var reviews: KpReviewsPage = .empty
   @Published public var staff: [KpStaffMember] = []
   @Published public var images: [KpImage] = []
+  // Per-group "finished loading" flags so the view can reserve space with a skeleton shelf while a
+  // dynamically-loaded block is in flight, then swap content in place (or collapse) — instead of the
+  // section popping in from zero height and shoving the rest of the page around.
+  @Published public var relatedLoaded: Bool = false
+  @Published public var moreFromLoaded: Bool = false
+  @Published public var moreWithLoaded: Bool = false
+  @Published public var extrasLoaded: Bool = false
   private let extrasService = KinopoiskExtrasService()
   public var primaryDirector: String? { directorNames.first }
   public var primaryActor: String? { castNames.first }
@@ -237,6 +244,7 @@ class MediaItemModel: ObservableObject {
       } catch {
         errorHandler.setError(error)
       }
+      relatedLoaded = true
     }
   }
 
@@ -251,7 +259,10 @@ class MediaItemModel: ObservableObject {
         if let response = try? await itemsService.filter(filter: filter, page: nil) {
           moreFromDirector = response.items.filter { $0.id != mediaItem.id }.prefix(15).map { $0 }
         }
+        moreFromLoaded = true
       }
+    } else {
+      moreFromLoaded = true
     }
     if let actor = castNames.first {
       Task {
@@ -260,7 +271,10 @@ class MediaItemModel: ObservableObject {
         if let response = try? await itemsService.filter(filter: filter, page: nil) {
           moreWithActor = response.items.filter { $0.id != mediaItem.id }.prefix(15).map { $0 }
         }
+        moreWithLoaded = true
       }
+    } else {
+      moreWithLoaded = true
     }
   }
 
@@ -373,11 +387,25 @@ class MediaItemModel: ObservableObject {
   /// Load Kinopoisk extras (facts / reviews / crew / stills) for this title via the kpapp.link proxy.
   /// Requires a Kinopoisk id; each request is independent and best-effort (a failure hides its section).
   func fetchExtras() {
-    guard let filmId = mediaItem.kinopoisk, filmId > 0 else { return }
-    Task { if let r = try? await extrasService.facts(filmId: filmId) { facts = r } }
-    Task { if let r = try? await extrasService.reviews(filmId: filmId) { reviews = r } }
-    Task { if let r = try? await extrasService.staff(filmId: filmId) { staff = r } }
-    Task { if let r = try? await extrasService.images(filmId: filmId) { images = r } }
+    // No Kinopoisk id → there will never be extras; mark loaded so the view doesn't reserve skeleton
+    // space for sections that can't appear.
+    guard let filmId = mediaItem.kinopoisk, filmId > 0 else {
+      extrasLoaded = true
+      return
+    }
+    // Resolve all four together and publish once, so the extras block settles in a single layout
+    // change (with the skeleton reserving its space) instead of four staggered pops.
+    Task {
+      async let f = extrasService.facts(filmId: filmId)
+      async let r = extrasService.reviews(filmId: filmId)
+      async let s = extrasService.staff(filmId: filmId)
+      async let i = extrasService.images(filmId: filmId)
+      facts = (try? await f) ?? []
+      reviews = (try? await r) ?? .empty
+      staff = (try? await s) ?? []
+      images = (try? await i) ?? []
+      extrasLoaded = true
+    }
   }
 
   /// kino.pub gives the aggregate as `rating_votes` (total) + `rating_percentage` (% positive), not

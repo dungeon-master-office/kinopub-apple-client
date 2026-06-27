@@ -23,6 +23,7 @@ struct ProfileView: View {
   @State private var showLogoutAlert: Bool = false
   @State private var showStorage: Bool = false
   @Environment(\.sectionEmbedded) private var sectionEmbedded
+  @Environment(\.dismiss) private var dismiss
 
   init(model: @autoclosure @escaping () -> ProfileModel) {
     _model = StateObject(wrappedValue: model())
@@ -42,14 +43,14 @@ struct ProfileView: View {
         VStack(alignment: .leading) {
           Form {
             Section {
-              LabeledContent("User Name", value: model.userData.username)
+              infoRow("User Name", model.userData.username)
                 .skeleton(enabled: model.userData.skeleton ?? false)
-              LabeledContent("User Subscription",
-                             value: "\(model.userData.subscription.remainingDays) \("days".localized) · \(model.userData.subscription.endDateFormatted)")
+              infoRow("User Subscription",
+                      "\(model.userData.subscription.remainingDays) \("days".localized) · \(model.userData.subscription.endDateFormatted)")
                 .skeleton(enabled: model.userData.skeleton ?? false)
-              LabeledContent("Registration Date", value: "\(model.userData.registrationDateFormatted)")
+              infoRow("Registration Date", "\(model.userData.registrationDateFormatted)")
                 .skeleton(enabled: model.userData.skeleton ?? false)
-              LabeledContent("App version", value: Bundle.main.appVersionLong)
+              infoRow("App version", Bundle.main.appVersionLong)
             }
               
             languageSection
@@ -60,16 +61,20 @@ struct ProfileView: View {
               Button {
                 showStorage = true
               } label: {
-                LabeledContent("Storage".localized) {
+                HStack {
+                  Text("Storage".localized).foregroundStyle(Color.KinoPub.text)
+                  Spacer()
                   Image(systemName: "chevron.right").font(.caption).foregroundStyle(Color.KinoPub.subtitle)
                 }
+                .contentShape(Rectangle())
               }
-#if os(macOS)
-              .buttonStyle(PlainButtonStyle())
-#endif
+              .buttonStyle(.plain)
             }
 
             Section {
+              NavigationLink("Sections".localized) {
+                SectionsSettingsView()
+              }
               NavigationLink("Device settings".localized) {
                 DeviceSettingsView(model: DeviceSettingsModel(deviceService: appContext.deviceService,
                                                               errorHandler: errorHandler))
@@ -84,14 +89,20 @@ struct ProfileView: View {
               Button(action: {
                 showLogoutAlert = true
               }, label: {
-                Text("Logout").foregroundStyle(Color.red)
+                HStack {
+                  Text("Logout").foregroundStyle(model.isLoggingOut ? Color.KinoPub.subtitle : Color.red)
+                  if model.isLoggingOut {
+                    Spacer()
+                    ProgressView()
+                  }
+                }
               })
+              .disabled(model.isLoggingOut)
               .skeleton(enabled: model.userData.skeleton ?? false)
-#if os(macOS)
-              .buttonStyle(PlainButtonStyle())
-#endif
+              .buttonStyle(.plain)
             }
           }
+          .formStyle(.grouped)
           .scrollContentBackground(.hidden)
           .background(Color.KinoPub.background)
         }
@@ -100,6 +111,10 @@ struct ProfileView: View {
       .onAppear(perform: {
         model.fetch()
       })
+      // Close the profile modal once logout finishes (the activation screen takes over).
+      .onChange(of: model.didLogout) { done in
+        if done { dismiss() }
+      }
       .sheet(isPresented: $showStorage) {
         StorageBreakdownView()
       }
@@ -118,31 +133,53 @@ struct ProfileView: View {
         )
       }
   }
-  private var videoQualitySection: some View {
-    Section(header: Text("Video Quality"),
-            footer: Text("Caps streaming quality. Auto lets the player adapt to your connection.".localized)) {
-      Picker("Maximum Quality".localized, selection: $streamQuality) {
-        ForEach(StreamQuality.allCases) { quality in
-          Text(quality.title).tag(quality)
-        }
-      }
-      .pickerStyle(MenuPickerStyle())
+  /// A leading-aligned label/value row. Avoids `LabeledContent`/`Form`'s macOS right-aligned label
+  /// gutter, which clips long labels off the left edge of the Profile sheet.
+  private func infoRow(_ label: String, _ value: String) -> some View {
+    HStack(alignment: .firstTextBaseline) {
+      Text(label.localized).foregroundStyle(Color.KinoPub.subtitle)
+      Spacer(minLength: 12)
+      Text(value)
+        .foregroundStyle(Color.KinoPub.text)
+        .multilineTextAlignment(.trailing)
     }
   }
 
-    private var languageSection: some View {
-        Section(header: Text("Language")) {
-            Picker("Select Language", selection: $selectedLanguage) {
-                ForEach(model.availableLanguages.keys.sorted(), id: \.self) { key in
-                    Text(model.availableLanguages[key] ?? key).tag(key)
-                }
-            }
-            .pickerStyle(MenuPickerStyle())
-            .onChange(of: selectedLanguage) { newLanguage in
-                model.changeLanguage(to: newLanguage)
-            }
+  private var videoQualitySection: some View {
+    Section(header: Text("Video Quality"),
+            footer: Text("Caps streaming quality. Auto lets the player adapt to your connection.".localized)) {
+      HStack {
+        Text("Maximum Quality".localized).foregroundStyle(Color.KinoPub.text)
+        Spacer()
+        Picker("", selection: $streamQuality) {
+          ForEach(StreamQuality.allCases) { quality in
+            Text(quality.title).tag(quality)
+          }
         }
+        .labelsHidden()
+        .pickerStyle(MenuPickerStyle())
+      }
     }
+  }
+
+  private var languageSection: some View {
+    Section(header: Text("Language")) {
+      HStack {
+        Text("Select Language".localized).foregroundStyle(Color.KinoPub.text)
+        Spacer()
+        Picker("", selection: $selectedLanguage) {
+          ForEach(model.availableLanguages.keys.sorted(), id: \.self) { key in
+            Text(model.availableLanguages[key] ?? key).tag(key)
+          }
+        }
+        .labelsHidden()
+        .pickerStyle(MenuPickerStyle())
+        .onChange(of: selectedLanguage) { newLanguage in
+          model.changeLanguage(to: newLanguage)
+        }
+      }
+    }
+  }
 }
 
 struct ProfileView_Previews: PreviewProvider {
@@ -150,6 +187,7 @@ struct ProfileView_Previews: PreviewProvider {
     ProfileView(model: ProfileModel(userService: UserServiceMock(),
                                     errorHandler: ErrorHandler(),
                                     authState: AuthState(authService: AuthorizationServiceMock(),
-                                                         accessTokenService: AccessTokenServiceMock())))
+                                                         accessTokenService: AccessTokenServiceMock(),
+                                                         deviceService: DeviceServiceMock())))
   }
 }

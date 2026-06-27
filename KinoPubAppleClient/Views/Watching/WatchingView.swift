@@ -52,9 +52,8 @@ struct WatchingView: View {
       .refreshable { await model.refresh() }
     }
     .kinoScreen((model.tab == .newEpisodes ? "New episodes" : "Watching").localized)
-    .task {
-      await model.fetchItems()
-    }
+    // Initial load is kicked off in WatchingModel.init (reliable regardless of how the view is hosted);
+    // pull-to-refresh and sub-tab changes drive subsequent fetches.
     .handleError(state: $errorHandler.state)
   }
 
@@ -180,7 +179,7 @@ struct WatchingSerialView: View {
 struct WatchingView_Previews: PreviewProvider {
   static var previews: some View {
     WatchingView(model: WatchingModel(itemsService: VideoContentServiceMock(),
-                                      authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock()),
+                                      authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock(), deviceService: DeviceServiceMock()),
                                       errorHandler: ErrorHandler()))
   }
 }

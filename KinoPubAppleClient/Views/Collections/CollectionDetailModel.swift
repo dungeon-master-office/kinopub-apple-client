@@ -10,9 +10,9 @@ import KinoPubBackend
 import OSLog
 import KinoPubLogging
 
-/// Client-side sort for the items within a single collection. The API does not
-/// sort within a collection, so we sort the already-loaded items locally.
-enum CollectionItemsSort: CaseIterable, Identifiable {
+/// Client-side sort for an already-loaded list of media items (used where the API can't sort for us:
+/// a single collection's items, an actor's/director's filmography opened from a detail page, etc.).
+enum MediaItemsSort: CaseIterable, Identifiable {
   case `default`
   case title
   case year
@@ -28,6 +28,20 @@ enum CollectionItemsSort: CaseIterable, Identifiable {
     case .rating: return "Rating".localized
     }
   }
+
+  /// Returns `items` sorted by this option (`.default` keeps the original order).
+  func sorted(_ items: [MediaItem]) -> [MediaItem] {
+    switch self {
+    case .default:
+      return items
+    case .title:
+      return items.sorted { $0.localizedTitle.localizedCaseInsensitiveCompare($1.localizedTitle) == .orderedAscending }
+    case .year:
+      return items.sorted { $0.year > $1.year }
+    case .rating:
+      return items.sorted { ($0.kinopoiskRating ?? $0.imdbRating ?? 0) > ($1.kinopoiskRating ?? $1.imdbRating ?? 0) }
+    }
+  }
 }
 
 @MainActor
@@ -41,7 +55,7 @@ class CollectionDetailModel: ObservableObject {
 
   @Published public var items: [MediaItem] = []
   @Published public var isLoading: Bool = true
-  @Published public var selectedSort: CollectionItemsSort = .default {
+  @Published public var selectedSort: MediaItemsSort = .default {
     didSet { applySort() }
   }
 
@@ -75,16 +89,7 @@ class CollectionDetailModel: ObservableObject {
   }
 
   private func applySort() {
-    switch selectedSort {
-    case .default:
-      items = rawItems
-    case .title:
-      items = rawItems.sorted { $0.localizedTitle.localizedCaseInsensitiveCompare($1.localizedTitle) == .orderedAscending }
-    case .year:
-      items = rawItems.sorted { $0.year > $1.year }
-    case .rating:
-      items = rawItems.sorted { ($0.kinopoiskRating ?? $0.imdbRating ?? 0) > ($1.kinopoiskRating ?? $1.imdbRating ?? 0) }
-    }
+    items = selectedSort.sorted(rawItems)
   }
 
   @Sendable @MainActor

@@ -35,9 +35,6 @@ struct BookmarksView: View {
     bookmarksList
       .kinoScreen("Bookmarks".localized)
       .refreshable(action: catalog.refresh)
-      .task {
-        await catalog.fetchItems()
-      }
       .handleError(state: $errorHandler.state)
   }
   
@@ -58,9 +55,7 @@ struct BookmarksView: View {
                              kinopoiskRating: item.kinopoiskRating)
                   .overlay(alignment: .topTrailing) { MediaCardStatusBadge(item: item) }
                 }
-                #if os(macOS)
                 .buttonStyle(.plain)
-                #endif
               }
             } else {
               // Loading placeholder shelf.
@@ -80,7 +75,7 @@ struct BookmarksView: View {
 struct BookmarksView_Previews: PreviewProvider {
   static var previews: some View {
     BookmarksView(catalog: BookmarksCatalog(itemsService: VideoContentServiceMock(),
-                                            authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock()),
+                                            authState: AuthState(authService: AuthorizationServiceMock(), accessTokenService: AccessTokenServiceMock(), deviceService: DeviceServiceMock()),
                                             errorHandler: ErrorHandler()))
   }
 }

@@ -65,6 +65,9 @@ enum CatalogPreset: String, CaseIterable, Identifiable, Hashable {
     case .threeD: return MediaItemsFilter(contentType: .movie, rawType: "3d", genres: [], countries: [])
     }
   }
+
+  /// Presets shown in the UI (incl. 3D). Each can be hidden in Profile → Sections like any other.
+  static var visible: [CatalogPreset] { allCases }
 }
 
 enum SidebarItem: Hashable, Identifiable {

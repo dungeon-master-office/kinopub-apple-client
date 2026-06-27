@@ -71,6 +71,21 @@ actor EPGServiceImpl: EPGService {
     memoryCache.removeAll()
   }
 
+  /// Newest real download time across the source caches (memory first, falling back to disk), so the
+  /// UI shows when the guide was actually fetched rather than when it was last read from cache.
+  func lastUpdated() -> Date? {
+    var newest: Date? = memoryCache.values.map { $0.fetchedAt }.max()
+    if newest == nil {
+      for url in Self.cacheFileURLs() {
+        if let data = try? Data(contentsOf: url),
+           let cached = try? JSONDecoder.epg.decode(CachedGuide.self, from: data) {
+          if newest == nil || cached.fetchedAt > newest! { newest = cached.fetchedAt }
+        }
+      }
+    }
+    return newest
+  }
+
   func fetchGuide(for channels: [TVChannel], forceRefresh: Bool) async throws -> [Int: [EPGProgram]] {
     var merged: [Int: [EPGProgram]] = [:]
     // Sources are ordered by preference; the first one with data for a channel wins.
