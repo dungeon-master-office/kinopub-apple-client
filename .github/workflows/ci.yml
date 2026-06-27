@@ -1,21 +1,40 @@
 name: CI
 
-# Compile-checks every push to the main branches and every PR, so "merge to main" is always green.
+# Compile-checks pushes to the main branches and PRs, so "merge to main" is always green.
 on:
   push:
     branches: [ main, integration/all-issues ]
+    paths-ignore:
+      - '**.md'
+      - 'AppIcon Exports/**'
+      - '.github/release.yml'
+      - 'LICENSE'
   pull_request:
+    branches: [ main, integration/all-issues ]
+    paths-ignore:
+      - '**.md'
+      - 'AppIcon Exports/**'
+      - 'LICENSE'
 
 permissions:
   contents: read
 
+# Newer pushes/merges on the same ref cancel still-running builds, so rapid merges don't pile up
+# (and don't burn extra runner minutes).
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
+    # Anti-spam: PRs opened from forks do NOT auto-run CI (which would burn Actions minutes). Only
+    # direct pushes and same-repo (trusted) PR branches build automatically. A maintainer can still
+    # run a fork PR on demand via the "Approve and run" button / re-running the workflow.
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
