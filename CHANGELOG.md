@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/dungeon-master-office/kinopub-apple-client/compare/v1.1.0...v1.1.1) (2026-06-27)
+
+
+### 🐛 Fixes
+
+* **macos:** add macOS app icon (idiom: mac) so the .app isn't blank ([dde14d4](https://github.com/dungeon-master-office/kinopub-apple-client/commit/dde14d4b0d425bae0ccd70aec3f78707471b3494))
+
 ## [1.1.0](https://github.com/dungeon-master-office/kinopub-apple-client/compare/v1.0.0...v1.1.0) (2026-06-27)
 
 
