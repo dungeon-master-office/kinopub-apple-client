@@ -3,16 +3,14 @@ name: Release
 # Builds the unsigned IPA and attaches it to a release.
 # - Automatic: when Release Please publishes a GitHub Release (after a release PR is merged).
 # - Manual: workflow_dispatch with an existing tag, or push a v* tag yourself.
+# Driven by the Release Please workflow, which dispatches this with the new tag once it cuts a release.
+# (Single deterministic build path — avoids double-builds from release/tag events.) Also runnable
+# manually to (re)build an existing tag's artifacts.
 on:
-  release:
-    types: [ published ]
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing tag to (re)build & attach the IPA to (e.g. v1.0.0)'
+        description: 'Existing tag to build & attach the IPA + macOS app to (e.g. v1.0.0)'
         required: true
 
 permissions:
@@ -20,7 +18,7 @@ permissions:
 
 # A release build per tag should never be cancelled mid-flight by a newer one.
 concurrency:
-  group: release-${{ github.event.release.tag_name || github.ref_name }}
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
