@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 concurrency:
   group: release-please-${{ github.ref }}
@@ -20,6 +21,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # Release Please creates the release with GITHUB_TOKEN, which (by design) does NOT trigger the
+      # Release workflow's `release: published` event. So dispatch it explicitly — workflow_dispatch
+      # via GITHUB_TOKEN is allowed — to build & attach the IPA + macOS artifacts.
+      - name: Build & attach artifacts for the new release
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run release.yml -f tag=${{ steps.release.outputs.tag_name }} --repo "${{ github.repository }}"
