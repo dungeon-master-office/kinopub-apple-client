@@ -64,6 +64,9 @@ public extension Episode {
   }
   /// "Finished" (watched to the credits) — so Continue offers the next episode, not this one's tail.
   var isWatchedToEnd: Bool { watchProgress.isFinished }
+  /// Single "watched" verdict: the explicit server flag OR watched-to-the-credits. Use this anywhere
+  /// a checkmark / "watched" state is shown so every screen agrees.
+  var isWatched: Bool { watched > 0 || isWatchedToEnd }
 }
 
 extension Episode: PlayableItem {

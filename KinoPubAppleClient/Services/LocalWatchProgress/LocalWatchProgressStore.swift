@@ -20,10 +20,10 @@ public struct LocalWatchEntry: Codable, Identifiable {
 
   public var id: Int { item.id }
 
-  public var progress: Double? {
-    guard duration > 0 else { return nil }
-    return min(max(position / duration, 0), 1)
-  }
+  /// Watch classification for this resume point — the single source of truth (fraction / finished).
+  public var watch: WatchProgress { WatchProgress(position: position, duration: duration) }
+  public var progress: Double? { watch.fraction }
+  public var finished: Bool { watch.isFinished }
 }
 
 protocol LocalWatchProgressProvider {
@@ -33,8 +33,9 @@ protocol LocalWatchProgressProvider {
 /// Thread-safe, file-backed store of local resume points.
 final class LocalWatchProgressStore {
 
-  /// Minimum playback before an item is considered "started" and worth resuming.
-  static let minimumSeconds: Double = 10
+  /// Minimum playback before an item is considered "started" and worth resuming — the shared
+  /// `WatchProgress` floor, so the local store and the classifier never disagree.
+  static let minimumSeconds: Double = WatchProgress.startedSeconds
 
   private let fileURL: URL
   private let lock = NSLock()

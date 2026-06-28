@@ -846,10 +846,7 @@ struct MediaItemView: View {
 
   private func episodeProgress(_ episode: Episode, in season: Season) -> Double? {
     if itemModel.isEpisodeWatched(episode) { return 1.0 }
-    var serverProgress: Double?
-    if episode.duration > 0, episode.watching.time > 0 {
-      serverProgress = Double(episode.watching.time) / Double(episode.duration)
-    }
+    let serverProgress = episode.watching.time > 0 ? episode.watchProgress.fraction : nil
     // Overlay the local resume point so a just-watched episode shows progress instantly.
     let localProgress = itemModel.localProgressFraction(season: season.number, episode: episode.number)
     guard let best = [serverProgress, localProgress].compactMap({ $0 }).max() else { return nil }

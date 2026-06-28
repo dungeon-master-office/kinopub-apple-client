@@ -29,4 +29,6 @@ public extension Video {
   }
   /// "Finished" (watched to the credits).
   var isWatchedToEnd: Bool { watchProgress.isFinished }
+  /// Single "watched" verdict: the explicit server flag OR watched-to-the-credits.
+  var isWatched: Bool { watched > 0 || isWatchedToEnd }
 }

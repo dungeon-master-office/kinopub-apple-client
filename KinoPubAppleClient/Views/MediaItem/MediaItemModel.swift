@@ -59,13 +59,13 @@ class MediaItemModel: ObservableObject {
   public var primaryActor: String? { castNames.first }
   /// Effective watched state for an episode (client optimistic override first, then server data).
   public func isEpisodeWatched(_ episode: Episode) -> Bool {
-    AppContext.shared.libraryState.episodeWatched(episodeId: episode.id, serverWatched: episode.watched > 0)
+    AppContext.shared.libraryState.episodeWatched(episodeId: episode.id, serverWatched: episode.isWatched)
   }
 
   /// Effective watched state for a movie (client optimistic override first, then server data).
   public var isMovieWatched: Bool {
     AppContext.shared.libraryState.movieWatched(itemId: mediaItemId,
-                                                serverWatched: (mediaItem.videos?.first?.watched ?? 0) > 0)
+                                                serverWatched: mediaItem.videos?.first?.isWatched ?? false)
   }
 
   private let localProgressStore: LocalWatchProgressStore = AppContext.shared.localProgressStore
@@ -90,9 +90,7 @@ class MediaItemModel: ObservableObject {
 
   /// Local progress fraction [0,1] for a specific video/episode, or nil if nothing recorded.
   public func localProgressFraction(season: Int?, episode: Int?) -> Double? {
-    guard let entry = localProgressStore.entry(forId: mediaItemId, season: season, episode: episode),
-          entry.duration > 0 else { return nil }
-    return min(max(entry.position / entry.duration, 0), 1)
+    localProgressStore.entry(forId: mediaItemId, season: season, episode: episode)?.progress
   }
 
   /// For a series with no server-side continue point yet, the (season, episode) to resume based on
@@ -204,8 +202,8 @@ class MediaItemModel: ObservableObject {
         // server now confirms (keeps any still-in-flight toggle), so the server can drive again.
         AppContext.shared.libraryState.reconcileWatched(
           movieItemId: mediaId,
-          serverMovieWatched: mediaItem.isSeries ? nil : (mediaItem.videos?.first?.watched ?? 0) > 0,
-          episodes: mediaItem.orderedEpisodes.map { (id: $0.episode.id, watched: $0.episode.watched > 0) })
+          serverMovieWatched: mediaItem.isSeries ? nil : mediaItem.videos?.first?.isWatched ?? false,
+          episodes: mediaItem.orderedEpisodes.map { (id: $0.episode.id, watched: $0.episode.isWatched) })
         // Seed the client library state once (bookmark folders + watchlist) so the UI reflects
         // membership instantly; optimistic toggles thereafter aren't clobbered by refetches.
         AppContext.shared.libraryState.seedIfAbsent(itemId: mediaId,

@@ -66,11 +66,11 @@ public struct SeasonItemView: View {
 
   }
 
-  // Shows whether the episode has been fully watched or only partially watched.
-  // Uses Episode.watched (fully watched flag) and Episode.watching.time (partial progress).
+  // Watched (server flag OR watched-to-the-credits) vs only partially watched — via the shared
+  // `Episode.isWatched`, so the season list agrees with Continue Watching and the detail page.
   @ViewBuilder
   var watchIndicator: some View {
-    if episode.watched > 0 {
+    if episode.isWatched {
       indicatorImage(systemName: "eye.fill")
     } else if episode.watching.time > 0 {
       indicatorImage(systemName: "circle.lefthalf.filled")
