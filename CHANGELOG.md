@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/dungeon-master-xx/kinopub-apple-client/compare/v1.4.1...v1.4.2) (2026-06-28)
+
+
+### 📝 Docs
+
+* AltStore button uses altstore-classic:// scheme (avoid AltStore PAL) ([#20](https://github.com/dungeon-master-xx/kinopub-apple-client/issues/20)) ([2b90eab](https://github.com/dungeon-master-xx/kinopub-apple-client/commit/2b90eabc44fc834ce78d90d5cc91d4e6a1feec06))
+
 ## [1.4.1](https://github.com/dungeon-master-xx/kinopub-apple-client/compare/v1.4.0...v1.4.1) (2026-06-28)
 
 
