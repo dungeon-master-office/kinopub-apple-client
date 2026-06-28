@@ -18,10 +18,16 @@ concurrency:
 jobs:
   analyze:
     name: Analyze (swift)
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
+
+      - name: Select Xcode 26
+        run: |
+          XC="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"
+          [ -n "$XC" ] && sudo xcode-select -s "$XC"
+          xcodebuild -version
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
