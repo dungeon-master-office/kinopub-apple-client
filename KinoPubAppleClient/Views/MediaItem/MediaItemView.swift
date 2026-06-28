@@ -710,7 +710,7 @@ struct MediaItemView: View {
         seasonPicker(seasons: seasons, current: season)
         ScrollViewReader { proxy in
           ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: 14) {
+            LazyHStack(alignment: .top, spacing: 14) {
               ForEach(season.episodes, id: \.id) { episode in
                 NavigationLink(value: itemModel.linkProvider.player(for: filledEpisode(episode, in: season))) {
                   EpisodeCard(imageURL: episode.thumbnail,
@@ -1784,7 +1784,7 @@ struct FactsView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(spacing: 10) {
+        LazyVStack(spacing: 10) {
           ForEach(facts) { FactCard(fact: $0) }
         }
         .padding(16)
@@ -1806,7 +1806,7 @@ struct ReviewsView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(spacing: 12) {
+        LazyVStack(spacing: 12) {
           ForEach(reviews.items) { review in
             ReviewCard(review: review)
           }

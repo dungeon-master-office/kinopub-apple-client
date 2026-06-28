@@ -81,7 +81,7 @@ struct HomeView: View {
       }
 #else
       ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 16) {
+        LazyHStack(spacing: 16) {
           ForEach(model.featured) { heroPage($0).frame(width: 820) }
         }
       }
