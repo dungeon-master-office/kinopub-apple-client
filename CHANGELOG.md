@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/dungeon-master-xx/kinopub-apple-client/compare/v1.2.0...v1.3.0) (2026-06-28)
+
+
+### ✨ Features
+
+* macOS fixes, DMG installer, rename to dungeon-master-xx, device screenshots ([7b3377a](https://github.com/dungeon-master-xx/kinopub-apple-client/commit/7b3377a774c8e4bd250a4e135dd3fa5beed0804f))
+
 ## [1.2.0](https://github.com/dungeon-master-xx/kinopub-apple-client/compare/v1.1.1...v1.2.0) (2026-06-27)
 
 
