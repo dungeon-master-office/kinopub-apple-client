@@ -73,8 +73,8 @@ jq -n \
   --arg repo "${REPO}" \
   --arg icon "${ICONSET}" '
 {
-  name: "KinoPub",
-  subtitle: "Unofficial kino.pub client for iPhone & iPad",
+  name: "Dungeon Apps",
+  subtitle: "Sideloadable apps for iPhone, iPad & Mac",
   website: "https://github.com/\($repo)",
   tintColor: "FF6500",
   iconURL: $icon,
