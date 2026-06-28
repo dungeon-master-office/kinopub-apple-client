@@ -81,16 +81,19 @@ Add this repo as a source to install in one tap and **get new versions automatic
 
 [![AltStore source](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-xx%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json&query=%24.apps%5B0%5D.versions%5B0%5D.version&prefix=v&label=AltStore%20source&style=for-the-badge&color=1F8AFF)](https://github.com/dungeon-master-xx/kinopub-apple-client/releases/latest)
 
-[![Add to AltStore](https://img.shields.io/badge/Add_to-AltStore-1F8AFF?style=for-the-badge)](https://dungeon-master-xx.github.io/kinopub-apple-client/?r=altstore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-xx%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)
+[![Add to AltStore Classic](https://img.shields.io/badge/Add_to-AltStore_Classic-1F8AFF?style=for-the-badge)](https://dungeon-master-xx.github.io/kinopub-apple-client/?r=altstore-classic://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-xx%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)
 &nbsp;
 [![Add to SideStore](https://img.shields.io/badge/Add_to-SideStore-8A4FFF?style=for-the-badge)](https://dungeon-master-xx.github.io/kinopub-apple-client/?r=sidestore://source?url=https%3A%2F%2Fgithub.com%2Fdungeon-master-xx%2Fkinopub-apple-client%2Freleases%2Flatest%2Fdownload%2Fapps.json)
 
 </div>
 
-> Tap the buttons **on your iPhone/iPad**. Or add the source URL manually in AltStore/SideStore → Browse → Sources → ➕:
+> Tap the buttons **on your iPhone/iPad**, or add the source URL manually → Browse → Sources → ➕:
 > ```
 > https://github.com/dungeon-master-xx/kinopub-apple-client/releases/latest/download/apps.json
 > ```
+>
+> ⚠️ Use **AltStore Classic** or **SideStore** (free sideloading with your own Apple ID). The EU
+> **AltStore PAL** marketplace only installs Apple-notarized apps and won't load this source.
 
 You'll need an active kino.pub subscription; sign in with the on-screen device code.
 
