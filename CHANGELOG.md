@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/dungeon-master-xx/kinopub-apple-client/compare/v1.4.0...v1.4.1) (2026-06-28)
+
+
+### 🐛 Fixes
+
+* stop advertising 3D video in the README (it's disabled behind a flag) ([#18](https://github.com/dungeon-master-xx/kinopub-apple-client/issues/18)) ([500c50a](https://github.com/dungeon-master-xx/kinopub-apple-client/commit/500c50a77577adea4fd805d572fae5acaf2e81f4))
+
 ## [1.4.0](https://github.com/dungeon-master-xx/kinopub-apple-client/compare/v1.3.0...v1.4.0) (2026-06-28)
 
 
