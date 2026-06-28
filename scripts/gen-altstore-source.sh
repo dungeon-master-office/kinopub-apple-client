@@ -62,7 +62,7 @@ versions="$(echo "${releases}" | jq '
     | ($r.assets[] | select(.name | endswith(".ipa"))) as $ipa
     | {
         version: ($r.tag_name | ltrimstr("v")),
-        date: ($r.published_at | split("T")[0]),
+        date: $r.published_at,
         localizedDescription: ($r.body | md2txt | .[0:1500]),
         downloadURL: $ipa.browser_download_url,
         size: $ipa.size,
@@ -82,9 +82,11 @@ jq -n \
 {
   name: "Dungeon Apps",
   subtitle: "Sideloadable apps for iPhone, iPad & Mac",
+  description: "Sideload-ready apps for iPhone, iPad and Mac. Add this source in AltStore, SideStore or Feather to install and get updates automatically.",
   website: "https://github.com/\($repo)",
-  tintColor: "FF6500",
+  tintColor: "#FF6500",
   iconURL: $icon,
+  featuredApps: [ "com.kino.pub" ],
   apps: [
     {
       name: "KinoPub",
@@ -93,7 +95,7 @@ jq -n \
       subtitle: "Unofficial kino.pub client",
       localizedDescription: "Native iOS/iPadOS client for the kino.pub service: catalog, search by cast & crew, offline downloads, 4K/HDR, sport EPG and more. Community fork — not affiliated with kino.pub.",
       iconURL: $icon,
-      tintColor: "FF6500",
+      tintColor: "#FF6500",
       category: "entertainment",
       # Device-specific screenshots (newer AltStore/SideStore); screenshotURLs is the legacy fallback.
       screenshots: { iphone: $iphoneShots, ipad: $ipadShots },
