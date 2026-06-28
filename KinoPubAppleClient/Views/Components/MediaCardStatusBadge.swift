@@ -23,7 +23,7 @@ struct MediaCardStatusBadge: View {
     let downloading = !downloaded && libraryState.isDownloadingAny(itemId: item.id)
     let watched = showsWatched
       && !item.isSeries
-      && libraryState.movieWatched(itemId: item.id, serverWatched: (item.videos?.first?.watched ?? 0) > 0)
+      && libraryState.movieWatched(itemId: item.id, serverWatched: item.videos?.first?.isWatched ?? false)
 
     HStack(spacing: 4) {
       if watched { badge("eye.fill") }

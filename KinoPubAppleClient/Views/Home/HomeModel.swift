@@ -57,8 +57,18 @@ class HomeModel: ObservableObject {
   struct ContinueItem: Identifiable {
     let id: Int
     let item: MediaItem
-    let progress: Double?
+    /// Resume progress for the movie / last-watched episode (nil for live or unstarted).
+    let watch: WatchProgress?
     let subtitle: String?
+
+    /// Fraction for the progress bar — nil (no bar) until the title is actually started.
+    var progress: Double? {
+      guard let watch, watch.state != .unwatched else { return nil }
+      return watch.fraction
+    }
+    /// Watched to (or past) the credits — surfaced on the card so a finished title reads as "watched"
+    /// instead of still inviting you to continue.
+    var finished: Bool { watch?.isFinished ?? false }
   }
 
   private var authState: AuthState
@@ -174,13 +184,19 @@ class HomeModel: ObservableObject {
         } else {
           subtitle = entry.item.duration.totalFormatted
         }
-        let item = ContinueItem(id: entry.id, item: entry.item, progress: entry.progress, subtitle: subtitle)
+        let watch = WatchProgress(position: entry.position, duration: entry.duration)
+        let item = ContinueItem(id: entry.id, item: entry.item, watch: watch, subtitle: subtitle)
         return (item, entry.updatedAt)
       }
 
     // Single list ordered by real recency (newest first) across both sources, so Continue Watching
     // matches what History shows instead of always floating local items to the front.
-    continueWatching = (enriched + localOnly).sorted { $0.watchedAt > $1.watchedAt }.map { $0.item }
+    // Drop finished titles (watched to the credits) — a movie at its end / a fully-watched series
+    // shouldn't sit in Continue Watching inviting you to resume (Netflix-style).
+    continueWatching = (enriched + localOnly)
+      .filter { !$0.item.finished }
+      .sorted { $0.watchedAt > $1.watchedAt }
+      .map { $0.item }
     continueWatchingLoading = false
   }
 
@@ -189,17 +205,15 @@ class HomeModel: ObservableObject {
   nonisolated private static func continueItem(from item: MediaItem) -> ContinueItem {
     if item.isSeries, let target = item.continueEpisode() ?? item.orderedEpisodes.last {
       let episode = target.episode
-      let progress: Double? = (episode.duration > 0 && episode.watching.time > 0)
-        ? min(max(Double(episode.watching.time) / Double(episode.duration), 0), 1)
-        : nil
-      return ContinueItem(id: item.id, item: item, progress: progress,
+      let watch = WatchProgress(position: Double(episode.watching.time), duration: Double(episode.duration))
+      return ContinueItem(id: item.id, item: item, watch: watch,
                           subtitle: "S\(target.season.number) · E\(episode.number)")
     }
-    if let video = item.videos?.first, video.duration > 0, video.watching.time > 0 {
-      let progress = min(max(Double(video.watching.time) / Double(video.duration), 0), 1)
-      return ContinueItem(id: item.id, item: item, progress: progress, subtitle: item.duration.totalFormatted)
+    if let video = item.videos?.first {
+      let watch = WatchProgress(position: Double(video.watching.time), duration: Double(video.duration))
+      return ContinueItem(id: item.id, item: item, watch: watch, subtitle: item.duration.totalFormatted)
     }
-    return ContinueItem(id: item.id, item: item, progress: nil, subtitle: item.duration.totalFormatted)
+    return ContinueItem(id: item.id, item: item, watch: nil, subtitle: item.duration.totalFormatted)
   }
 
   private static func skeletonShelves() -> [Shelf] {

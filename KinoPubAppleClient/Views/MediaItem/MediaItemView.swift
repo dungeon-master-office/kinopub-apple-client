@@ -710,7 +710,7 @@ struct MediaItemView: View {
         seasonPicker(seasons: seasons, current: season)
         ScrollViewReader { proxy in
           ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: 14) {
+            LazyHStack(alignment: .top, spacing: 14) {
               ForEach(season.episodes, id: \.id) { episode in
                 NavigationLink(value: itemModel.linkProvider.player(for: filledEpisode(episode, in: season))) {
                   EpisodeCard(imageURL: episode.thumbnail,
@@ -846,10 +846,7 @@ struct MediaItemView: View {
 
   private func episodeProgress(_ episode: Episode, in season: Season) -> Double? {
     if itemModel.isEpisodeWatched(episode) { return 1.0 }
-    var serverProgress: Double?
-    if episode.duration > 0, episode.watching.time > 0 {
-      serverProgress = Double(episode.watching.time) / Double(episode.duration)
-    }
+    let serverProgress = episode.watching.time > 0 ? episode.watchProgress.fraction : nil
     // Overlay the local resume point so a just-watched episode shows progress instantly.
     let localProgress = itemModel.localProgressFraction(season: season.number, episode: episode.number)
     guard let best = [serverProgress, localProgress].compactMap({ $0 }).max() else { return nil }
@@ -1787,7 +1784,7 @@ struct FactsView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(spacing: 10) {
+        LazyVStack(spacing: 10) {
           ForEach(facts) { FactCard(fact: $0) }
         }
         .padding(16)
@@ -1809,7 +1806,7 @@ struct ReviewsView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(spacing: 12) {
+        LazyVStack(spacing: 12) {
           ForEach(reviews.items) { review in
             ReviewCard(review: review)
           }

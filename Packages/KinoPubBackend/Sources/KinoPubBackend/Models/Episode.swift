@@ -58,13 +58,15 @@ public class Episode: Codable, Hashable, Identifiable {
 }
 
 public extension Episode {
-  /// "Finished": remaining time is within a small threshold (~8% of length, clamped 60...180s),
-  /// so Continue should offer the next episode rather than this one's tail.
-  var isWatchedToEnd: Bool {
-    guard duration > 0, watching.time > 0 else { return false }
-    let threshold = min(max(Int(Double(duration) * 0.08), 60), 180)
-    return watching.time >= duration - threshold
+  /// Resume progress for this episode (single source of truth for "watched / in progress").
+  var watchProgress: WatchProgress {
+    WatchProgress(position: Double(watching.time), duration: Double(duration))
   }
+  /// "Finished" (watched to the credits) — so Continue offers the next episode, not this one's tail.
+  var isWatchedToEnd: Bool { watchProgress.isFinished }
+  /// Single "watched" verdict: the explicit server flag OR watched-to-the-credits. Use this anywhere
+  /// a checkmark / "watched" state is shown so every screen agrees.
+  var isWatched: Bool { watched > 0 || isWatchedToEnd }
 }
 
 extension Episode: PlayableItem {

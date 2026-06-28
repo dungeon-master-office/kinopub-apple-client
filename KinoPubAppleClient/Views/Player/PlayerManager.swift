@@ -174,6 +174,7 @@ class PlayerManager: ObservableObject {
   private var seekObservation: NSKeyValueObservation?
   private var audioObservation: NSKeyValueObservation?
   private var failureObservation: NSKeyValueObservation?
+  private var endOfPlaybackObserver: NSObjectProtocol?
   private var actionsService: UserActionsService
   
   private var fileURL: URL? {
@@ -271,6 +272,18 @@ class PlayerManager: ObservableObject {
       self?.saveWatchMark(time: time)
       self?.captureCurrentAudio()
     })
+
+    // Playing to the very end marks the title watched (see `markFinished`).
+    if watchMode == .media {
+      endOfPlaybackObserver = NotificationCenter.default.addObserver(
+        forName: .AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: .main) { [weak self] _ in
+          self?.markFinished()
+      }
+    }
+  }
+
+  deinit {
+    if let endOfPlaybackObserver { NotificationCenter.default.removeObserver(endOfPlaybackObserver) }
   }
 
   // MARK: - Failure diagnostics
@@ -353,7 +366,28 @@ class PlayerManager: ObservableObject {
       }
     }
   }
-  
+
+  /// Reaching the end marks the title watched. kino.pub derives watched status from the position you
+  /// report via `marktime` (there's no separate "set watched" call — `toggle` only flips it), so we
+  /// send one final marktime at the full duration to push it over the threshold server-side, and
+  /// clear the local resume point so Continue Watching drops it immediately (Netflix-style).
+  private func markFinished() {
+    guard watchMode == .media else { return }
+    let duration = player.currentItem?.duration.seconds ?? 0
+    guard duration.isFinite, duration > 0 else { return }
+    AppContext.shared.localProgressStore.clear(id: playItem.metadata.id)
+    Task.detached(priority: .utility) { [weak self] in
+      guard let self else { return }
+      do {
+        try await self.actionsService.markWatch(id: self.playItem.metadata.id,
+                                                time: Int(duration), video: self.playItem.metadata.video,
+                                                season: self.playItem.metadata.season)
+      } catch {
+        Logger.app.error("Failed to mark finished: \(error)")
+      }
+    }
+  }
+
   func fetchWatchMark() async {
     // Only media has a resume point (live/trailers don't).
     guard watchMode == .media else { return }

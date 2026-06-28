@@ -351,7 +351,7 @@ struct SearchView: View {
         .font(.system(size: 22, weight: .bold)).foregroundStyle(Color.KinoPub.text)
         .padding(.horizontal, 20)
       ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 12) {
+        LazyHStack(spacing: 12) {
           ForEach(model.topResults, id: \.id) { item in
             NavigationLink(value: Route.details(item)) { topResultCard(item) }
               .buttonStyle(.plain)
@@ -398,7 +398,7 @@ struct SearchView: View {
       .buttonStyle(.plain)
       .padding(.horizontal, 20)
       ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 16) {
+        LazyHStack(spacing: 16) {
           ForEach(model.people) { person in
             NavigationLink(value: Route.personSearch(person.name, person.searchField, person.displayName)) {
               CastAvatarView(imageURL: ActorImageProvider.photoURLString(for: person.name),

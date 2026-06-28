@@ -42,7 +42,7 @@ public struct MediaShelf<Content: View>: View {
     VStack(alignment: .leading, spacing: 12) {
       header
       ScrollView(.horizontal, showsIndicators: false) {
-        HStack(alignment: .top, spacing: spacing) {
+        LazyHStack(alignment: .top, spacing: spacing) {
           content
         }
         .padding(.horizontal, horizontalPadding)
