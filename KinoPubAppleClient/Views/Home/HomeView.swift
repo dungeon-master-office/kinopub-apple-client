@@ -138,8 +138,7 @@ struct HomeView: View {
           ContinueWatchingCard(imageURL: entry.item.posters.wide ?? entry.item.posters.big,
                                title: entry.item.localizedTitle,
                                subtitle: entry.subtitle,
-                               progress: entry.progress,
-                               finished: entry.finished)
+                               progress: entry.progress)
           .overlay(alignment: .topTrailing) {
             MediaCardStatusBadge(item: entry.item, showsWatched: false)
           }

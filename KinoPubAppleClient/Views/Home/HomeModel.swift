@@ -191,7 +191,12 @@ class HomeModel: ObservableObject {
 
     // Single list ordered by real recency (newest first) across both sources, so Continue Watching
     // matches what History shows instead of always floating local items to the front.
-    continueWatching = (enriched + localOnly).sorted { $0.watchedAt > $1.watchedAt }.map { $0.item }
+    // Drop finished titles (watched to the credits) — a movie at its end / a fully-watched series
+    // shouldn't sit in Continue Watching inviting you to resume (Netflix-style).
+    continueWatching = (enriched + localOnly)
+      .filter { !$0.item.finished }
+      .sorted { $0.watchedAt > $1.watchedAt }
+      .map { $0.item }
     continueWatchingLoading = false
   }
 
