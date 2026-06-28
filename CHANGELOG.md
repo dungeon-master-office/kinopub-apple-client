@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/dungeon-master-xx/kinopub-apple-client/compare/v1.4.2...v1.5.0) (2026-06-28)
+
+
+### ✨ Features
+
+* Continue Watching polish + unified watch-status (tested) + lazy lists ([16763d4](https://github.com/dungeon-master-xx/kinopub-apple-client/commit/16763d481c18c550666f3d5611c1122a6953d3a3))
+
 ## [1.4.2](https://github.com/dungeon-master-xx/kinopub-apple-client/compare/v1.4.1...v1.4.2) (2026-06-28)
 
 

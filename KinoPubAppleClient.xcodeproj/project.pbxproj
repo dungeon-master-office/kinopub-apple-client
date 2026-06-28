@@ -1178,7 +1178,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.4.2; /* x-release-please-version */
+				MARKETING_VERSION = 1.5.0; /* x-release-please-version */
 				PRODUCT_BUNDLE_IDENTIFIER = com.kino.pub;
 				PRODUCT_NAME = KinoPub;
 				SDKROOT = auto;
@@ -1224,7 +1224,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.4.2; /* x-release-please-version */
+				MARKETING_VERSION = 1.5.0; /* x-release-please-version */
 				PRODUCT_BUNDLE_IDENTIFIER = com.kino.pub;
 				PRODUCT_NAME = KinoPub;
 				SDKROOT = auto;
