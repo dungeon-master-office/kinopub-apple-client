@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/dungeon-master-xx/kinopub-apple-client/compare/v1.5.0...v1.5.1) (2026-07-02)
+
+
+### 📝 Docs
+
+* add CLAUDE.md dev/architecture guide ([#24](https://github.com/dungeon-master-xx/kinopub-apple-client/issues/24)) ([d60388a](https://github.com/dungeon-master-xx/kinopub-apple-client/commit/d60388a5d3b73fd7ce2ed1880291d1cadbeda2a9))
+
 ## [1.5.0](https://github.com/dungeon-master-xx/kinopub-apple-client/compare/v1.4.2...v1.5.0) (2026-06-28)
 
 
