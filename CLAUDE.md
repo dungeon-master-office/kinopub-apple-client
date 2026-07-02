@@ -101,6 +101,24 @@ Key pieces:
   epg.org's US feed is 12k+ channels / >40 MB gz), so keep sources targeted; add sources/channels by
   editing `EPGSources.json` — no code change. `EPGServiceImpl.diskUsageBytes()` / `clearCache()` back
   the EPG row in the Storage screen.
+- **kino.pub API request encoding (subtle — verify new endpoints live before wiring UI):** write
+  mutations read params from the **form body**, not the query. `POST /v1/bookmarks/{toggle-item,create,
+  remove-folder}` set `forceSendAsGetParams = false`; sent as query params they silently `404`/`400`/
+  no-op (this is why bookmarks once "only worked client-side"). Exceptions that *do* read the query:
+  `POST /v1/history/clear-for-*`, and every GET call (vote, `watching/toggle`, `marktime`). Response
+  quirks: `watching/toggle` returns `watching` as an **object** `{status}` (not a `Bool`), and
+  `history/clear-*` returns a literal `null` — so `EmptyResponseData` tolerates null/empty bodies.
+- **Detail-screen data has three sources.** (1) The kino.pub item (`/v1/items/<id>`) — base fields +
+  its **own rating** (`rating_percentage`/10 with `rating_votes`) + like/dislike via
+  `GET /v1/items/vote?id=&like=1|0` (a **one-time** vote, *not* a toggle, with no read-back, so the
+  user's choice is remembered locally in `MediaLibraryStore.userVotes`). (2) **Cast/crew photos** from
+  kino.pub's CDN `m.pushbr.com/actors/<md5(russian name)>.jpg` (TMDB was fully removed — no API key).
+  (3) **Facts / reviews / full crew-with-characters / stills** aren't in the kino.pub API at all — they
+  come from the **kpapp.link "kpapi" proxy** over Kinopoisk (`kpapp.link/kpapi/films/<kinopoisk id>/
+  {facts,reviews,staff,images}`, public, no key), keyed by `mediaItem.kinopoisk`; see
+  `KinopoiskExtras.swift`. That proxy is a third-party dependency — each section degrades to hidden if it
+  fails. `/v1/items` filtering only honors type/genre/country/year/sort **plus `director=`/`cast=`**;
+  rating/HD/4K/AC3 are applied client-side.
 
 ## Conventions
 
